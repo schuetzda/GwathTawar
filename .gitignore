@@ -2,7 +2,6 @@
 .vs/
 bin-int/
 bin/
-externals/
 !externals/bin/premake/
 
 # Files
