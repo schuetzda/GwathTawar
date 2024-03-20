@@ -1,0 +1,13 @@
+# Directories
+.vs/
+bin-int/
+bin/
+externals/
+!externals/bin/premake/
+
+# Files
+*.sln
+*.user
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
