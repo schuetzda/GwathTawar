@@ -26,9 +26,9 @@ namespace gwa
 	{
 		return static_cast<float>(glfwGetTime());
 	}
-	const std::string Window::getAppTitle() const
+	const std::string& Window::getAppTitle() const
 	{
-		return std::string();
+		return appTitle;
 	}
 	void* Window::getWindowHandle() const
 	{

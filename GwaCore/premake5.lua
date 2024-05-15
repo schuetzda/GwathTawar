@@ -18,7 +18,7 @@
 	
 	includedirs
 	{
-		"src",
+            "src",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",

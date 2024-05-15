@@ -10,8 +10,8 @@ namespace gwa
 		assert(!s_Instance);
 		s_Instance = this;
 
-		m_renderer = std::make_unique<VulkanRenderer>(m_window);
-		m_renderer->init();
+		m_renderer = std::make_unique<Renderer>();
+		m_renderer->init(m_window);
 		
 	}
 

@@ -1,7 +1,7 @@
 workspace "GwathTawar"
 	architecture "x86_64"
 	toolset "v143"
-	startproject "GwaCore"
+	startproject "SimpleProject"
 	configurations
 	{
 		"Debug",

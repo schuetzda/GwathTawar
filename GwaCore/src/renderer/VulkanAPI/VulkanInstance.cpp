@@ -1,7 +1,6 @@
 #include "VulkanInstance.h"
 #include <cassert>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 #include "VulkanValidation.h"
 #include <GLFW/glfw3.h>
 
@@ -9,10 +8,13 @@ namespace gwa
 {
 	VulkanInstance::VulkanInstance(const std::string& appName, uint32_t appVersion, const std::string& engineName,
 		uint32_t engineVersion, uint32_t apiVersion, const std::vector<const char*> * validationLayers) 
-		: validationLayers(validationLayers), enableValidationLayers(!validationLayers->empty() && GWA_DEBUG)
+		: validationLayers(validationLayers), enableValidationLayers(!validationLayers->empty())
 	{
-		assert(enableValidationLayers && checkValidationLayerSupport());
-
+		if (enableValidationLayers) {
+			assert(checkValidationLayerSupport());
+		}
+			
+		
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = appName.c_str();
@@ -60,13 +62,25 @@ namespace gwa
 			createInfo.ppEnabledLayerNames = nullptr;
 		}
 
-		VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);		// Callback for memory management 2nd argument
+		VkResult result = vkCreateInstance(&createInfo, nullptr, &vkInstance);		// Callback for memory management 2nd argument
+
 		assert(result == VK_SUCCESS);
+
+		if (enableValidationLayers)
+		{
+			createDebugMessenger();
+		}
+
 	}
 
 	VulkanInstance::~VulkanInstance()
 	{
-		vkDestroyInstance(instance, nullptr);
+		if (enableValidationLayers) {
+			DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+		}
+
+		vkDestroyInstance(vkInstance, nullptr);
+		
 	}
 
 	bool VulkanInstance::checkValidationLayerSupport() const
@@ -114,7 +128,7 @@ namespace gwa
 		return extensions;
 	}
 
-	bool VulkanInstance::checkInstanceExtensionSupport(std::vector<const char*> * const checkExtensions) const
+	bool VulkanInstance::checkInstanceExtensionSupport(const std::vector<const char*> * const checkExtensions) const
 	{
 		// First get the number of extension in order to populate our vector
 		uint32_t extensionCount = 0;
@@ -141,5 +155,13 @@ namespace gwa
 		}
 
 		return true;
+	}
+
+	void VulkanInstance::createDebugMessenger()
+	{
+		VkDebugUtilsMessengerCreateInfoEXT createInfo;
+		populateDebugMessengerCreateInfo(createInfo);
+
+		assert(!CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS);
 	}
 }

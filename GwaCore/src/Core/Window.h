@@ -17,7 +17,7 @@ namespace gwa
 		bool shouldClose() const;
 		void shutDown() const;
 		float getTime() const;
-		const std::string getAppTitle() const;
+		const std::string& getAppTitle() const;
 
 		void* getWindowHandle() const;
 	private:

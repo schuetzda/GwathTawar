@@ -17,6 +17,7 @@ project "SimpleProject"
 	{
 		"%{wks.location}/GwaCore/src",
 		"%{IncludeDir.glm}"
+
 	}
 
 	links 
@@ -37,3 +38,4 @@ project "SimpleProject"
 		defines "GWA_DEV"
 		runtime "Release"
 		optimize "on"
+

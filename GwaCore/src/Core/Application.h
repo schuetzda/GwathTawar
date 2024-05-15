@@ -5,8 +5,7 @@
 #include <memory>
 #include "Layer.h"
 #include <vector>
-#include "renderer/VulkanRenderer.h"
-
+#include "renderer/Renderer.h"
 int main(int argc, char** argv);
 
 namespace gwa
@@ -28,7 +27,7 @@ namespace gwa
 
 		void run() const;
 
-		Window * m_window;
+		Window * const m_window;
 
 		std::vector<Layer*> m_layerStack;
 
@@ -36,7 +35,7 @@ namespace gwa
 		friend int ::main(int argc, char** argv);
 
 		//TODO Change scope of renderer. Decide where it is accessible.
-		std::unique_ptr<VulkanRenderer> m_renderer;
+		std::unique_ptr<Renderer> m_renderer;
 	};
 
 	std::unique_ptr<Application> createApplication();
