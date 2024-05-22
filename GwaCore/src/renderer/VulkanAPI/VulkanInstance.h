@@ -12,6 +12,8 @@ namespace gwa
 			uint32_t engineVersion, uint32_t apiVersion, const std::vector<const char*> * validationLayers);
 		~VulkanInstance();
 
+		void cleanup();
+
 		bool checkValidationLayerSupport() const;
 		VkInstance& getVkInstance() {
 			return vkInstance;
@@ -28,7 +30,7 @@ namespace gwa
 		const bool enableValidationLayers;
 
 		VkInstance vkInstance;
-		VkSurfaceKHR vkSurface;
 		VkDebugUtilsMessengerEXT debugMessenger;
+
 	};
 }

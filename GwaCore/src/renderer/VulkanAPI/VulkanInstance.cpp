@@ -73,14 +73,15 @@ namespace gwa
 
 	}
 
-	VulkanInstance::~VulkanInstance()
+	VulkanInstance::~VulkanInstance() = default;
+
+	void VulkanInstance::cleanup()
 	{
 		if (enableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
 		}
-
 		vkDestroyInstance(vkInstance, nullptr);
-		
+
 	}
 
 	bool VulkanInstance::checkValidationLayerSupport() const

@@ -4,7 +4,6 @@
 #include "VulkanRenderAPI.h"
 #include "VulkanInstance.h"
 #include "VulkanSurface.h"
-#include "PhysicalDevice.h"
 
 namespace gwa {
 	void VulkanRenderAPI::init(Window * window) 
@@ -25,10 +24,15 @@ namespace gwa {
 		// Create Vulkan surface
 		m_surface = std::make_unique<VulkanSurface>(window, m_instance->getVkInstance());
 
-		m_physicalDevice = std::make_unique<PhysicalDevice>(m_instance->getVkInstance(), m_surface->getSurface());
+		m_physicalDevice = std::make_unique<VulkanPhysicalDevice>(m_instance->getVkInstance(), m_surface->getSurface(), deviceExtensions);
+
+		m_logicalDevice = std::make_unique<VulkanLogicalDevice>(m_physicalDevice->getPhysicalDevice(), m_surface->getSurface(), deviceExtensions);
 	}
 
 	void VulkanRenderAPI::shutdown() {
+		m_surface->cleanup(m_instance->getVkInstance());
+		m_logicalDevice->cleanup();
+		m_instance->cleanup();
 
 	}
 }

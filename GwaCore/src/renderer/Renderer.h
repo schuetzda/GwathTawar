@@ -7,7 +7,8 @@ namespace gwa
 	{
 	public:
 		Renderer();
-		void init(Window* window);
+		void init(Window* window) const;
+		void shutdown() const;
 
 	private:
 		static std::unique_ptr<RenderAPI> s_renderAPI;

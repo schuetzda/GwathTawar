@@ -38,6 +38,7 @@ namespace gwa
 
 			m_window->update();
 		}
+		m_renderer->shutdown();
 		m_window->shutDown();
 	}
 }

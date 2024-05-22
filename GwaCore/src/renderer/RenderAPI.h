@@ -20,5 +20,6 @@ namespace gwa {
 		static std::unique_ptr<RenderAPI> Create();
 	private:
 		static API s_API;
+	
 	};
 }

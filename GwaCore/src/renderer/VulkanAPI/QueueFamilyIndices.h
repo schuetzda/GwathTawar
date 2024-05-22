@@ -6,7 +6,7 @@ namespace gwa {
 		int graphicsFamily = -1;
 		int presentationFamily = -1;
 		
-		static QueueFamilyIndices getQueueFamilyIndices(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+		static QueueFamilyIndices getQueueFamilyIndices(const VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
 			QueueFamilyIndices indices;
 
 			uint32_t queueFamilyCount = 0;

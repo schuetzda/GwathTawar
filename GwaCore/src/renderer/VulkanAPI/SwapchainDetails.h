@@ -3,7 +3,7 @@
 #include <vector>
 namespace gwa {
 	struct SwapchainDetails {
-		VkSurfaceCapabilitiesKHR surfaceCababilities;		//Surface properties, e.g. image size/extent
+		VkSurfaceCapabilitiesKHR surfaceCababilities = VkSurfaceCapabilitiesKHR();		//Surface properties, e.g. image size/extent
 		std::vector<VkSurfaceFormatKHR> formats;			//Surface image formats, e.g. RGBA
 		std::vector<VkPresentModeKHR> presentationModes;	//How images should be presented to screen
 
