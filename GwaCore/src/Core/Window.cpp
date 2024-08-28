@@ -30,6 +30,13 @@ namespace gwa
 	{
 		return appTitle;
 	}
+	WindowSize Window::getFramebufferSize() const
+	{
+		int framebufferWidth = 0;
+		int framebufferHeight = 0;
+		glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+		return WindowSize{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+	}
 	void* Window::getWindowHandle() const
 	{
 		return window;

@@ -5,9 +5,13 @@
 
 namespace gwa
 {
+	struct WindowSize {
+		uint32_t width, height;
+	};
+
 	class Window
 	{
-	public:
+		public:
 		Window(const std::string& title = "GwaApp", uint32_t width = 1920, uint32_t height = 1080) :appTitle(title), width(width), height(height)
 		{
 			init();
@@ -18,6 +22,8 @@ namespace gwa
 		void shutDown() const;
 		float getTime() const;
 		const std::string& getAppTitle() const;
+
+		WindowSize getFramebufferSize() const;
 
 		void* getWindowHandle() const;
 	private:

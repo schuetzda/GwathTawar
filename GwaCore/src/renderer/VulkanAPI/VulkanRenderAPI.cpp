@@ -27,12 +27,15 @@ namespace gwa {
 		m_physicalDevice = std::make_unique<VulkanPhysicalDevice>(m_instance->getVkInstance(), m_surface->getSurface(), deviceExtensions);
 
 		m_logicalDevice = std::make_unique<VulkanLogicalDevice>(m_physicalDevice->getPhysicalDevice(), m_surface->getSurface(), deviceExtensions);
+		
+		WindowSize framebufferSize = window->getFramebufferSize();
+		m_swapchain = std::make_unique<VulkanSwapchain>(m_physicalDevice->getPhysicalDevice(), m_logicalDevice->getLogicalDevice(), m_surface->getSurface(), framebufferSize.width, framebufferSize.height);
 	}
 
 	void VulkanRenderAPI::shutdown() {
+		m_swapchain->cleanup(m_logicalDevice->getLogicalDevice());
 		m_surface->cleanup(m_instance->getVkInstance());
 		m_logicalDevice->cleanup();
 		m_instance->cleanup();
-
 	}
 }
