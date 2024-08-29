@@ -15,6 +15,11 @@ namespace gwa {
 		VkSwapchainKHR& getSwapchain() {
 			return vkSwapchain;
 		}
+		VkFormat getSwapchainFormat()
+		{
+			return vkSwapchainImageFormat;
+		}
+
 		void cleanup(VkDevice& vkDevice);
 
 		struct VulkanSwapchainImage {

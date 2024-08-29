@@ -9,7 +9,8 @@ namespace gwa
 	public:
 		VulkanSurface(Window * const window, VkInstance& vkInstance);
 		~VulkanSurface();
-		VkSurfaceKHR& getSurface() {
+		VkSurfaceKHR& getSurface() 
+		{
 			return vkSurface;
 		}
 		void cleanup(VkInstance& vkInstance);

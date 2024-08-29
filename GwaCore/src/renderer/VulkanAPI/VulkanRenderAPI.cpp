@@ -2,8 +2,6 @@
 #include <GLFW/glfw3.h>
 
 #include "VulkanRenderAPI.h"
-#include "VulkanInstance.h"
-#include "VulkanSurface.h"
 
 namespace gwa {
 	void VulkanRenderAPI::init(Window * window) 
@@ -30,9 +28,12 @@ namespace gwa {
 		
 		WindowSize framebufferSize = window->getFramebufferSize();
 		m_swapchain = std::make_unique<VulkanSwapchain>(m_physicalDevice->getPhysicalDevice(), m_logicalDevice->getLogicalDevice(), m_surface->getSurface(), framebufferSize.width, framebufferSize.height);
+
+		m_renderPass = std::make_unique<VulkanRenderPass>(m_physicalDevice->getPhysicalDevice(), m_logicalDevice->getLogicalDevice(), m_swapchain->getSwapchainFormat());
 	}
 
 	void VulkanRenderAPI::shutdown() {
+		m_renderPass->cleanup(m_logicalDevice->getLogicalDevice());
 		m_swapchain->cleanup(m_logicalDevice->getLogicalDevice());
 		m_surface->cleanup(m_instance->getVkInstance());
 		m_logicalDevice->cleanup();
