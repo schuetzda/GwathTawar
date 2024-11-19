@@ -7,6 +7,11 @@ Those are presented to the display hardware
 #include <vector>
 
 namespace gwa {
+	struct VulkanSwapchainImage {
+		VkImage image;
+		VkImageView imageView;
+	};
+
 	class VulkanSwapchain {
 
 	public:
@@ -15,18 +20,24 @@ namespace gwa {
 		VkSwapchainKHR& getSwapchain() {
 			return vkSwapchain;
 		}
-		VkFormat getSwapchainFormat()
+		VkFormat& const getSwapchainFormat()
 		{
 			return vkSwapchainImageFormat;
 		}
 
+		VkExtent2D& getSwapchainExtent()
+		{
+			return vkSwapchainExtent;
+		}
+
+		std::vector<VulkanSwapchainImage>& getSwapchainImages()
+		{
+			return swapchainImages;
+		}
+
 		void cleanup(VkDevice& vkDevice);
 
-		struct VulkanSwapchainImage {
-			VkImage image;
-			VkImageView imageView;
-		};
-
+	
 	private:
 		VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const;
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, int framebufferWidth, int framebufferHeight) const;

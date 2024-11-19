@@ -15,7 +15,7 @@ namespace gwa
 	private:
 
 		std::vector<VkPhysicalDevice> getPhysicalDeviceList(VkInstance& instance) const;
-		bool checkPhysicalDeviceSuitable(const VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) const;
+		int ratePhysicalDeviceSuitable(const VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) const;
 		bool checkDeviceExtensionSupport(const VkPhysicalDevice& physicalDevice) const;
 		
 		

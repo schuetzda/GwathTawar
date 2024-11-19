@@ -12,6 +12,10 @@ namespace gwa
 		{
 			return vkRenderPass;
 		}
+		VkFormat& getDepthFormat()
+		{
+			return depthFormat;
+		}
 		void cleanup(VkDevice vkLogicalDevice);
 	private:
 		VkFormat chooseSupportedFormat(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);

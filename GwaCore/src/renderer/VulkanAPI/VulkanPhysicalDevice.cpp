@@ -10,12 +10,15 @@ namespace gwa{
 	{
 		std::vector<VkPhysicalDevice> deviceList = getPhysicalDeviceList(instance);
 		// Check if device is suitable for this application
+		int score = 0;
+		int rating = 0;
 		for (const auto& device : deviceList)
 		{
-			if (checkPhysicalDeviceSuitable(device, surface))
+			rating = ratePhysicalDeviceSuitable(device, surface);
+			if (score < rating)
 			{
 				physicalDevice = device;
-				break;
+				score = rating;
 			}
 		}
 		assert(physicalDevice);
@@ -42,8 +45,9 @@ namespace gwa{
 	}
 
 
-	bool VulkanPhysicalDevice::checkPhysicalDeviceSuitable(const VkPhysicalDevice& curPhysicalDevice, VkSurfaceKHR& surface) const
+	int VulkanPhysicalDevice::ratePhysicalDeviceSuitable(const VkPhysicalDevice& curPhysicalDevice, VkSurfaceKHR& surface) const
 	{
+		int score = 0;
 		// Get QueueFamily to check if valid for App
 		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(curPhysicalDevice, surface);
 
@@ -51,11 +55,20 @@ namespace gwa{
 		bool extensionsSupported = checkDeviceExtensionSupport(curPhysicalDevice);
 
 		bool swapChainValid = false;
-		
+	
+		VkPhysicalDeviceProperties deviceProperties;
+		VkPhysicalDeviceFeatures deviceFeatures;
+		vkGetPhysicalDeviceProperties(curPhysicalDevice, &deviceProperties);
+		vkGetPhysicalDeviceFeatures(curPhysicalDevice, &deviceFeatures);
+	
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(curPhysicalDevice, surface);
 		swapChainValid = !swapchainDetails.presentationModes.empty() && !swapchainDetails.formats.empty();
+		score = static_cast<int>(indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.geometryShader);
 
-		return indices.isValid() && extensionsSupported && swapChainValid;
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			score *= 1000;
+		}
+		return score;
 	}
 
 	bool VulkanPhysicalDevice::checkDeviceExtensionSupport(const VkPhysicalDevice& curPhysicalDevice) const

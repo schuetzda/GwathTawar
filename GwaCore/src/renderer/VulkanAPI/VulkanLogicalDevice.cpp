@@ -6,7 +6,7 @@ namespace gwa {
 	VulkanLogicalDevice::VulkanLogicalDevice(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions)
 		: deviceExtensions(deviceExtensions)
 	{
-		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(physicalDevice, surface);
+		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(physicalDevice, surface); //Which queues are supported?
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<int>  queueFamilyIndices = { indices.graphicsFamily, indices.presentationFamily };
 
@@ -39,7 +39,7 @@ namespace gwa {
 		}
 
 		//Queues are created at the same time es the device
-		// So we want handle to queues from given logical device of given Queue Familym of given Queue Index
+		// So we want handles to queues from given logical device of given Queue Familym of given Queue Index
 		vkGetDeviceQueue(logicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
 		vkGetDeviceQueue(logicalDevice, indices.presentationFamily, 0, &presentationQueue);
 

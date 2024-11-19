@@ -33,8 +33,8 @@ namespace gwa {
 			//Surace also defines max and minn, so make sure within boundaries by clamping value
 			newExtent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, newExtent.width));
 			newExtent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, newExtent.height));
+			return newExtent;
 		}
-		return VkExtent2D();
 	}
 
 	VkSurfaceFormatKHR VulkanSwapchain::chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const

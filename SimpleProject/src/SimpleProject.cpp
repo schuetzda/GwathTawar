@@ -1,5 +1,5 @@
 #include <GwathTawar.h>
-#include <Core/EntryPoint.h>
+#include <core/EntryPoint.h>
 
 namespace gwa
 {
