@@ -16,7 +16,6 @@ namespace gwa
 			return imageMemory;
 		}
 	private:
-		static uint32_t findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t allowedTypes, VkMemoryPropertyFlags properties);
 
 		VkImage image;
 		VkDeviceMemory imageMemory;

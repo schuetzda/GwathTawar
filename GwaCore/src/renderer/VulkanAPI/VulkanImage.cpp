@@ -1,4 +1,5 @@
 #include "VulkanImage.h"
+#include "MemoryType.h"
 #include <stdexcept>
 namespace gwa
 {
@@ -36,7 +37,7 @@ namespace gwa
 		VkMemoryAllocateInfo memoryAllocInfo = {};
 		memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		memoryAllocInfo.allocationSize = memoryRequirements.size;
-		memoryAllocInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, propFlags);
+		memoryAllocInfo.memoryTypeIndex = MemoryType::findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, propFlags);
 
 		result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &imageMemory);
 		if (result != VK_SUCCESS)
@@ -53,20 +54,4 @@ namespace gwa
 		vkFreeMemory(logicalDevice, imageMemory, nullptr);
 
 	}
-	uint32_t VulkanImage::findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t allowedTypes, VkMemoryPropertyFlags properties)
-	{
-		VkPhysicalDeviceMemoryProperties memoryProperties;
-		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
-
-		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
-		{
-			if ((allowedTypes & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
-			{
-				// This memoryType is Valid so return index
-				return i;
-			}
-		}
-		throw std::runtime_error("failed to find suitable memory type!");
-		return 0;
 	}
-}

@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Window.h>
+#include <core/Window.h>
 #include "VulkanInstance.h"
 #include "VulkanSurface.h"
 #include "VulkanPhysicalDevice.h"
@@ -14,6 +14,10 @@
 #include "VulkanImageView.h"
 #include "VulkanSwapchainFramebuffers.h"
 #include "VulkanCommandPool.h"
+#include "VulkanCommandBuffers.h"
+#include "VulkanUniformBuffers.h"
+#include "VulkanDescriptorPool.h"
+#include "VulkanDescriptorSet.h"
 
 #include <glm/glm.hpp>
 namespace gwa {
@@ -23,23 +27,28 @@ namespace gwa {
 		VulkanRenderAPI() = default;
 
 		void init(Window * window) override;
+		void draw() override;
 		void shutdown() override;
 
 	private:
 		
-		std::unique_ptr<VulkanSurface> m_surface;
-		std::unique_ptr<VulkanInstance> m_instance;
-		std::unique_ptr<VulkanPhysicalDevice> m_physicalDevice;
-		std::unique_ptr<VulkanLogicalDevice> m_logicalDevice;
-		std::unique_ptr<VulkanSwapchain> m_swapchain;
-		std::unique_ptr<VulkanRenderPass> m_renderPass;
-		std::unique_ptr<VulkanDescriptorSetLayout> m_descriptorSetLayout;
-		std::unique_ptr<VulkanPushConstant> m_pushConstant;
-		std::unique_ptr<VulkanPipeline> m_graphicsPipeline;
-		std::unique_ptr<VulkanImage> m_depthBufferImage;
-		std::unique_ptr<VulkanImageView> m_depthBufferImageView;
-		std::unique_ptr<VulkanSwapchainFramebuffers> m_swapchainFramebuffers; 
-		std::unique_ptr<VulkanCommandPool> m_graphicsCommandPool;
+		VulkanSurface m_surface;
+		VulkanInstance m_instance;
+		VulkanPhysicalDevice m_physicalDevice;
+		VulkanLogicalDevice m_logicalDevice;
+		VulkanSwapchain m_swapchain;
+		VulkanRenderPass m_renderPass;
+		VulkanDescriptorSetLayout m_descriptorSetLayout;
+		VulkanPushConstant m_pushConstant;
+		VulkanPipeline m_graphicsPipeline;
+		VulkanImage m_depthBufferImage;
+		VulkanImageView m_depthBufferImageView;
+		VulkanSwapchainFramebuffers m_swapchainFramebuffers; 
+		VulkanCommandPool m_graphicsCommandPool;
+		VulkanCommandBuffers m_graphicsCommandBuffer;
+		VulkanUniformBuffers m_mvpUniformBuffers;
+		VulkanDescriptorPool m_descriptorPool;
+		VulkanDescriptorSet m_descriptorSet;
 
 		std::shared_ptr<const std::vector<const char*>> deviceExtensions = 
 			std::make_shared<const std::vector<const char*>>(std::vector<const char*>{VK_KHR_SWAPCHAIN_EXTENSION_NAME});
@@ -48,6 +57,10 @@ namespace gwa {
 		struct Model
 		{
 			glm::mat4 model;
+		};
+		struct UboViewProj {
+			glm::mat4 projection;
+			glm::mat4 view;
 		};
 		struct Vertex {
 			glm::vec3 pos;

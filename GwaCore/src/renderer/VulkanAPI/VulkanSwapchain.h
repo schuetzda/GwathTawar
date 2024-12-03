@@ -20,7 +20,7 @@ namespace gwa {
 		VkSwapchainKHR& getSwapchain() {
 			return vkSwapchain;
 		}
-		VkFormat& const getSwapchainFormat()
+		VkFormat& getSwapchainFormat()
 		{
 			return vkSwapchainImageFormat;
 		}
