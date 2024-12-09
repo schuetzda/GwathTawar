@@ -6,7 +6,7 @@ namespace gwa
 	class VulkanRenderPass
 	{
 	public:
-		VulkanRenderPass(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, VkFormat swapchainImageFormat);
+		VulkanRenderPass(VkPhysicalDevice vkPhysicalDevice, VkDevice logicalDevice, VkFormat swapchainImageFormat);
 		~VulkanRenderPass();
 		VkRenderPass& getRenderPass()
 		{
@@ -18,9 +18,9 @@ namespace gwa
 		}
 		void cleanup(VkDevice vkLogicalDevice);
 	private:
-		VkFormat chooseSupportedFormat(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
+		VkFormat chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
 		
-		VkRenderPass vkRenderPass;
+	VkRenderPass vkRenderPass;
 		VkFormat depthFormat;
 	};
 }

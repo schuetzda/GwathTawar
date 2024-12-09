@@ -2,6 +2,8 @@
 #include "SwapchainDetails.h"
 #include "QueueFamilyIndices.h"
 #include <iostream>
+#include <cassert>
+#include <array>
 namespace gwa {
 
 	VkPresentModeKHR VulkanSwapchain::chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const
@@ -79,14 +81,12 @@ namespace gwa {
 		//Create image view and return it
 		VkImageView imageView;
 		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create an Image View");
-		}
+		assert(result == VK_SUCCESS);
+
 		return imageView;
 	}
 
-	VulkanSwapchain::VulkanSwapchain(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, VkSurfaceKHR& vkSurface, int framebufferWidth, int framebufferHeight)
+	VulkanSwapchain::VulkanSwapchain(VkPhysicalDevice vkPhysicalDevice, VkDevice vkLogicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight)
 	{
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(vkPhysicalDevice, vkSurface);
 
@@ -119,14 +119,14 @@ namespace gwa {
 
 		if (indices.graphicsFamily != indices.presentationFamily)
 		{
-			uint32_t queueFamilyIndices[] = {
+			std::array<uint32_t,2> queueFamilyIndices {
 				(uint32_t)indices.graphicsFamily,
 				(uint32_t)indices.presentationFamily
 			};
 
 			swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			swapChainCreateInfo.queueFamilyIndexCount = 2;
-			swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+			swapChainCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 		}
 		else
 		{
@@ -139,10 +139,7 @@ namespace gwa {
 		//swapChainCreateInfo.oldSwapchain = swapchain;
 
 		VkResult result = vkCreateSwapchainKHR(vkLogicalDevice, &swapChainCreateInfo, nullptr, &vkSwapchain);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create a swapchain!");
-		}
+		assert(result == VK_SUCCESS);
 		//Store for later references
 		vkSwapchainImageFormat = surfaceFormat.format;
 		vkSwapchainExtent = extent;
@@ -164,13 +161,19 @@ namespace gwa {
 	}
 	VulkanSwapchain::~VulkanSwapchain() = default;
 
-	void VulkanSwapchain::cleanup(VkDevice& vkDevice)
+	void VulkanSwapchain::recreateSwapchain(VkDevice logicalDevice) const
+	{
+		vkDeviceWaitIdle(logicalDevice);
+
+	}
+
+	void VulkanSwapchain::cleanup(VkDevice logicalDevice)
 	{
 		for (auto image : swapchainImages)
 		{
-			vkDestroyImageView(vkDevice, image.imageView, nullptr);
+			vkDestroyImageView(logicalDevice, image.imageView, nullptr);
 		}
-		vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
+		vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
 	}
 
 }

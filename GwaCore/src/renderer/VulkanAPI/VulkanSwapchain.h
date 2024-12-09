@@ -15,12 +15,14 @@ namespace gwa {
 	class VulkanSwapchain {
 
 	public:
-		VulkanSwapchain(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, VkSurfaceKHR& vkSurface, int framebufferWidth, int framebufferHeight);
+		VulkanSwapchain(VkPhysicalDevice vkPhysicalDevice, VkDevice vkLogicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight);
 		~VulkanSwapchain();
+
+		void recreateSwapchain(const VkDevice logicalDevice) const;
 		VkSwapchainKHR& getSwapchain() {
 			return vkSwapchain;
 		}
-		VkFormat& getSwapchainFormat()
+		VkFormat getSwapchainFormat() const
 		{
 			return vkSwapchainImageFormat;
 		}
@@ -35,7 +37,7 @@ namespace gwa {
 			return swapchainImages;
 		}
 
-		void cleanup(VkDevice& vkDevice);
+		void cleanup(VkDevice logicalDevice);
 
 	
 	private:

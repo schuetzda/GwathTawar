@@ -1,8 +1,10 @@
 #include "VulkanPipeline.h"
 #include "tools/FileReader.h"
 #include <stdexcept>
+#include <array>
+#include <cassert>
 namespace gwa {
-	VulkanPipeline::VulkanPipeline(VkDevice& logicalDevice, uint32_t stride, std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass& renderPass, VkExtent2D& swapchainExtent, VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout& descriptorSetLayout) {
+	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, uint32_t stride,const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout) {
 		std::vector<char> vertexShaderCode = readBinaryFile("src/shaders/vert.spv");
 		std::vector<char> fragmentShaderCode = readBinaryFile("src/shaders/frag.spv");
 
@@ -23,7 +25,7 @@ namespace gwa {
 		fragmentCreateInfo.module = fragmentShaderModule; 
 		fragmentCreateInfo.pName = "main";
 
-		VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
+		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexCreateInfo, fragmentCreateInfo };
 
 		// How the data for a single vertex is as a whole
 		VkVertexInputBindingDescription bindingDescription = {};
@@ -34,7 +36,9 @@ namespace gwa {
 
 		// How the data for an attribute is defined within a vertex
 		const uint32_t attributeDescriptionsSize = 2;
-		VkVertexInputAttributeDescription attributeDescriptions[attributeDescriptionsSize]{};
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+		attributeDescriptions.resize(attributeDescriptionsSize);
+
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;	// Format the data will take. Also defines size of format
@@ -53,7 +57,7 @@ namespace gwa {
 		vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
 		vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;		//List of Vertex Binding Description (data spacing, stride info,...)
 		vertexInputCreateInfo.vertexAttributeDescriptionCount = attributeDescriptionsSize;
-		vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions;	//data format
+		vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();	//data format
 
 		// INPUT ASSEMBLYconst 
 		// What kind of topology will be drawn?
@@ -144,10 +148,7 @@ namespace gwa {
 
 		// Create Pipeline Layout
 		VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create Pipeline Layout!");
-		}
+		assert(result == VK_SUCCESS);
 
 		// DEPTH STENCIL TESTING
 		VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
@@ -163,7 +164,7 @@ namespace gwa {
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
 		pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		pipelineCreateInfo.stageCount = 2;
-		pipelineCreateInfo.pStages = shaderStages;
+		pipelineCreateInfo.pStages = shaderStages.data();
 		pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo; \
 			pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
 		pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
@@ -180,21 +181,18 @@ namespace gwa {
 		pipelineCreateInfo.basePipelineIndex = -1;				//What is the base pipeline, all other pipelines are derivatives of it for optimization
 
 		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create a Graphics Pipeline!");
-		}
+		assert(result == VK_SUCCESS);
 		// Destroy Shader Modules, no longer needed after Pipeline created
 		vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
 		vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 
 	}
-	void VulkanPipeline::cleanup(VkDevice& logicalDevice)
+	void VulkanPipeline::cleanup(VkDevice logicalDevice)
 	{
 		vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 	}
-	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code, VkDevice& logicalDevice)
+	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code, const VkDevice logicalDevice)
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
 		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -203,11 +201,8 @@ namespace gwa {
 
 		VkShaderModule shaderModule;
 		VkResult result = vkCreateShaderModule(logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create Shader Module!");
-		}
-		return shaderModule;
+		assert(result == VK_SUCCESS);
 
+		return shaderModule;
 	}
 }

@@ -6,7 +6,7 @@
 #include <cassert>
 namespace gwa{
 
-	VulkanPhysicalDevice::VulkanPhysicalDevice(VkInstance& instance, VkSurfaceKHR& surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions) : deviceExtensions(deviceExtensions)
+	VulkanPhysicalDevice::VulkanPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions) : deviceExtensions(deviceExtensions)
 	{
 		std::vector<VkPhysicalDevice> deviceList = getPhysicalDeviceList(instance);
 		// Check if device is suitable for this application
@@ -28,7 +28,7 @@ namespace gwa{
 		//minUniformBufferOffset = deviceProperties.limits.minUniformBufferOffsetAlignment;
 	}
 
-	std::vector<VkPhysicalDevice> VulkanPhysicalDevice::getPhysicalDeviceList(VkInstance& instance) const
+	std::vector<VkPhysicalDevice> VulkanPhysicalDevice::getPhysicalDeviceList(const VkInstance& instance) const
 	{
 			// Enumerate physical devices vkInstance can access
 		uint32_t deviceCount = 0;

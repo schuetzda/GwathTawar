@@ -1,9 +1,10 @@
 #include "VulkanImage.h"
 #include "MemoryType.h"
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
-	VulkanImage::VulkanImage(VkDevice& logicalDevice, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags)
+	VulkanImage::VulkanImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags)
 	{
 		// CREATE IMAGE
 		//Image Creation Info
@@ -24,10 +25,7 @@ namespace gwa
 
 		VkResult result = vkCreateImage(logicalDevice, &imageCreateInfo, nullptr, &image);
 
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create an Image!");
-		}
+		assert(result == VK_SUCCESS);
 		// CREATE MEMORY FOR IMAGE
 
 		// Get memory requiremts for a type of image
@@ -40,10 +38,7 @@ namespace gwa
 		memoryAllocInfo.memoryTypeIndex = MemoryType::findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, propFlags);
 
 		result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &imageMemory);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate memory for Image!");
-		}
+		assert(result == VK_SUCCESS);
 
 		// Connect memory to image
 		vkBindImageMemory(logicalDevice, image, imageMemory, 0);
@@ -54,4 +49,4 @@ namespace gwa
 		vkFreeMemory(logicalDevice, imageMemory, nullptr);
 
 	}
-	}
+}

@@ -1,10 +1,11 @@
 #include "VulkanDescriptorPool.h"
 #include <stdexcept>
+#include <cassert>
 
 namespace gwa
 {
 	
-	VulkanDescriptorPool::VulkanDescriptorPool(VkDevice& logicalDevice, std::vector<VkBuffer>& buffers, const int FRAMES_IN_FLIGHT)
+	VulkanDescriptorPool::VulkanDescriptorPool(const VkDevice logicalDevice,const std::vector<VkBuffer>& buffers, const int FRAMES_IN_FLIGHT)
 	{
 		// Type of descriptors + how many DESCRIPTORS, not descriptor sets (combined makes the pool size)
 		VkDescriptorPoolSize vpPoolSize = {};
@@ -28,11 +29,7 @@ namespace gwa
 
 		// Create Descriptor Pool
 		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create a Descriptor Pool!");
-		}
-
+		assert(result == VK_SUCCESS);
 	}
 	void VulkanDescriptorPool::cleanup(VkDevice logicalDevice)
 	{

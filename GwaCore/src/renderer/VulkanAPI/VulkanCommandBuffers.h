@@ -6,8 +6,8 @@ namespace gwa
 	class VulkanCommandBuffers
 	{
 	public:
-		VulkanCommandBuffers(VkDevice& logicalDevice, VkCommandPool& commandPool, const int MAX_FRAME_DRAWS);
-		std::vector<VkCommandBuffer>& getCommandBuffers()
+		VulkanCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, const int MAX_FRAME_DRAWS);
+		const std::vector<VkCommandBuffer>& getCommandBuffers() const
 		{
 			return commandBuffers;
 		}

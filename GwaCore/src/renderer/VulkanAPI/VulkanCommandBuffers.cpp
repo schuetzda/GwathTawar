@@ -1,9 +1,10 @@
 #include "VulkanCommandBuffers.h"
 #include <stdexcept>
+#include <cassert>
 
 namespace gwa
 {
-	VulkanCommandBuffers::VulkanCommandBuffers(VkDevice& logicalDevice, VkCommandPool& commandPool, const int MAX_FRAME_DRAWS)
+	VulkanCommandBuffers::VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const int MAX_FRAME_DRAWS)
 	{
 		commandBuffers.resize(MAX_FRAME_DRAWS);
 
@@ -15,9 +16,6 @@ namespace gwa
 		cbAllocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
 		VkResult result = vkAllocateCommandBuffers(logicalDevice, &cbAllocInfo, commandBuffers.data());
-		if (result != VK_SUCCESS)
-		{
-			throw new std::runtime_error("Failed to allocate Command Buffers!");
-		}
+		assert(result == VK_SUCCESS);
 	}
 }

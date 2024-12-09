@@ -1,8 +1,9 @@
 #include "VulkanImageView.h"
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
-	VulkanImageView::VulkanImageView(VkDevice& logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -24,13 +25,9 @@ namespace gwa
 
 		//Create image view and return it
 		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create an Image View");
-		}
-
+		assert(result == VK_SUCCESS);
 	}
-	void VulkanImageView::cleanup(VkDevice& logicalDevice)
+	void VulkanImageView::cleanup(VkDevice logicalDevice)
 	{
 		vkDestroyImageView(logicalDevice, imageView, nullptr);
 	}

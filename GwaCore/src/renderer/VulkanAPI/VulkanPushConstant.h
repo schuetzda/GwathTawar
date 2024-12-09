@@ -4,8 +4,8 @@ namespace gwa {
 	class VulkanPushConstant
 	{
 	public:
-		VulkanPushConstant(VkShaderStageFlags, uint32_t offset, uint32_t size);
-		VkPushConstantRange& getPushConstantRange() {
+		VulkanPushConstant(VkShaderStageFlags vkShaderStageFlags, uint32_t offset, uint32_t size);
+		VkPushConstantRange getPushConstantRange() const{
 			return vkPushConstantRange;
 		}
 		void cleanup();

@@ -5,8 +5,8 @@ namespace gwa
 	class VulkanImageView
 	{
 	public:
-		VulkanImageView(VkDevice& logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-		void cleanup(VkDevice& logicalDevice);
+		VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		void cleanup(VkDevice logicalDevice);
 
 		VkImageView& getImageView()
 		{

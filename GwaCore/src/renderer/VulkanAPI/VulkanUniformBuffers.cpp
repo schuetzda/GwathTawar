@@ -1,9 +1,10 @@
 #include "VulkanUniformBuffers.h"
 #include "MemoryType.h"
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
-	VulkanUniformBuffers::VulkanUniformBuffers(VkDevice& logicalDevice, VkPhysicalDevice physicalDevice, uint64_t uniformBufferSize, const int MAX_FRAMES_IN_FLIGHT) : MAX_FRAMES_IN_FLIGHT(MAX_FRAMES_IN_FLIGHT)
+	VulkanUniformBuffers::VulkanUniformBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint64_t uniformBufferSize, const int MAX_FRAMES_IN_FLIGHT) : MAX_FRAMES_IN_FLIGHT(MAX_FRAMES_IN_FLIGHT)
 	{
 		VkDeviceSize vpBufferSize = uniformBufferSize;
 		// NOT IN USE, for Dynamic UBO
@@ -26,7 +27,7 @@ namespace gwa
 	}
 
 	void VulkanUniformBuffers::createBuffer(VkPhysicalDevice physicalDevice, VkDevice logicalDevice, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage,
-		VkMemoryPropertyFlags bufferProperties, VkBuffer* buffer, VkDeviceMemory* bufferMemory)
+		VkMemoryPropertyFlags bufferProperties, VkBuffer* buffer, VkDeviceMemory* bufferMemory) const
 	{
 		// Create Vertex Buffer
 		VkBufferCreateInfo bufferInfo = {};
@@ -37,11 +38,7 @@ namespace gwa
 
 		VkResult result = vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, buffer);
 
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create a Vertex Buffer!");
-		}
-
+		assert(result == VK_SUCCESS);
 		// Get Buffer memory requirements
 		VkMemoryRequirements memRequirements;
 		vkGetBufferMemoryRequirements(logicalDevice, *buffer, &memRequirements);
@@ -55,11 +52,7 @@ namespace gwa
 		//VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Allows placement of data straight into buffer after mapping
 		result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, bufferMemory);
 
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate Vertex Buffer Memory");
-		}
-
+		assert(result == VK_SUCCESS);
 		// Allocate memory to given Vertex Buffer
 		vkBindBufferMemory(logicalDevice, *buffer, *bufferMemory, 0);
 

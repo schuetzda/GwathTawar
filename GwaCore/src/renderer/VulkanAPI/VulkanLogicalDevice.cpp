@@ -2,8 +2,9 @@
 #include "QueueFamilyIndices.h"
 #include <set>
 #include <stdexcept>
+#include <cassert>
 namespace gwa {
-	VulkanLogicalDevice::VulkanLogicalDevice(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions)
+	VulkanLogicalDevice::VulkanLogicalDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions)
 		: deviceExtensions(deviceExtensions)
 	{
 		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(physicalDevice, surface); //Which queues are supported?
@@ -33,10 +34,7 @@ namespace gwa {
 		deviceCreateInfo.pEnabledFeatures = &phDeviceFeatures;		//Set tessShader, etc here
 
 		VkResult result = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &logicalDevice);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create a logical device!");
-		}
+		assert(result == VK_SUCCESS);
 
 		//Queues are created at the same time es the device
 		// So we want handles to queues from given logical device of given Queue Familym of given Queue Index

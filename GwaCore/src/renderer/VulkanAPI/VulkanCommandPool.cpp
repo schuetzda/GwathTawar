@@ -1,9 +1,11 @@
 #include "VulkanCommandPool.h"
 #include "QueueFamilyIndices.h"
 #include <stdexcept>
+#include <cassert>
+
 namespace gwa
 {
-	VulkanCommandPool::VulkanCommandPool(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR& surface)
+	VulkanCommandPool::VulkanCommandPool(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
 	{
 		QueueFamilyIndices queueFamilyIndices = QueueFamilyIndices::getQueueFamilyIndices(physicalDevice,surface);
 
@@ -13,10 +15,7 @@ namespace gwa
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
 
 		VkResult result = vkCreateCommandPool(logicalDevice, &poolInfo, nullptr, &commandPool);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create a command pool");
-		}
+		assert(result == VK_SUCCESS);
 	}
 	void VulkanCommandPool::cleanup(VkDevice logicalDevice)
 	{

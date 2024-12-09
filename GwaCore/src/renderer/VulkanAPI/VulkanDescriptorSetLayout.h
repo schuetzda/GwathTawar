@@ -5,7 +5,7 @@ namespace gwa
 	class VulkanDescriptorSetLayout
 	{
 	public:
-		explicit VulkanDescriptorSetLayout(VkDevice& vkLogicalDevice);
+		explicit VulkanDescriptorSetLayout(VkDevice vkLogicalDevice);
 		VkDescriptorSetLayout& getDescriptorSetLayout()
 		{
 			return vkDescriptorSetLayout;

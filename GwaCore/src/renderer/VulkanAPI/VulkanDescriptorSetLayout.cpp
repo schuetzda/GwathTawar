@@ -1,9 +1,10 @@
 #include "VulkanDescriptorSetLayout.h"
 #include <vector>
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
-	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice& vkLogicalDevice)
+	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice vkLogicalDevice)
 	{
 		// MVPMat Binding Info
 		VkDescriptorSetLayoutBinding vpLayoutBinding = {};
@@ -33,10 +34,7 @@ namespace gwa
 		layoutCreateInfo.pBindings = layoutBindings.data();				// array of binding infos
 
 		VkResult result = vkCreateDescriptorSetLayout(vkLogicalDevice, &layoutCreateInfo, nullptr, &vkDescriptorSetLayout);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create a Descriptor Set Layout");
-		}
+		assert(result == VK_SUCCESS);
 
 	}
 	void VulkanDescriptorSetLayout::cleanup(VkDevice vkLogicalDevice)

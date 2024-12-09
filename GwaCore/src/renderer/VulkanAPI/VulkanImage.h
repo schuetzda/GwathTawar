@@ -5,7 +5,7 @@ namespace gwa
 	class VulkanImage
 	{
 	public:
-		VulkanImage(VkDevice& logicalDevice, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
+		VulkanImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
 		void cleanup(VkDevice logicalDevice);
 		VkImage& getImage()
 		{

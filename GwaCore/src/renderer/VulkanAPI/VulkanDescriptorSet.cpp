@@ -1,8 +1,9 @@
 #include "VulkanDescriptorSet.h"
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice& logicalDevice, VkDescriptorSetLayout& descriptorSetLayout, VkDescriptorPool& descriptorPool,std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize)
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, VkDescriptorPool descriptorPool,const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize)
 	{
 		descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -17,10 +18,7 @@ namespace gwa
 
 		//Allocate descriptorSet 
 		VkResult result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate Descriptor Sets!");
-		}
+		assert(result == VK_SUCCESS);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{

@@ -6,8 +6,8 @@ namespace gwa {
 	class VulkanLogicalDevice
 	{
 	public:
-		VulkanLogicalDevice(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions);
-		VkDevice& getLogicalDevice() {
+		VulkanLogicalDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions);
+		VkDevice getLogicalDevice() const{
 			return logicalDevice;
 		}
 		void cleanup();

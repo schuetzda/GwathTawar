@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Window.h>
+#include <core/Window.h>
 #include <vulkan/vulkan_core.h>
 namespace gwa
 {
@@ -7,13 +7,13 @@ namespace gwa
 	{
 
 	public:
-		VulkanSurface(Window * const window, VkInstance& vkInstance);
+		VulkanSurface(const Window * const window, VkInstance vkInstance);
 		~VulkanSurface();
-		VkSurfaceKHR& getSurface() 
+		VkSurfaceKHR getSurface() const 
 		{
 			return vkSurface;
 		}
-		void cleanup(VkInstance& vkInstance);
+		void cleanup(const VkInstance& vkInstance);
 	private:
 		VkSurfaceKHR vkSurface;
 	};

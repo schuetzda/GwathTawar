@@ -21,6 +21,5 @@ namespace gwa {
 		static std::unique_ptr<RenderAPI> Create();
 	private:
 		static API s_API;
-		const int MAX_FRAMES_IN_FLIGHT;
 	};
 }

@@ -5,10 +5,11 @@ It can contain multiple subpasses. The image layout of an image changes inside a
 #include "VulkanRenderPass.h"
 #include <array>
 #include <stdexcept>
+#include <cassert>
 
 namespace gwa
 {
-	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
+	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
 	{
 		for (VkFormat format : formats)
 		{
@@ -23,11 +24,11 @@ namespace gwa
 				return format;
 			}
 		}
-		throw std::runtime_error("Failed to find a Format");
-		return VkFormat();
+		assert(false);
+		return formats[0];
 	}
 
-	VulkanRenderPass::VulkanRenderPass(VkPhysicalDevice& vkPhysicalDevice, VkDevice& vkLogicalDevice, VkFormat swapchainImageFormat)
+	VulkanRenderPass::VulkanRenderPass(VkPhysicalDevice vkPhysicalDevice, VkDevice vkLogicalDevice, VkFormat swapchainImageFormat)
 	{
 		// Color Attachments of render pass. All subpasses have access to this.
 		VkAttachmentDescription colorAttachment = {};
@@ -43,12 +44,10 @@ namespace gwa
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;			// Image data layout before render pass starts
 		// There is an subpass format inbetween (see colorAttachment layout)
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		// Image data layout after render pass (to change to)
-
 		// Depth attachment of render pass
 		VkAttachmentDescription depthAttachment = {};
 		depthFormat = chooseSupportedFormat(
 			vkPhysicalDevice,
-			vkLogicalDevice,
 			{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -122,10 +121,7 @@ namespace gwa
 		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
 		VkResult result = vkCreateRenderPass(vkLogicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass);
-		if (result != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create a Render Pass!");
-		}
+		assert(result == VK_SUCCESS);
 	}
 	VulkanRenderPass::~VulkanRenderPass() = default;
 	

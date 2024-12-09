@@ -15,7 +15,7 @@ namespace gwa
 		void cleanup();
 
 		bool checkValidationLayerSupport() const;
-		VkInstance& getVkInstance() {
+		const VkInstance getVkInstance() const{
 			return vkInstance;
 		}
 
