@@ -8,19 +8,12 @@ namespace gwa
 	public:
 		VulkanRenderPass(VkPhysicalDevice vkPhysicalDevice, VkDevice logicalDevice, VkFormat swapchainImageFormat);
 		~VulkanRenderPass();
-		VkRenderPass& getRenderPass()
-		{
-			return vkRenderPass;
-		}
-		VkFormat& getDepthFormat()
-		{
-			return depthFormat;
-		}
 		void cleanup(VkDevice vkLogicalDevice);
+
+		VkRenderPass vkRenderPass;
+		VkFormat depthFormat;
 	private:
 		VkFormat chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
 		
-	VkRenderPass vkRenderPass;
-		VkFormat depthFormat;
 	};
 }

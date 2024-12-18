@@ -8,6 +8,10 @@ namespace gwa {
 	{
 		s_renderAPI->init(window);
 	}
+	void Renderer::run(Window* window) const
+	{
+		s_renderAPI->draw(window);
+	}
 	void Renderer::shutdown() const 
 	{
 		s_renderAPI->shutdown();

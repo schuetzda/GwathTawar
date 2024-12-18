@@ -10,8 +10,14 @@ namespace gwa
 	public:
 		VulkanSwapchainFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 			VkImageView depthBufferImageView, VkExtent2D swpachainExtent);
-		void cleanup(VkDevice logicalDevice) const;
-	private:
+		void recreateSwapchain(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
+			VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
+		void cleanup(VkDevice logicalDevice);
+
 		std::vector<VkFramebuffer> swapchainFramebuffers;
+	private:
+		void createFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
+			VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
+
 	};
 }

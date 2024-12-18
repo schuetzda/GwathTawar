@@ -3,8 +3,35 @@
 #include <cassert>
 namespace gwa
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, VkDescriptorPool descriptorPool,const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize)
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize)
 	{
+		//---DescriptorPool---
+
+		// Type of descriptors + how many DESCRIPTORS, not descriptor sets (combined makes the pool size)
+		VkDescriptorPoolSize vpPoolSize = {};
+		vpPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		vpPoolSize.descriptorCount = static_cast<uint32_t> (uniformBuffers.size());
+		std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { vpPoolSize };
+
+		// Dynamic Model Pool for Dynamic Uniform Buffer. NOT IN USE, for reference only
+		/*VkDescriptorPoolSize modelPoolSize = {};
+		modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		modelPoolSize.descriptorCount = static_cast<uint32_t> (modelDynUniformBuffer.size());
+		descriptorPoolSizes.push_back(modelPoolSize)
+		*/
+
+		// Data to create Descriptor Pool
+		VkDescriptorPoolCreateInfo poolCreateInfo = {};
+		poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolCreateInfo.maxSets = static_cast<uint32_t> (MAX_FRAMES_IN_FLIGHT);		// Maximum number of Descriptor Sets that can be created from pool
+		poolCreateInfo.poolSizeCount = static_cast<uint32_t> (descriptorPoolSizes.size());											// Amount of Pool Sizes being passed
+		poolCreateInfo.pPoolSizes = descriptorPoolSizes.data();										// Pool Sizes to create pool with
+
+		// Create Descriptor Pool
+		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
+		assert(result == VK_SUCCESS);
+
+		//---Descriptor Set---
 		descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
 		//Each sets has the same layout
@@ -17,7 +44,7 @@ namespace gwa
 		setAllocInfo.pSetLayouts = setLayouts.data();
 
 		//Allocate descriptorSet 
-		VkResult result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
+		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
 		assert(result == VK_SUCCESS);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -63,5 +90,9 @@ namespace gwa
 			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0, nullptr);
 
 		}
+	}
+	void VulkanDescriptorSet::cleanup(VkDevice logicalDevice)
+	{
+		vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
 	}
 }

@@ -8,6 +8,7 @@ namespace gwa
 	public:
 		Renderer();
 		void init(Window* window) const;
+		void run(Window* window) const;
 		void shutdown() const;
 
 	private:

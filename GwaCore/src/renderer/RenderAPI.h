@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Window.h>
+#include <core/Window.h>
 #include <memory>
 namespace gwa {
 
@@ -14,7 +14,7 @@ namespace gwa {
 		virtual ~RenderAPI() = default;
 
 		virtual void init(Window* window) = 0;
-		virtual void draw() = 0;
+		virtual void draw(Window* window) = 0;
 		virtual void shutdown() = 0;
 
 		static API GetAPI() { return s_API; }

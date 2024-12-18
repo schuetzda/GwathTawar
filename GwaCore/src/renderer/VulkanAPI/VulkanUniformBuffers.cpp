@@ -57,6 +57,13 @@ namespace gwa
 		vkBindBufferMemory(logicalDevice, *buffer, *bufferMemory, 0);
 
 	}
+	void VulkanUniformBuffers::updateUniformBuffers(VkDevice logicalDevice, uint32_t imageIndex, uint64_t uniformBufferSize, const void* uniformBufferData)
+	{
+		void* data;
+		vkMapMemory(logicalDevice, uniformBufferMemory[imageIndex], 0, uniformBufferSize, 0, &data);
+		memcpy(data, uniformBufferData, uniformBufferSize);
+		vkUnmapMemory(logicalDevice, uniformBufferMemory[imageIndex]);
+	}
 	void VulkanUniformBuffers::cleanup(VkDevice logicalDevice)
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)

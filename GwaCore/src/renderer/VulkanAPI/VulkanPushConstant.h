@@ -8,8 +8,7 @@ namespace gwa {
 		VkPushConstantRange getPushConstantRange() const{
 			return vkPushConstantRange;
 		}
-		void cleanup();
-	private:
+
 		VkPushConstantRange vkPushConstantRange;
 	};
 }

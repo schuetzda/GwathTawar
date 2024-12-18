@@ -7,6 +7,18 @@ namespace gwa
 	VulkanSwapchainFramebuffers::VulkanSwapchainFramebuffers(VkDevice logicalDevice,const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 		VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
 	{
+		createFramebuffers(logicalDevice, swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
+	}
+	void VulkanSwapchainFramebuffers::recreateSwapchain(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
+	{
+		cleanup(logicalDevice);
+		swapchainFramebuffers.clear();
+
+		createFramebuffers(logicalDevice, swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
+	}
+	void VulkanSwapchainFramebuffers::createFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
+		VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
+	{
 		swapchainFramebuffers.resize(swapchainImages.size());
 
 		for (size_t i = 0; i < swapchainFramebuffers.size(); ++i)
@@ -30,7 +42,7 @@ namespace gwa
 			assert(result == VK_SUCCESS);
 		}
 	}
-	void VulkanSwapchainFramebuffers::cleanup(VkDevice logicalDevice) const
+	void VulkanSwapchainFramebuffers::cleanup(VkDevice logicalDevice) 
 	{
 		for (auto framebuffer : swapchainFramebuffers)
 		{

@@ -16,7 +16,6 @@
 #include "VulkanCommandPool.h"
 #include "VulkanCommandBuffers.h"
 #include "VulkanUniformBuffers.h"
-#include "VulkanDescriptorPool.h"
 #include "VulkanDescriptorSet.h"
 #include "VulkanSemaphore.h"
 #include "VulkanFence.h"
@@ -29,11 +28,10 @@ namespace gwa {
 		VulkanRenderAPI() = default;
 
 		void init(Window * window) override;
-		void draw() override;
+		void draw(Window * window) override;
 		void shutdown() override;
 
 	private:
-		size_t m_swapchainImageCount = 3;
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 		uint32_t currentFrame = 0;
 		
@@ -52,7 +50,6 @@ namespace gwa {
 		std::unique_ptr<VulkanCommandPool> m_graphicsCommandPool;
 		std::unique_ptr<VulkanCommandBuffers> m_graphicsCommandBuffer;
 		std::unique_ptr<VulkanUniformBuffers> m_mvpUniformBuffers;
-		std::unique_ptr<VulkanDescriptorPool> m_descriptorPool;
 		std::unique_ptr<VulkanDescriptorSet> m_descriptorSet;
 		std::unique_ptr<VulkanSemaphore> m_renderFinished;
 		std::unique_ptr<VulkanSemaphore> m_imageAvailable;

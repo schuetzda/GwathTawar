@@ -7,16 +7,14 @@ namespace gwa {
 	{
 	public:
 		VulkanLogicalDevice(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions);
-		VkDevice getLogicalDevice() const{
-			return logicalDevice;
-		}
 		void cleanup();
-	private:	
-		std::shared_ptr<const std::vector<const char*>> deviceExtensions;
 
 		VkDevice logicalDevice;
 		VkQueue graphicsQueue;
 		VkQueue presentationQueue;
+	private:	
+		std::shared_ptr<const std::vector<const char*>> deviceExtensions;
+
 	};
 	
 }

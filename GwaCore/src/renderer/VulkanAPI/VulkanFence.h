@@ -8,13 +8,10 @@ namespace gwa
 	{
 	public:
 		VulkanFence(VkDevice logicalDevice, const int MAX_FRAMES_IN_FLIGHT);
-		const std::vector<VkFence>& getFences() const
-		{
-			return fences;
-		}
 		void cleanup(VkDevice logicalDevice);
-	private:
+
 		std::vector<VkFence> fences;
+	private:
 		const int MAX_FRAMES_IN_FLIGHT;
 	};
 }

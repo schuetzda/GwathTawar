@@ -15,42 +15,24 @@ namespace gwa {
 	class VulkanSwapchain {
 
 	public:
-		VulkanSwapchain(VkPhysicalDevice vkPhysicalDevice, VkDevice vkLogicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight);
+		VulkanSwapchain(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight);
 		~VulkanSwapchain();
 
-		void recreateSwapchain(const VkDevice logicalDevice) const;
-		VkSwapchainKHR& getSwapchain() {
-			return vkSwapchain;
-		}
-		VkFormat getSwapchainFormat() const
-		{
-			return vkSwapchainImageFormat;
-		}
-
-		VkExtent2D& getSwapchainExtent()
-		{
-			return vkSwapchainExtent;
-		}
-
-		std::vector<VulkanSwapchainImage>& getSwapchainImages()
-		{
-			return swapchainImages;
-		}
-
+		void recreateSwapchain(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, int framebufferWidth, int framebufferHeight);
 		void cleanup(VkDevice logicalDevice);
 
-	
+		VkSwapchainKHR vkSwapchain;
+		VkFormat vkSwapchainImageFormat;
+		VkExtent2D vkSwapchainExtent;
+		std::vector<VulkanSwapchainImage> swapchainImages;
+
 	private:
+		void createSwapchain(VkDevice logicalDevice, VkPhysicalDevice phyiscalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight);
 		VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const;
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, int framebufferWidth, int framebufferHeight) const;
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
 		VkImageView createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
-		VkSwapchainKHR vkSwapchain;
-
-		VkFormat vkSwapchainImageFormat;
-		VkExtent2D vkSwapchainExtent;
-		std::vector<VulkanSwapchainImage> swapchainImages;
 
 	};
 }

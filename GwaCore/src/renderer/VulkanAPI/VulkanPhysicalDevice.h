@@ -9,17 +9,13 @@ namespace gwa
 	{
 	public:
 		 VulkanPhysicalDevice(VkInstance instance, VkSurfaceKHR surface, std::shared_ptr<const std::vector<const char*>> deviceExtensions);
-		 VkPhysicalDevice& getPhysicalDevice() {
-			 return physicalDevice;
-		 }
+
+		VkPhysicalDevice physicalDevice;
+		std::shared_ptr<const std::vector<const char*>> deviceExtensions;
 	private:
 
 		std::vector<VkPhysicalDevice> getPhysicalDeviceList(const VkInstance& instance) const;
 		int ratePhysicalDeviceSuitable(const VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) const;
 		bool checkDeviceExtensionSupport(const VkPhysicalDevice& physicalDevice) const;
-		
-		
-		VkPhysicalDevice physicalDevice;
-		std::shared_ptr<const std::vector<const char*>> deviceExtensions;
 	};
 }

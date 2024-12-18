@@ -7,11 +7,7 @@ namespace gwa
 	{
 	public:
 		VulkanCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, const int MAX_FRAME_DRAWS);
-		const std::vector<VkCommandBuffer>& getCommandBuffers() const
-		{
-			return commandBuffers;
-		}
-	private:
+		void recordCommands(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, VkPipeline pipeline, const uint32_t currentFrame);
 		std::vector<VkCommandBuffer> commandBuffers;
 	};
 }

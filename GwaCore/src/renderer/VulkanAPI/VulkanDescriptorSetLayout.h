@@ -6,12 +6,8 @@ namespace gwa
 	{
 	public:
 		explicit VulkanDescriptorSetLayout(VkDevice vkLogicalDevice);
-		VkDescriptorSetLayout& getDescriptorSetLayout()
-		{
-			return vkDescriptorSetLayout;
-		}
 		void cleanup(VkDevice vkLogicalDevice);
-	private:
+
 		VkDescriptorSetLayout vkDescriptorSetLayout;
 	};
 }

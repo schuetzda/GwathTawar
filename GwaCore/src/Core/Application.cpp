@@ -36,6 +36,7 @@ namespace gwa
 				layer->OnUpdate(timestep);
 			}
 
+			m_renderer->run(m_window);
 			m_window->update();
 		}
 		m_renderer->shutdown();

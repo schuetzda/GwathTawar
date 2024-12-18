@@ -8,15 +8,10 @@ namespace gwa
 	public:
 		VulkanSemaphore(VkDevice logicalDevice, const int MAX_FRAMES_IN_FLIGHT);
 
-		const std::vector<VkSemaphore>& getSemaphores () const
-		{
-			return vkSemaphores;
-		}
-
 		void cleanup(VkDevice logicalDevice);
 
-	private:
 		std::vector<VkSemaphore> vkSemaphores;
+	private:
 		const int MAX_FRAMES_IN_FLIGHT;
 	};
 }
