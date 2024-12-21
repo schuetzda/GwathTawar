@@ -7,7 +7,7 @@ namespace gwa {
 	{
 	public:
 		enum class API {
-			None = 0, Vulkan = 0
+			None = 0, Vulkan = 1
 		};
 
 	public:

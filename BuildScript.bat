@@ -1,2 +1,2 @@
-call externals\premake\premake5.exe vs2019
+call externals\premake\premake5.exe vs2022
 PAUSE

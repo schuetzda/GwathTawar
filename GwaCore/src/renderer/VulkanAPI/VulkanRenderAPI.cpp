@@ -137,6 +137,7 @@ namespace gwa {
 		m_drawFences->cleanup(cur_logicalDevice);
 		m_renderFinished->cleanup(cur_logicalDevice);
 		m_imageAvailable->cleanup(cur_logicalDevice);
+		m_descriptorSet->cleanup(cur_logicalDevice);
 		m_mvpUniformBuffers->cleanup(cur_logicalDevice);
 		m_graphicsCommandPool->cleanup(cur_logicalDevice);
 		m_swapchainFramebuffers->cleanup(cur_logicalDevice);

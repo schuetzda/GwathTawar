@@ -4,9 +4,9 @@
 
 namespace gwa
 {
-	VulkanCommandBuffers::VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const int MAX_FRAME_DRAWS)
+	VulkanCommandBuffers::VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const uint32_t commandBufferCount)
 	{
-		commandBuffers.resize(MAX_FRAME_DRAWS);
+		commandBuffers.resize(commandBufferCount);
 
 		VkCommandBufferAllocateInfo cbAllocInfo = {};
 		cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -19,13 +19,28 @@ namespace gwa
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffers::recordCommands(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, VkPipeline pipeline, const uint32_t currentFrame)
+	void VulkanCommandBuffers::beginCommandBuffer(const uint32_t currentIndex)
 	{
 		VkCommandBufferBeginInfo bufferBeginInfo = {};
 		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 		// Start recording commands to command buffer
-		VkResult result = vkBeginCommandBuffer(commandBuffers[currentFrame], &bufferBeginInfo);
+		VkResult result = vkBeginCommandBuffer(commandBuffers[currentIndex], &bufferBeginInfo);
+		assert(result == VK_SUCCESS);
+	}
+
+	void VulkanCommandBuffers::endCommandBuffer(const uint32_t currentIndex)
+	{
+		vkEndCommandBuffer(commandBuffers[currentIndex]);
+	}
+
+	void VulkanCommandBuffers::recordCommands(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, VkPipeline pipeline, const uint32_t currentIndex)
+	{
+		VkCommandBufferBeginInfo bufferBeginInfo = {};
+		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		// Start recording commands to command buffer
+		VkResult result = vkBeginCommandBuffer(commandBuffers[currentIndex], &bufferBeginInfo);
 		assert(result == VK_SUCCESS);
 
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
@@ -43,9 +58,9 @@ namespace gwa
 		renderPassBeginInfo.clearValueCount = clearValuesSize;
 		renderPassBeginInfo.framebuffer = framebuffer;
 
-		vkCmdBeginRenderPass(commandBuffers[currentFrame], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[currentIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+		vkCmdBindPipeline(commandBuffers[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -54,12 +69,12 @@ namespace gwa
 		viewport.height = (float)extent.height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
+		vkCmdSetViewport(commandBuffers[currentIndex], 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = extent;
-		vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
+		vkCmdSetScissor(commandBuffers[currentIndex], 0, 1, &scissor);
 /*
 		for (size_t i = 0; i < meshes.size(); ++i)
 		{
@@ -91,10 +106,10 @@ namespace gwa
 		}
 			*/
 
-		vkCmdEndRenderPass(commandBuffers[currentFrame]);
+		vkCmdEndRenderPass(commandBuffers[currentIndex]);
 
 		// Start recording commands to command buffer
-		result = vkEndCommandBuffer(commandBuffers[currentFrame]);
+		result = vkEndCommandBuffer(commandBuffers[currentIndex]);
 		assert(result == VK_SUCCESS);
 	}
 }
