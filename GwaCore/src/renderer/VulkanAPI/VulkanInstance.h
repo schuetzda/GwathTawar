@@ -13,7 +13,6 @@ namespace gwa
 		~VulkanInstance();
 
 		void cleanup();
-
 		bool checkValidationLayerSupport() const;
 
 		VkInstance vkInstance;

@@ -91,6 +91,7 @@ namespace gwa
 
 		}
 	}
+
 	void VulkanDescriptorSet::cleanup(VkDevice logicalDevice)
 	{
 		vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);

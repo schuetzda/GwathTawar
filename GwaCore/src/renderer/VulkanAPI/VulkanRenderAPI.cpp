@@ -37,7 +37,7 @@ namespace gwa {
 
 		m_pushConstant = std::make_unique<VulkanPushConstant>(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Model));
 
-		std::vector<uint32_t> offset = { offsetof(Vertex, pos), offsetof(Vertex, col) };
+		std::vector<uint32_t> offset = { offsetof(Vertex, position), offsetof(Vertex, color) };
 		m_graphicsPipeline = std::make_unique<VulkanPipeline>(m_logicalDevice->logicalDevice, sizeof(Vertex), offset, m_renderPass->vkRenderPass, m_swapchain->vkSwapchainExtent, m_pushConstant->getPushConstantRange(), m_descriptorSetLayout->vkDescriptorSetLayout);
 
 		m_depthBufferImage = std::make_unique<VulkanImage>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_swapchain->vkSwapchainExtent,
@@ -48,6 +48,37 @@ namespace gwa {
 			m_swapchain->vkSwapchainExtent);
 
 		m_graphicsCommandPool = std::make_unique<VulkanCommandPool>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_surface->vkSurface);
+
+		//--TODO move to own implementation
+		std::vector<Vertex> meshVertices1 = {
+		{ { -0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
+		{ { -0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	    // 1
+		{ { 0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },    // 2
+		{ { 0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },   // 3
+		};
+
+		std::vector<Vertex> meshVertices2 = {
+			{ { -0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	// 0
+			{ { -0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	    // 1
+			{ { 0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },    // 2
+			{ { 0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 11.0f } },   // 3
+		};
+
+		//Index Data
+		std::vector<uint32_t> meshIndices = {
+			0, 1, 2,
+			2, 3, 0
+		};
+
+		MeshBuffer buffer1 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, std::span<Vertex>(meshVertices1), std::span<uint32_t>(meshIndices),
+			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
+
+		MeshBuffer buffer2 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, std::span<Vertex>(meshVertices2), std::span<uint32_t>(meshIndices),
+			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
+
+		meshes.push_back(buffer1);
+		meshes.push_back(buffer2);
+
 		m_graphicsCommandBuffer = std::make_unique<VulkanCommandBuffers>(m_logicalDevice->logicalDevice, m_graphicsCommandPool->commandPool, MAX_FRAMES_IN_FLIGHT);
 
 		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), MAX_FRAMES_IN_FLIGHT);
@@ -87,8 +118,9 @@ namespace gwa {
 		}
 		vkResetFences(logicalDevice, 1, &m_drawFences->fences[currentFrame]);
 		vkResetCommandBuffer(m_graphicsCommandBuffer->commandBuffers[currentFrame], 0);
-		m_graphicsCommandBuffer->recordCommands(m_renderPass->vkRenderPass, m_swapchain->vkSwapchainExtent, 
-			m_swapchainFramebuffers->swapchainFramebuffers[imageIndex], m_graphicsPipeline->graphicsPipeline, currentFrame);
+
+		recordCommands(currentFrame);
+
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -133,6 +165,11 @@ namespace gwa {
 		const VkDevice cur_logicalDevice = m_logicalDevice->logicalDevice;
 
 		vkDeviceWaitIdle(cur_logicalDevice);
+		
+		for (MeshBuffer mesh : meshes)
+		{
+			mesh.cleanup(cur_logicalDevice);
+		}
 
 		m_drawFences->cleanup(cur_logicalDevice);
 		m_renderFinished->cleanup(cur_logicalDevice);
@@ -150,5 +187,35 @@ namespace gwa {
 		m_surface->cleanup(m_instance->vkInstance);
 		m_logicalDevice->cleanup();
 		m_instance->cleanup();
+	}
+	void VulkanRenderAPI::recordCommands(const int currentFrame)
+	{
+		VkExtent2D extent = m_swapchain->vkSwapchainExtent;
+		m_graphicsCommandBuffer->beginCommandBuffer(currentFrame);
+		m_graphicsCommandBuffer->beginRenderPass(m_renderPass->vkRenderPass, extent,
+			m_swapchainFramebuffers->swapchainFramebuffers[currentFrame], currentFrame);
+		m_graphicsCommandBuffer->bindPipeline(m_graphicsPipeline->graphicsPipeline, currentFrame);
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)extent.width;
+		viewport.height = (float)extent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		m_graphicsCommandBuffer->setViewport(viewport, currentFrame);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = extent;
+		m_graphicsCommandBuffer->setScissor(scissor, currentFrame);
+
+		for (MeshBuffer mesh : meshes)
+		{
+			VkBuffer vertexBuffers[] = { mesh.vertexBuffer.buffer };			// Buffers to bind
+			VkDeviceSize offsets[] = { 0 };
+			m_graphicsCommandBuffer->bindVertexBuffer(vertexBuffers, offsets, currentFrame);
+			
+		}
 	}
 }

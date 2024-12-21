@@ -29,9 +29,49 @@ namespace gwa
 		assert(result == VK_SUCCESS);
 	}
 
+	void VulkanCommandBuffers::beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, const uint32_t currentIndex)
+	{
+		VkRenderPassBeginInfo renderPassBeginInfo = {};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = renderPass;
+		renderPassBeginInfo.renderArea.offset = { 0,0 };
+		renderPassBeginInfo.renderArea.extent = extent;
+
+		const uint32_t clearValuesSize = 2;
+		VkClearValue clearValues[2] = { VkClearValue(),VkClearValue() };
+		clearValues[0].color = { .6f, .65f, .4f, 1.f };
+		clearValues[1].depthStencil.depth = 1.f;
+
+		renderPassBeginInfo.pClearValues = clearValues;
+		renderPassBeginInfo.clearValueCount = clearValuesSize;
+		renderPassBeginInfo.framebuffer = framebuffer;
+
+		vkCmdBeginRenderPass(commandBuffers[currentIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+
+	void VulkanCommandBuffers::bindPipeline(VkPipeline pipeline, const uint32_t currentIndex)
+	{
+		vkCmdBindPipeline(commandBuffers[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	}
+
+	void VulkanCommandBuffers::setViewport(const VkViewport& viewport, const uint32_t currentIndex)
+	{
+		vkCmdSetViewport(commandBuffers[currentIndex], 0, 1, &viewport);
+	}
+
+	void VulkanCommandBuffers::setScissor(const VkRect2D& scissor, const uint32_t currentIndex)
+	{
+		vkCmdSetScissor(commandBuffers[currentIndex], 0, 1, &scissor);
+	}
+
 	void VulkanCommandBuffers::endCommandBuffer(const uint32_t currentIndex)
 	{
 		vkEndCommandBuffer(commandBuffers[currentIndex]);
+	}
+
+	void VulkanCommandBuffers::bindVertexBuffer(const VkBuffer* vertexBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const
+	{
+		vkCmdBindVertexBuffers(commandBuffers[currentIndex], 0, 1, vertexBuffers, offsets);
 	}
 
 	void VulkanCommandBuffers::recordCommands(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, VkPipeline pipeline, const uint32_t currentIndex)

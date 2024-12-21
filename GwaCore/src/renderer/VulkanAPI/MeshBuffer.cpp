@@ -1,6 +1,6 @@
 #include "MeshBuffer.h"
 #include <cstring>
-#include "VulkanAPI/VulkanCommandBuffers.h"
+#include "VulkanCommandBuffers.h"
 namespace gwa
 {
 
@@ -63,4 +63,9 @@ namespace gwa
 		vkFreeCommandBuffers(logicalDevice, transferCommandPool, 1, &transferCommandBuffer.commandBuffers[0]);
 	}
 
+	void MeshBuffer::cleanup(VkDevice logicalDevice)
+	{
+		vertexBuffer.cleanup(logicalDevice);
+		indexBuffer.cleanup(logicalDevice);
+	}
 }

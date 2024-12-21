@@ -1,8 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "VulkanAPI/VulkanBuffer.h"
+#include "VulkanBuffer.h"
 #include <span>
-#include "VulkanAPI/vkTypes.h"
+#include "vkTypes.h"
 
 namespace gwa
 {
@@ -12,6 +12,7 @@ namespace gwa
 		MeshBuffer(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
 
 		void createMeshBuffer(VulkanBuffer& buffer, VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, VkDeviceSize bufferSize, const void* vertData);
+		void cleanup(VkDevice logicalDevice);
 
 		VulkanBuffer vertexBuffer;
 		VulkanBuffer indexBuffer;
