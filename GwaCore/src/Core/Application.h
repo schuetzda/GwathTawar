@@ -27,7 +27,7 @@ namespace gwa
 
 		void run() const;
 
-		Window * const m_window;
+		Window m_window;
 
 		std::vector<Layer*> m_layerStack;
 

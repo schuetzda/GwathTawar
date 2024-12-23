@@ -19,11 +19,11 @@ namespace gwa
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffers::beginCommandBuffer(const uint32_t currentIndex)
+	void VulkanCommandBuffers::beginCommandBuffer(const uint32_t currentIndex, VkCommandBufferUsageFlags flags)
 	{
 		VkCommandBufferBeginInfo bufferBeginInfo = {};
 		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		bufferBeginInfo.flags = flags;
 		// Start recording commands to command buffer
 		VkResult result = vkBeginCommandBuffer(commandBuffers[currentIndex], &bufferBeginInfo);
 		assert(result == VK_SUCCESS);
@@ -74,82 +74,35 @@ namespace gwa
 		vkCmdBindVertexBuffers(commandBuffers[currentIndex], 0, 1, vertexBuffers, offsets);
 	}
 
-	void VulkanCommandBuffers::recordCommands(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, VkPipeline pipeline, const uint32_t currentIndex)
+	void VulkanCommandBuffers::bindIndexBuffer(VkBuffer indexBuffer, const uint32_t currrentIndex) const
 	{
-		VkCommandBufferBeginInfo bufferBeginInfo = {};
-		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		// Start recording commands to command buffer
-		VkResult result = vkBeginCommandBuffer(commandBuffers[currentIndex], &bufferBeginInfo);
-		assert(result == VK_SUCCESS);
-
-		VkRenderPassBeginInfo renderPassBeginInfo = {};
-		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassBeginInfo.renderPass = renderPass;
-		renderPassBeginInfo.renderArea.offset = { 0,0 };
-		renderPassBeginInfo.renderArea.extent = extent;
-
-		const uint32_t clearValuesSize = 2;
-		VkClearValue clearValues[2] = { VkClearValue(),VkClearValue() };
-		clearValues[0].color = { .6f, .65f, .4f, 1.f };
-		clearValues[1].depthStencil.depth = 1.f;
-
-		renderPassBeginInfo.pClearValues = clearValues;
-		renderPassBeginInfo.clearValueCount = clearValuesSize;
-		renderPassBeginInfo.framebuffer = framebuffer;
-
-		vkCmdBeginRenderPass(commandBuffers[currentIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(commandBuffers[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)extent.width;
-		viewport.height = (float)extent.height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffers[currentIndex], 0, 1, &viewport);
-
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = extent;
-		vkCmdSetScissor(commandBuffers[currentIndex], 0, 1, &scissor);
-/*
-		for (size_t i = 0; i < meshes.size(); ++i)
-		{
-			VkBuffer vertexBuffer[] = { meshes[i].getVertexBuffer() };			// Buffers to bind
-			VkDeviceSize offsets[] = { 0 };										// Offsets into buffers being bound
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer, offsets);	// Command to bind verte buffer
-
-			// Bind index buffer with offset of 0 and using uint32 indices
-			vkCmdBindIndexBuffer(commandBuffer, meshes[i].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-			/* NOT IN USE, for Dynamic UBO
-			uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * i;
-
-
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-				0, 1, &descriptorSets[i], 1, &dynamicOffset);*/
-		/*
-			vkCmdPushConstants(
-				commandBuffer,
-				pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-				0,
-				sizeof(Model),
-				&meshes[i].getModel());
-
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-				0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
-			vkCmdDrawIndexed(commandBuffer, meshes[i].getIndexCount(), 1, 0, 0, 0);
-		}
-			*/
-
-		vkCmdEndRenderPass(commandBuffers[currentIndex]);
-
-		// Start recording commands to command buffer
-		result = vkEndCommandBuffer(commandBuffers[currentIndex]);
-		assert(result == VK_SUCCESS);
+		vkCmdBindIndexBuffer(commandBuffers[currrentIndex], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
+
+	void VulkanCommandBuffers::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, Model* model) 
+	{
+		vkCmdPushConstants(
+			commandBuffers[currentIndex],
+			pipelineLayout, flags,
+			0,
+			sizeof(Model),
+			model);
+	}
+
+	void VulkanCommandBuffers::bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, const int currentIndex) 
+	{
+		vkCmdBindDescriptorSets(commandBuffers[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+			0, 1, &descriptorSet, 0, nullptr);
+	}
+
+	void VulkanCommandBuffers::drawIndexed(uint32_t indexCount, const int currentIndex)
+	{
+		vkCmdDrawIndexed(commandBuffers[currentIndex], indexCount, 1, 0, 0, 0);
+	}
+
+	void VulkanCommandBuffers::endRenderPass(const int currentIndex)
+	{
+		vkCmdEndRenderPass(commandBuffers[currentIndex]);
+	}
+
 }

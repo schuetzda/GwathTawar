@@ -4,9 +4,10 @@
 #include "VulkanRenderAPI.h"
 #include <array>
 #include <stdexcept>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace gwa {
-	void VulkanRenderAPI::init(Window * window) 
+	void VulkanRenderAPI::init(const Window *  window) 
 	{
 		
 #ifdef GWA_DEBUG
@@ -49,6 +50,10 @@ namespace gwa {
 
 		m_graphicsCommandPool = std::make_unique<VulkanCommandPool>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_surface->vkSurface);
 
+		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain->vkSwapchainExtent.width / (float)m_swapchain->vkSwapchainExtent.height, 0.1f, 100.0f);
+		uboViewProj.view = glm::lookAt(glm::vec3(3.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
 		//--TODO move to own implementation
 		std::vector<Vertex> meshVertices1 = {
 		{ { -0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
@@ -70,10 +75,10 @@ namespace gwa {
 			2, 3, 0
 		};
 
-		MeshBuffer buffer1 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, std::span<Vertex>(meshVertices1), std::span<uint32_t>(meshIndices),
+		MeshBuffer buffer1 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, meshVertices1, meshIndices,
 			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
 
-		MeshBuffer buffer2 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, std::span<Vertex>(meshVertices2), std::span<uint32_t>(meshIndices),
+		MeshBuffer buffer2 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, meshVertices2, meshIndices,
 			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
 
 		meshes.push_back(buffer1);
@@ -81,7 +86,7 @@ namespace gwa {
 
 		m_graphicsCommandBuffer = std::make_unique<VulkanCommandBuffers>(m_logicalDevice->logicalDevice, m_graphicsCommandPool->commandPool, MAX_FRAMES_IN_FLIGHT);
 
-		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), MAX_FRAMES_IN_FLIGHT);
+		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), m_swapchain->swapchainImages.size());
 
 		m_descriptorSet = std::make_unique<VulkanDescriptorSet>(m_logicalDevice->logicalDevice, m_descriptorSetLayout->vkDescriptorSetLayout, m_mvpUniformBuffers->uniformBuffers,
 			MAX_FRAMES_IN_FLIGHT, sizeof(UboViewProj));
@@ -91,7 +96,7 @@ namespace gwa {
 		m_drawFences = std::make_unique<VulkanFence>(m_logicalDevice->logicalDevice, MAX_FRAMES_IN_FLIGHT);
 	}
 
-	void VulkanRenderAPI::draw(Window * window)
+	void VulkanRenderAPI::draw(const Window *  window)
 	{
 		const VkDevice logicalDevice = m_logicalDevice->logicalDevice;
 		const VkPhysicalDevice physicalDevice = m_physicalDevice->physicalDevice;
@@ -116,10 +121,12 @@ namespace gwa {
 		{
 			assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 		}
+
+		m_mvpUniformBuffers->updateUniformBuffers(logicalDevice, imageIndex, sizeof(UboViewProj), &uboViewProj);
 		vkResetFences(logicalDevice, 1, &m_drawFences->fences[currentFrame]);
 		vkResetCommandBuffer(m_graphicsCommandBuffer->commandBuffers[currentFrame], 0);
 
-		recordCommands(currentFrame);
+		recordCommands(imageIndex);
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -188,12 +195,12 @@ namespace gwa {
 		m_logicalDevice->cleanup();
 		m_instance->cleanup();
 	}
-	void VulkanRenderAPI::recordCommands(const int currentFrame)
+	void VulkanRenderAPI::recordCommands(uint32_t imageIndex)
 	{
 		VkExtent2D extent = m_swapchain->vkSwapchainExtent;
-		m_graphicsCommandBuffer->beginCommandBuffer(currentFrame);
+		m_graphicsCommandBuffer->beginCommandBuffer(currentFrame, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 		m_graphicsCommandBuffer->beginRenderPass(m_renderPass->vkRenderPass, extent,
-			m_swapchainFramebuffers->swapchainFramebuffers[currentFrame], currentFrame);
+			m_swapchainFramebuffers->swapchainFramebuffers[imageIndex], currentFrame);
 		m_graphicsCommandBuffer->bindPipeline(m_graphicsPipeline->graphicsPipeline, currentFrame);
 
 		VkViewport viewport{};
@@ -212,10 +219,23 @@ namespace gwa {
 
 		for (MeshBuffer mesh : meshes)
 		{
-			VkBuffer vertexBuffers[] = { mesh.vertexBuffer.buffer };			// Buffers to bind
+			VkBuffer vertexBuffers[] = { mesh.vertexBuffer.buffer};			// Buffers to bind
 			VkDeviceSize offsets[] = { 0 };
 			m_graphicsCommandBuffer->bindVertexBuffer(vertexBuffers, offsets, currentFrame);
-			
+			m_graphicsCommandBuffer->bindIndexBuffer(mesh.indexBuffer.buffer, currentFrame);
+
+			m_graphicsCommandBuffer->pushConstants(m_graphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &mesh.model);
+			m_graphicsCommandBuffer->bindDescriptorSet(m_descriptorSet->descriptorSets[currentFrame], m_graphicsPipeline->pipelineLayout, currentFrame);
+
+			m_graphicsCommandBuffer->drawIndexed(mesh.indexCount, currentFrame);
 		}
+		m_graphicsCommandBuffer->endRenderPass(currentFrame);
+		m_graphicsCommandBuffer->endCommandBuffer(currentFrame);
+	}
+	void VulkanRenderAPI::updateModel(int modelId, const glm::mat4& newModel)
+	{
+		if (modelId >= meshes.size()) return;
+
+		meshes[modelId].model.model = newModel;
 	}
 }

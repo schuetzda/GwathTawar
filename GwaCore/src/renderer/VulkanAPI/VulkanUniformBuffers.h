@@ -15,6 +15,6 @@ namespace gwa
 		std::vector<VkBuffer> uniformBuffers;
 	private:
 		std::vector<VkDeviceMemory> uniformBufferMemory;
-		const int MAX_FRAMES_IN_FLIGHT;
+		const int IMAGE_COUNT;
 	};
 }

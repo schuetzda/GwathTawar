@@ -6,7 +6,8 @@
 namespace gwa
 {
 	struct WindowSize {
-		uint32_t width, height;
+		uint32_t width;
+		uint32_t height;
 	};
 
 	class Window
@@ -29,7 +30,7 @@ namespace gwa
 	private:
 		void init() const;
 
-		const std::string appTitle;
+		const std::string& appTitle;
 		uint32_t width;
 		uint32_t height;
 	};

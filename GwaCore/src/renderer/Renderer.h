@@ -7,11 +7,14 @@ namespace gwa
 	{
 	public:
 		Renderer();
-		void init(Window* window) const;
-		void run(Window* window) const;
+		void init(const Window* window) const;
+		void run(const Window* window) ;
 		void shutdown() const;
 
 	private:
 		static std::unique_ptr<RenderAPI> s_renderAPI;
+		float angle = 0.f;
+		float deltaTime = 0.f;
+		float lasttime = 0.f;
 	};
 }

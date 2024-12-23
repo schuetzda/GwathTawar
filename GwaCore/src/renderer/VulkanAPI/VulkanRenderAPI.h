@@ -22,19 +22,24 @@
 #include "MeshBuffer.h"
 #include "vkTypes.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace gwa {
 	class VulkanRenderAPI: public RenderAPI 
 	{
 	public:
 		VulkanRenderAPI() = default;
 
-		void init(Window * window) override;
-		void draw(Window * window) override;
+		void init(const Window *  window) override;
+		void draw(const Window *  window) override;
 		void shutdown() override;
 
+		void recordCommands(uint32_t imageIndex);
+		void updateModel(int modelId, const glm::mat4& newModel) override;
 
 	private:
-		void recordCommands(const int currentFrame);
+		void recordCommands();
+
 		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 		uint32_t currentFrame = 0;
 		
@@ -64,14 +69,11 @@ namespace gwa {
 			std::make_shared<const std::vector<const char*>>(std::vector<const char*>{VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 		
 		//TODO temp fix, move Mesehs and camera to correct spot
-		struct Model
-		{
-			glm::mat4 model;
-		};
 		struct UboViewProj {
 			glm::mat4 projection;
 			glm::mat4 view;
 		};		
+		UboViewProj uboViewProj;
 	};
 }
 

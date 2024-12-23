@@ -12,9 +12,9 @@
 			void cleanup(VkDevice logicalDevice);
 
 			VkPipeline graphicsPipeline;
+			VkPipelineLayout pipelineLayout;
 		private:
 			VkShaderModule createShaderModule(const std::vector<char>& code, const VkDevice logicalDevice);
-			VkPipelineLayout pipelineLayout;
 	};
 	}
 

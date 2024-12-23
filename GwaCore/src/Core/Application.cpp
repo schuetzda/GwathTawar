@@ -4,14 +4,14 @@ namespace gwa
 {
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& title, uint32_t width = 1920, uint32_t height = 1080) : m_window(&Window(title, width, height))
+	Application::Application(const std::string& title, uint32_t width = 1920, uint32_t height = 1080):m_window(Window(title, width, height))
 	{
 		// Only one instance of Application is allowed
 		assert(!s_Instance);
 		s_Instance = this;
 
 		m_renderer = std::make_unique<Renderer>();
-		m_renderer->init(m_window);
+		m_renderer->init(&m_window);
 		
 	}
 
@@ -25,9 +25,9 @@ namespace gwa
 	void Application::run() const
 	{
 		float lasttime = 0.f;
-		while (!m_window->shouldClose())
+		while (!m_window.shouldClose())
 		{
-			float time = m_window->getTime();
+			float time = m_window.getTime();
 			float timestep = time - lasttime;
 			lasttime = time;
 
@@ -36,10 +36,10 @@ namespace gwa
 				layer->OnUpdate(timestep);
 			}
 
-			m_renderer->run(m_window);
-			m_window->update();
+			m_renderer->run(&m_window);
+			m_window.update();
 		}
 		m_renderer->shutdown();
-		m_window->shutDown();
+		m_window.shutDown();
 	}
 }

@@ -1,5 +1,6 @@
 #include <vulkan/vulkan_core.h>
 #include <stdexcept>
+#include <cassert>
 namespace gwa
 {
 	class MemoryType

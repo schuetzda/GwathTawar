@@ -4,20 +4,20 @@
 #include <cassert>
 namespace gwa
 {
-	VulkanUniformBuffers::VulkanUniformBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint64_t uniformBufferSize, const int MAX_FRAMES_IN_FLIGHT) : MAX_FRAMES_IN_FLIGHT(MAX_FRAMES_IN_FLIGHT)
+	VulkanUniformBuffers::VulkanUniformBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint64_t uniformBufferSize, const int IMAGE_COUNT) :IMAGE_COUNT(IMAGE_COUNT)
 	{
 		VkDeviceSize vpBufferSize = uniformBufferSize;
 		// NOT IN USE, for Dynamic UBO
 		//VkDeviceSize modelBufferSize = modelUniformAlignment * MAX_OBJECTS;
 
 		// One uniform buffer for each image (and by extension, command buffer)
-		uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		uniformBufferMemory.resize(MAX_FRAMES_IN_FLIGHT);
+		uniformBuffers.resize(IMAGE_COUNT);
+		uniformBufferMemory.resize(IMAGE_COUNT);
 		//modelDynUniformBuffer.resize(swapchainImages.size());
 		//modelDynUniformBufferMemory.resize(swapchainImages.size());
 
 		// Create Uniform buffers
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		for (size_t i = 0; i < IMAGE_COUNT; ++i)
 		{
 			createBuffer(physicalDevice, logicalDevice, vpBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &uniformBuffers[i], &uniformBufferMemory[i]);
@@ -66,7 +66,7 @@ namespace gwa
 	}
 	void VulkanUniformBuffers::cleanup(VkDevice logicalDevice)
 	{
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		for (size_t i = 0; i < IMAGE_COUNT; ++i)
 		{
 			vkDestroyBuffer(logicalDevice, uniformBuffers[i], nullptr);
 			vkFreeMemory(logicalDevice, uniformBufferMemory[i], nullptr);

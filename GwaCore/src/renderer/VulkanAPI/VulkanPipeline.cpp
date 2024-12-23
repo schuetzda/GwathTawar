@@ -30,6 +30,7 @@ namespace gwa {
 		// How the data for a single vertex is as a whole
 		VkVertexInputBindingDescription bindingDescription = {};
 		bindingDescription.binding = 0;								// Can bind multiple streams of data, this defines which one
+
 		bindingDescription.stride = stride;					// Size of a single vertex object
 		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;	// VK_VERTEX_INPUT_RATE_VERTEX: Move on to the next vertex
 		// VK_VERTEX_INPUT_RATE_INSTANCE: Move on to a vertex for the next instance
