@@ -1,5 +1,5 @@
 #include "Renderer.h"
-#include <glm/glm.hpp>;
+#include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 namespace gwa {
 
@@ -8,6 +8,29 @@ namespace gwa {
 
 	void Renderer::init(const Window* window) const
 	{
+		std::vector<Vertex> meshVertices1 = {
+		{ { -0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
+		{ { -0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	    // 1
+		{ { 0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },    // 2
+		{ { 0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },   // 3
+		};
+
+		std::vector<Vertex> meshVertices2 = {
+			{ { -0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	// 0
+			{ { -0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	    // 1
+			{ { 0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },    // 2
+			{ { 0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 11.0f } },   // 3
+		};
+
+		//Index Data
+		std::vector<uint32_t> meshIndices = {
+			0, 1, 2,
+			2, 3, 0
+		};
+		s_renderAPI->m_meshes.emplace_back();
+		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices1), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
+		s_renderAPI->m_meshes.emplace_back();
+		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices2), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
 		s_renderAPI->init(window);
 	}
 	void Renderer::run(const Window* window) 

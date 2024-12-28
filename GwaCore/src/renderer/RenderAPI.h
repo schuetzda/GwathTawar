@@ -2,6 +2,7 @@
 #include <core/Window.h>
 #include <memory>
 #include <glm/glm.hpp>
+#include "RenderDataManager.h"
 namespace gwa {
 
 	class RenderAPI
@@ -22,6 +23,10 @@ namespace gwa {
 
 		static API GetAPI() { return s_API; }
 		static std::unique_ptr<RenderAPI> Create();
+		
+		RenderDataManager renderDataManager;
+		std::vector<Mesh> m_meshes; //TODO move to protected
+	protected:
 	private:
 		static API s_API;
 	};

@@ -79,13 +79,13 @@ namespace gwa
 		vkCmdBindIndexBuffer(commandBuffers[currrentIndex], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffers::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, Model* model) 
+	void VulkanCommandBuffers::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, glm::mat4* model)
 	{
 		vkCmdPushConstants(
 			commandBuffers[currentIndex],
 			pipelineLayout, flags,
 			0,
-			sizeof(Model),
+			sizeof(*model),
 			model);
 	}
 

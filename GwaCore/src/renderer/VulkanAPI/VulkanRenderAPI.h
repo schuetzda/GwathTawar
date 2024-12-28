@@ -19,10 +19,10 @@
 #include "VulkanDescriptorSet.h"
 #include "VulkanSemaphore.h"
 #include "VulkanFence.h"
-#include "MeshBuffer.h"
 #include "vkTypes.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "VulkanMeshBuffers.h"
 
 namespace gwa {
 	class VulkanRenderAPI: public RenderAPI 
@@ -62,8 +62,7 @@ namespace gwa {
 		std::unique_ptr<VulkanSemaphore> m_renderFinished;
 		std::unique_ptr<VulkanSemaphore> m_imageAvailable;
 		std::unique_ptr<VulkanFence> m_drawFences;
-
-		std::vector<MeshBuffer> meshes;
+		std::unique_ptr<VulkanMeshBuffers> m_meshBuffers;
 
 		std::shared_ptr<const std::vector<const char*>> deviceExtensions = 
 			std::make_shared<const std::vector<const char*>>(std::vector<const char*>{VK_KHR_SWAPCHAIN_EXTENSION_NAME});

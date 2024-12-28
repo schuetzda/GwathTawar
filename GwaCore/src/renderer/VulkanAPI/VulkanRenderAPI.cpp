@@ -36,7 +36,7 @@ namespace gwa {
 
 		m_descriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_logicalDevice->logicalDevice);
 
-		m_pushConstant = std::make_unique<VulkanPushConstant>(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Model));
+		m_pushConstant = std::make_unique<VulkanPushConstant>(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
 		std::vector<uint32_t> offset = { offsetof(Vertex, position), offsetof(Vertex, color) };
 		m_graphicsPipeline = std::make_unique<VulkanPipeline>(m_logicalDevice->logicalDevice, sizeof(Vertex), offset, m_renderPass->vkRenderPass, m_swapchain->vkSwapchainExtent, m_pushConstant->getPushConstantRange(), m_descriptorSetLayout->vkDescriptorSetLayout);
@@ -49,41 +49,18 @@ namespace gwa {
 			m_swapchain->vkSwapchainExtent);
 
 		m_graphicsCommandPool = std::make_unique<VulkanCommandPool>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_surface->vkSurface);
-
+		
+		m_meshBuffers = std::make_unique<VulkanMeshBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice);
 		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain->vkSwapchainExtent.width / (float)m_swapchain->vkSwapchainExtent.height, 0.1f, 100.0f);
 		uboViewProj.view = glm::lookAt(glm::vec3(3.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
-		//--TODO move to own implementation
-		std::vector<Vertex> meshVertices1 = {
-		{ { -0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
-		{ { -0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	    // 1
-		{ { 0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },    // 2
-		{ { 0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },   // 3
-		};
-
-		std::vector<Vertex> meshVertices2 = {
-			{ { -0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	// 0
-			{ { -0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },	    // 1
-			{ { 0.25, -0.6, 0.0 },{ 0.0f, 0.0f, 1.0f } },    // 2
-			{ { 0.25, 0.6, 0.0 },{ 0.0f, 0.0f, 11.0f } },   // 3
-		};
-
-		//Index Data
-		std::vector<uint32_t> meshIndices = {
-			0, 1, 2,
-			2, 3, 0
-		};
-
-		MeshBuffer buffer1 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, meshVertices1, meshIndices,
-			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
-
-		MeshBuffer buffer2 = MeshBuffer(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, meshVertices2, meshIndices,
-			m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
-
-		meshes.push_back(buffer1);
-		meshes.push_back(buffer2);
-
+				
+		for (int i=0; i< renderDataManager.getRenderDataToSubmit().size(); ++i)
+		{
+			renderDataManager.meshesToBind[i]->meshBufferIndex = m_meshBuffers->addBuffer(renderDataManager.getRenderDataToSubmit()[i].vertices, renderDataManager.getRenderDataToSubmit()[i].indices, m_logicalDevice->graphicsQueue, m_graphicsCommandPool->commandPool);
+		}
+		
 		m_graphicsCommandBuffer = std::make_unique<VulkanCommandBuffers>(m_logicalDevice->logicalDevice, m_graphicsCommandPool->commandPool, MAX_FRAMES_IN_FLIGHT);
 
 		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), m_swapchain->swapchainImages.size());
@@ -173,11 +150,7 @@ namespace gwa {
 
 		vkDeviceWaitIdle(cur_logicalDevice);
 		
-		for (MeshBuffer mesh : meshes)
-		{
-			mesh.cleanup(cur_logicalDevice);
-		}
-
+		m_meshBuffers->cleanup();
 		m_drawFences->cleanup(cur_logicalDevice);
 		m_renderFinished->cleanup(cur_logicalDevice);
 		m_imageAvailable->cleanup(cur_logicalDevice);
@@ -217,25 +190,25 @@ namespace gwa {
 		scissor.extent = extent;
 		m_graphicsCommandBuffer->setScissor(scissor, currentFrame);
 
-		for (MeshBuffer mesh : meshes)
+		uint32_t firstIndex = 0;
+		for (Mesh mesh: m_meshes)
 		{
-			VkBuffer vertexBuffers[] = { mesh.vertexBuffer.buffer};			// Buffers to bind
+			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers->meshBufferDataList[mesh.meshBufferIndex];
 			VkDeviceSize offsets[] = { 0 };
+			VkBuffer vertexBuffers[] = { meshData.vertexBuffer };
 			m_graphicsCommandBuffer->bindVertexBuffer(vertexBuffers, offsets, currentFrame);
-			m_graphicsCommandBuffer->bindIndexBuffer(mesh.indexBuffer.buffer, currentFrame);
+			m_graphicsCommandBuffer->bindIndexBuffer(meshData.indexBuffer, currentFrame);
 
-			m_graphicsCommandBuffer->pushConstants(m_graphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &mesh.model);
+			m_graphicsCommandBuffer->pushConstants(m_graphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &mesh.modelMatrix);
 			m_graphicsCommandBuffer->bindDescriptorSet(m_descriptorSet->descriptorSets[currentFrame], m_graphicsPipeline->pipelineLayout, currentFrame);
 
-			m_graphicsCommandBuffer->drawIndexed(mesh.indexCount, currentFrame);
+			m_graphicsCommandBuffer->drawIndexed(meshData.indexCount, currentFrame);
 		}
 		m_graphicsCommandBuffer->endRenderPass(currentFrame);
 		m_graphicsCommandBuffer->endCommandBuffer(currentFrame);
 	}
 	void VulkanRenderAPI::updateModel(int modelId, const glm::mat4& newModel)
 	{
-		if (modelId >= meshes.size()) return;
-
-		meshes[modelId].model.model = newModel;
+		m_meshes[modelId].modelMatrix = newModel;
 	}
 }

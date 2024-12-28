@@ -35,7 +35,7 @@ namespace gwa
 		bufferInfo.size = bufferSize;
 		bufferInfo.usage = bufferUsage;							// Multiple types of buffers possible
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;		// Similar to swapchain images, can share vertex buffers
-
+		
 		VkResult result = vkCreateBuffer(logicalDevice, &bufferInfo, nullptr, buffer);
 
 		assert(result == VK_SUCCESS);
