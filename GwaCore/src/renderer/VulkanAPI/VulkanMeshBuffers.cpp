@@ -5,27 +5,26 @@
 namespace gwa
 {
 
-	int VulkanMeshBuffers::addBuffer(std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
+	uint32_t VulkanMeshBuffers::addBuffer(std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
 	{
-		meshBufferDataList.emplace_back();
+		MeshBufferData meshBufferData;
 		//Vertex Buffer
-		vertexBuffers.emplace_back();
 		vertexBufferMemoryList.emplace_back();
 		const VkDeviceSize vertexBufferSize = sizeof(vertices[0]) * vertices.size();
 		
-		createMeshBuffer(vertexBuffers.back(), vertexBufferMemoryList.back(), transferQueue, transferCommandPool, vertexBufferSize,
+		createMeshBuffer(meshBufferData.vertexBuffer, vertexBufferMemoryList.back(), transferQueue, transferCommandPool, vertexBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertices.data());
 
 		//Index Buffer
 		indexBufferMemoryList.emplace_back();
 		const VkDeviceSize indexBufferSize = sizeof(indices[0]) * indices.size();
 
-		meshBufferDataList.back().indexCount = static_cast<uint32_t>(indices.size());
-		createMeshBuffer(meshBufferDataList.back().indexBuffer, indexBufferMemoryList.back(), transferQueue, transferCommandPool, indexBufferSize,
+		meshBufferData.indexCount = static_cast<uint32_t>(indices.size());
+		createMeshBuffer(meshBufferData.indexBuffer, indexBufferMemoryList.back(), transferQueue, transferCommandPool, indexBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indices.data());
-		meshBufferDataList.back().vertexBuffer = vertexBuffers.back();
-
-		return meshBufferDataList.size()-1;
+		
+		meshBufferDataList.push_back(meshBufferData);
+		return static_cast<uint32_t>(meshBufferDataList.size()-1);
 	}
 
 	void VulkanMeshBuffers::copyBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
@@ -113,9 +112,9 @@ namespace gwa
 
 	void VulkanMeshBuffers::cleanup()
 	{
-		for (int i = 0; i < vertexBuffers.size(); ++i)
+		for (int i = 0; i < meshBufferDataList.size(); ++i)
 		{
-			vkDestroyBuffer(logicalDevice, vertexBuffers[i], nullptr);
+			vkDestroyBuffer(logicalDevice, meshBufferDataList[i].vertexBuffer, nullptr);
 			vkDestroyBuffer(logicalDevice, meshBufferDataList[i].indexBuffer, nullptr);
 		}
 		for (int i = 0; i < indexBufferMemoryList.size(); ++i)

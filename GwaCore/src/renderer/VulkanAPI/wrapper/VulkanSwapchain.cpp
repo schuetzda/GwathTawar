@@ -1,19 +1,20 @@
 #include "VulkanSwapchain.h"
 #include "SwapchainDetails.h"
-#include "QueueFamilyIndices.h"
 #include <iostream>
 #include <cassert>
 #include <array>
+#include "QueueFamilyIndices.h"
 namespace gwa {
 
-	VulkanSwapchain::VulkanSwapchain(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight)
+	void VulkanSwapchain::init(VulkanDevice* const device, int framebufferWidth, int framebufferHeight)
 	{
-		createSwapchain(logicalDevice, physicalDevice, vkSurface, framebufferWidth, framebufferHeight);
+		device_ = device;
+		createSwapchain(framebufferWidth, framebufferHeight);
 	}
 
-	void VulkanSwapchain::createSwapchain(VkDevice vkLogicalDevice, VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface, int framebufferWidth, int framebufferHeight)
+	void VulkanSwapchain::createSwapchain(int framebufferWidth, int framebufferHeight)
 	{
-		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(vkPhysicalDevice, vkSurface);
+		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(device_->getPhysicalDevice(), device_->getSurface());
 
 		VkSurfaceFormatKHR surfaceFormat = chooseBestSurfaceFormat(swapchainDetails.formats);
 		VkPresentModeKHR presentMode = chooseBestPresentationMode(swapchainDetails.presentationModes);
@@ -28,7 +29,7 @@ namespace gwa {
 		}
 		VkSwapchainCreateInfoKHR swapChainCreateInfo = {};
 		swapChainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		swapChainCreateInfo.surface = vkSurface;
+		swapChainCreateInfo.surface = device_->getSurface();
 		swapChainCreateInfo.imageFormat = surfaceFormat.format;
 		swapChainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 		swapChainCreateInfo.presentMode = presentMode;
@@ -40,7 +41,7 @@ namespace gwa {
 		swapChainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;		// How to handle blending images with external graphic (e.g. other windows)
 		swapChainCreateInfo.clipped = VK_TRUE;	//Whether to clip parts of image not in view (e.g. behind another window, off screen)
 
-		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(vkPhysicalDevice, vkSurface);
+		QueueFamilyIndices indices = QueueFamilyIndices::getQueueFamilyIndices(device_->getPhysicalDevice(), device_->getSurface());
 
 		if (indices.graphicsFamily != indices.presentationFamily)
 		{
@@ -63,25 +64,25 @@ namespace gwa {
 		// If old swap chain is destroyed and this one replaces it, then link old one to quickly hand over responsibilites
 		//swapChainCreateInfo.oldSwapchain = swapchain;
 
-		VkResult result = vkCreateSwapchainKHR(vkLogicalDevice, &swapChainCreateInfo, nullptr, &vkSwapchain);
+		VkResult result = vkCreateSwapchainKHR(device_->getLogicalDevice(), &swapChainCreateInfo, nullptr, &vkSwapchain_);
 		assert(result == VK_SUCCESS);
 		//Store for later references
-		vkSwapchainImageFormat = surfaceFormat.format;
-		vkSwapchainExtent = extent;
+		vkSwapchainImageFormat_ = surfaceFormat.format;
+		vkSwapchainExtent_ = extent;
 
 		// Get Swapchain images
 		uint32_t swapchainImageCount;
-		vkGetSwapchainImagesKHR(vkLogicalDevice, vkSwapchain, &swapchainImageCount, nullptr);
+		vkGetSwapchainImagesKHR(device_->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, nullptr);
 		std::vector<VkImage> images(swapchainImageCount);
-		vkGetSwapchainImagesKHR(vkLogicalDevice, vkSwapchain, &swapchainImageCount, images.data());
+		vkGetSwapchainImagesKHR(device_->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, images.data());
 
 		for (VkImage image : images)
 		{
 			VulkanSwapchainImage swapchainImage = {};
 			swapchainImage.image = image;
-			swapchainImage.imageView = createImageView(vkLogicalDevice, image, vkSwapchainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+			swapchainImage.imageView = createImageView(image, vkSwapchainImageFormat_, VK_IMAGE_ASPECT_COLOR_BIT);
 
-			swapchainImages.push_back(swapchainImage);
+			swapchainImages_.push_back(swapchainImage);
 		}
 	}
 	VkPresentModeKHR VulkanSwapchain::chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const
@@ -136,7 +137,7 @@ namespace gwa {
 		return formats[0];
 	}
 
-	VkImageView VulkanSwapchain::createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VkImageView VulkanSwapchain::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -158,30 +159,29 @@ namespace gwa {
 
 		//Create image view and return it
 		VkImageView imageView;
-		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
+		VkResult result = vkCreateImageView(device_->getLogicalDevice(), &viewCreateInfo, nullptr, &imageView);
 		assert(result == VK_SUCCESS);
 
 		return imageView;
 	}
 
-	VulkanSwapchain::~VulkanSwapchain() = default;
 
-	void VulkanSwapchain::cleanup(VkDevice logicalDevice) 
+	void VulkanSwapchain::cleanup() 
 	{
-		vkDeviceWaitIdle(logicalDevice);
-		for (auto image : swapchainImages)
+		vkDeviceWaitIdle(device_->getLogicalDevice());
+		for (auto image : swapchainImages_)
 		{
-			vkDestroyImageView(logicalDevice, image.imageView, nullptr);
+			vkDestroyImageView(device_->getLogicalDevice(), image.imageView, nullptr);
 		}
-		vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
+		vkDestroySwapchainKHR(device_->getLogicalDevice(), vkSwapchain_, nullptr);
 	}
 
-	void VulkanSwapchain::recreateSwapchain(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, int framebufferWidth, int framebufferHeight) 
+	void VulkanSwapchain::recreateSwapchain(int framebufferWidth, int framebufferHeight)
 	{
-		cleanup(logicalDevice);
-		swapchainImages.clear();
+		cleanup();
+		swapchainImages_.clear();
 		
-		createSwapchain(logicalDevice, physicalDevice, surface, framebufferWidth, framebufferHeight);
+		createSwapchain(framebufferWidth, framebufferHeight);
 	}
 
 

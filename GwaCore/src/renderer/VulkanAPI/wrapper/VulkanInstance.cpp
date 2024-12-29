@@ -1,19 +1,20 @@
+#include <GLFW/glfw3.h>
+
 #include "VulkanInstance.h"
 #include <cassert>
 #include <vector>
+#include "renderer/VulkanAPI/MemoryType.h"
 #include "VulkanValidation.h"
-#include <GLFW/glfw3.h>
 
 namespace gwa
 {
-	VulkanInstance::VulkanInstance(const std::string& appName, uint32_t appVersion, const std::string& engineName,
-		uint32_t engineVersion, uint32_t apiVersion, const std::vector<const char*> * validationLayers) 
-		: validationLayers(validationLayers), enableValidationLayers(!validationLayers->empty())
+	void VulkanInstance::init(const std::string& appName, const std::string& engineName, uint32_t appVersion, uint32_t engineVersion, uint32_t apiVersion,
+		const std::vector<const char*>* validationLayers)
 	{
-		if (enableValidationLayers) {
-			assert(checkValidationLayerSupport());
+		m_enableValidationLayers = !validationLayers->empty();
+		if (m_enableValidationLayers) {
+			assert(checkValidationLayerSupport(validationLayers));
 		}
-			
 		
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -29,7 +30,7 @@ namespace gwa
 		createInfo.pApplicationInfo = &appInfo;
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-		if (enableValidationLayers) {
+		if (m_enableValidationLayers) {
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers->size());
 			createInfo.ppEnabledLayerNames = validationLayers->data();
 
@@ -51,7 +52,7 @@ namespace gwa
 		createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
 
-		if (enableValidationLayers)
+		if (m_enableValidationLayers)
 		{
 			createInfo.enabledLayerCount = static_cast<uint32_t> (validationLayers->size());
 			createInfo.ppEnabledLayerNames = validationLayers->data();
@@ -62,29 +63,27 @@ namespace gwa
 			createInfo.ppEnabledLayerNames = nullptr;
 		}
 
-		VkResult result = vkCreateInstance(&createInfo, nullptr, &vkInstance);		// Callback for memory management 2nd argument
+		VkResult result = vkCreateInstance(&createInfo, nullptr, &vkInstance_);		// Callback for memory management 2nd argument
 
 		assert(result == VK_SUCCESS);
 
-		if (enableValidationLayers)
+		if (m_enableValidationLayers)
 		{
 			createDebugMessenger();
 		}
 
 	}
 
-	VulkanInstance::~VulkanInstance() = default;
-
 	void VulkanInstance::cleanup()
 	{
-		if (enableValidationLayers) {
-			DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+		if (m_enableValidationLayers) {
+			DestroyDebugUtilsMessengerEXT(vkInstance_, m_debugMessenger, nullptr);
 		}
-		vkDestroyInstance(vkInstance, nullptr);
+		vkDestroyInstance(vkInstance_, nullptr);
 
 	}
 
-	bool VulkanInstance::checkValidationLayerSupport() const
+	bool VulkanInstance::checkValidationLayerSupport(const std::vector<const char*>* validationLayers) const
 	{
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -98,7 +97,7 @@ namespace gwa
 
 			for (const auto& layerProperties : availableLayers)
 			{
-				if (strcmp(layerName.c_str(), layerProperties.layerName) == 0)
+				if (layerName.compare(layerProperties.layerName))
 				{
 					layerFound = true;
 					break;
@@ -122,7 +121,7 @@ namespace gwa
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (enableValidationLayers)
+		if (m_enableValidationLayers)
 		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
@@ -163,6 +162,6 @@ namespace gwa
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		populateDebugMessengerCreateInfo(createInfo);
 
-		assert(!CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS);
+		assert(!CreateDebugUtilsMessengerEXT(vkInstance_, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS);
 	}
 }

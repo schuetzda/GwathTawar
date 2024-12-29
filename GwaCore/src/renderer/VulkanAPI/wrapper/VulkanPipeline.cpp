@@ -4,12 +4,15 @@
 #include <array>
 #include <cassert>
 namespace gwa {
-	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, uint32_t stride,const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout) {
+	void VulkanPipeline::init(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout)
+	{
+		vkLogicalDevice_ = logicalDevice;
+
 		std::vector<char> vertexShaderCode = readBinaryFile("src/shaders/vert.spv");
 		std::vector<char> fragmentShaderCode = readBinaryFile("src/shaders/frag.spv");
 
-		VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode, logicalDevice);
-		VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode, logicalDevice);
+		VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
+		VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
 
 		// SHADER STAGE CREATIION
 		//Vertex Stage creation information
@@ -148,7 +151,7 @@ namespace gwa {
 		pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
 		// Create Pipeline Layout
-		VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+		VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout_);
 		assert(result == VK_SUCCESS);
 
 		// DEPTH STENCIL TESTING
@@ -174,26 +177,26 @@ namespace gwa {
 		pipelineCreateInfo.pMultisampleState = &multiSamplingCreateInfo;
 		pipelineCreateInfo.pColorBlendState = &colorBlendingCreateInfo;
 		pipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
-		pipelineCreateInfo.layout = pipelineLayout;
+		pipelineCreateInfo.layout = pipelineLayout_;
 		pipelineCreateInfo.renderPass = renderPass;
 		pipelineCreateInfo.subpass = 0;									// Subpass of render pass to use with pipeline
 
 		pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	// Existing pipeline to derive from
 		pipelineCreateInfo.basePipelineIndex = -1;				//What is the base pipeline, all other pipelines are derivatives of it for optimization
 
-		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
+		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline_);
 		assert(result == VK_SUCCESS);
 		// Destroy Shader Modules, no longer needed after Pipeline created
 		vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
 		vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 
 	}
-	void VulkanPipeline::cleanup(VkDevice logicalDevice)
+	void VulkanPipeline::cleanup()
 	{
-		vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+		vkDestroyPipeline(vkLogicalDevice_, graphicsPipeline_, nullptr);
+		vkDestroyPipelineLayout(vkLogicalDevice_, pipelineLayout_, nullptr);
 	}
-	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code, const VkDevice logicalDevice)
+	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code)
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
 		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -201,7 +204,7 @@ namespace gwa {
 		shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*> (code.data());
 
 		VkShaderModule shaderModule;
-		VkResult result = vkCreateShaderModule(logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
+		VkResult result = vkCreateShaderModule(vkLogicalDevice_, &shaderModuleCreateInfo, nullptr, &shaderModule);
 		assert(result == VK_SUCCESS);
 
 		return shaderModule;

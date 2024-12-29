@@ -7,7 +7,7 @@ namespace gwa {
 		std::vector<VkSurfaceFormatKHR> formats;			//Surface image formats, e.g. RGBA
 		std::vector<VkPresentModeKHR> presentationModes;	//How images should be presented to screen
 
-		static SwapchainDetails getSwapchainDetails(const VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+		static SwapchainDetails getSwapchainDetails(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
 			SwapchainDetails swapChainDetails;
 
 			// CAPABILITIES

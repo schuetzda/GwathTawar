@@ -9,27 +9,9 @@ It can contain multiple subpasses. The image layout of an image changes inside a
 
 namespace gwa
 {
-	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
+	void VulkanRenderPass::init(const VulkanDevice* const device, VkFormat swapchainImageFormat)
 	{
-		for (VkFormat format : formats)
-		{
-			// Get properties for given format o nthis device
-			VkFormatProperties properties;
-			vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
-			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
-			{
-				return format;
-			}
-			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
-				return format;
-			}
-		}
-		assert(false);
-		return formats[0];
-	}
-
-	VulkanRenderPass::VulkanRenderPass(VkPhysicalDevice vkPhysicalDevice, VkDevice vkLogicalDevice, VkFormat swapchainImageFormat)
-	{
+		vkLogicalDevice_ = device->getLogicalDevice();
 		// Color Attachments of render pass. All subpasses have access to this.
 		VkAttachmentDescription colorAttachment = {};
 		colorAttachment.format = swapchainImageFormat;						// Format of attachment
@@ -46,12 +28,12 @@ namespace gwa
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		// Image data layout after render pass (to change to)
 		// Depth attachment of render pass
 		VkAttachmentDescription depthAttachment = {};
-		depthFormat = chooseSupportedFormat(
-			vkPhysicalDevice,
+		depthFormat_ = chooseSupportedFormat(
+			device->getPhysicalDevice(),
 			{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-		depthAttachment.format = depthFormat;
+		depthAttachment.format = depthFormat_;
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; //TODO sth in the tutorial at 40 min not done
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -120,14 +102,33 @@ namespace gwa
 		renderPassCreateInfo.dependencyCount = subpassDepSize;
 		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
-		VkResult result = vkCreateRenderPass(vkLogicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass);
+		VkResult result = vkCreateRenderPass(vkLogicalDevice_, &renderPassCreateInfo, nullptr, &vkRenderPass_);
 		assert(result == VK_SUCCESS);
+
 	}
-	VulkanRenderPass::~VulkanRenderPass() = default;
-	
-	void VulkanRenderPass::cleanup(VkDevice vkLogicalDevice)
+
+	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
 	{
-		vkDestroyRenderPass(vkLogicalDevice, vkRenderPass, nullptr);
+		for (VkFormat format : formats)
+		{
+			// Get properties for given format o nthis device
+			VkFormatProperties properties;
+			vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
+			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
+			{
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
+				return format;
+			}
+		}
+		assert(false);
+		return formats[0];
+	}
+	
+	void VulkanRenderPass::cleanup()
+	{
+		vkDestroyRenderPass(vkLogicalDevice_, vkRenderPass_, nullptr);
 	}
 
 }

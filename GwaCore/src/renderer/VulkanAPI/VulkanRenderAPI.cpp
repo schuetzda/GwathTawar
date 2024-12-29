@@ -19,39 +19,34 @@ namespace gwa {
 #endif
 
 		// Create Vulkan instance and enable/ disable ValidationLayers
-		m_instance = std::make_unique<VulkanInstance>(window->getAppTitle(), VK_MAKE_API_VERSION(1, 3, 0, 0), std::string("Gwa Engine"),
+		m_instance.init(window->getAppTitle(), std::string("Gwa Engine"), VK_MAKE_API_VERSION(1, 3, 0, 0), 
 			VK_MAKE_API_VERSION(0, 1, 0, 0), VK_API_VERSION_1_3, &validationLayers);
 
-		// Create Vulkan surface
-		m_surface = std::make_unique<VulkanSurface>(window, m_instance->vkInstance);
-
-		m_physicalDevice = std::make_unique<VulkanPhysicalDevice>(m_instance->vkInstance, m_surface->vkSurface, deviceExtensions);
-
-		m_logicalDevice = std::make_unique<VulkanLogicalDevice>(m_physicalDevice->physicalDevice, m_surface->vkSurface, deviceExtensions);
+		m_device.init(window, m_instance.getVkInstance(), deviceExtensions);
 
 		WindowSize framebufferSize = window->getFramebufferSize();
-		m_swapchain = std::make_unique<VulkanSwapchain>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_surface->vkSurface, framebufferSize.width, framebufferSize.height);
+		m_swapchain.init(&m_device, framebufferSize.width, framebufferSize.height);
 
-		m_renderPass = std::make_unique<VulkanRenderPass>(m_physicalDevice->physicalDevice, m_logicalDevice->logicalDevice, m_swapchain->vkSwapchainImageFormat);
+		m_renderPass.init(&m_device, m_swapchain.getImageFormat());
 
-		m_descriptorSetLayout = std::make_unique<VulkanDescriptorSetLayout>(m_logicalDevice->logicalDevice);
+		m_descriptorSetLayout.init(m_device.getLogicalDevice());
 
-		m_pushConstant = std::make_unique<VulkanPushConstant>(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
+		m_pushConstant.init(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
-		std::vector<uint32_t> offset = { offsetof(Vertex, position), offsetof(Vertex, color) };
-		m_graphicsPipeline = std::make_unique<VulkanPipeline>(m_logicalDevice->logicalDevice, sizeof(Vertex), offset, m_renderPass->vkRenderPass, m_swapchain->vkSwapchainExtent, m_pushConstant->getPushConstantRange(), m_descriptorSetLayout->vkDescriptorSetLayout);
+		std::vector<uint32_t> offset = { offsetof(Vertex, position), offsetof(Vertex, color) }; //TODO move
+		m_graphicsPipeline.init(m_device.getLogicalDevice(), sizeof(Vertex), offset, m_renderPass.getRenderPass(), m_swapchain.getSwapchainExtent(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
 
-		m_depthBufferImage = std::make_unique<VulkanImage>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_swapchain->vkSwapchainExtent,
+		m_depthBufferImage = std::make_unique<VulkanImage>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_swapchain->m_vkSwapchainExtent,
 			m_renderPass->depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		m_depthBufferImageView = std::make_unique<VulkanImageView>(m_logicalDevice->logicalDevice, m_depthBufferImage->image, m_renderPass->depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-		m_swapchainFramebuffers = std::make_unique<VulkanSwapchainFramebuffers>(m_logicalDevice->logicalDevice, m_swapchain->swapchainImages, m_renderPass->vkRenderPass, m_depthBufferImageView->imageView,
-			m_swapchain->vkSwapchainExtent);
+		m_swapchainFramebuffers = std::make_unique<VulkanSwapchainFramebuffers>(m_logicalDevice->logicalDevice, m_swapchain->m_swapchainImages, m_renderPass->m_vkRenderPass, m_depthBufferImageView->imageView,
+			m_swapchain->m_vkSwapchainExtent);
 
 		m_graphicsCommandPool = std::make_unique<VulkanCommandPool>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, m_surface->vkSurface);
 		
 		m_meshBuffers = std::make_unique<VulkanMeshBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice);
-		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain->vkSwapchainExtent.width / (float)m_swapchain->vkSwapchainExtent.height, 0.1f, 100.0f);
+		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain->m_vkSwapchainExtent.width / (float)m_swapchain->m_vkSwapchainExtent.height, 0.1f, 100.0f);
 		uboViewProj.view = glm::lookAt(glm::vec3(3.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
@@ -63,9 +58,9 @@ namespace gwa {
 		
 		m_graphicsCommandBuffer = std::make_unique<VulkanCommandBuffers>(m_logicalDevice->logicalDevice, m_graphicsCommandPool->commandPool, MAX_FRAMES_IN_FLIGHT);
 
-		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), m_swapchain->swapchainImages.size());
+		m_mvpUniformBuffers = std::make_unique<VulkanUniformBuffers>(m_logicalDevice->logicalDevice, m_physicalDevice->physicalDevice, sizeof(UboViewProj), m_swapchain->m_swapchainImages.size());
 
-		m_descriptorSet = std::make_unique<VulkanDescriptorSet>(m_logicalDevice->logicalDevice, m_descriptorSetLayout->vkDescriptorSetLayout, m_mvpUniformBuffers->uniformBuffers,
+		m_descriptorSet = std::make_unique<VulkanDescriptorSet>(m_logicalDevice->logicalDevice, m_descriptorSetLayout->m_vkDescriptorSetLayout, m_mvpUniformBuffers->uniformBuffers,
 			MAX_FRAMES_IN_FLIGHT, sizeof(UboViewProj));
 
 		m_renderFinished = std::make_unique<VulkanSemaphore>(m_logicalDevice->logicalDevice, MAX_FRAMES_IN_FLIGHT);
@@ -85,13 +80,13 @@ namespace gwa {
 		vkWaitForFences(logicalDevice, 1, &m_drawFences->fences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(logicalDevice, m_swapchain->vkSwapchain, std::numeric_limits<uint64_t>::max(), imageAvailabe[currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(logicalDevice, m_swapchain->m_vkSwapchain, std::numeric_limits<uint64_t>::max(), imageAvailabe[currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		{
 			vkDeviceWaitIdle(logicalDevice);
 			m_swapchain->recreateSwapchain(logicalDevice, physicalDevice, m_surface->vkSurface, framebufferSize.width, framebufferSize.height);
-			m_swapchainFramebuffers->recreateSwapchain(logicalDevice, m_swapchain->swapchainImages, m_renderPass->vkRenderPass,
-				m_depthBufferImageView->imageView, m_swapchain->vkSwapchainExtent);
+			m_swapchainFramebuffers->recreateSwapchain(logicalDevice, m_swapchain->m_swapchainImages, m_renderPass->m_vkRenderPass,
+				m_depthBufferImageView->imageView, m_swapchain->m_vkSwapchainExtent);
 			return;
 		}
 		else
@@ -128,14 +123,14 @@ namespace gwa {
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = &renderFinished[currentFrame];
 		presentInfo.swapchainCount = 1;
-		presentInfo.pSwapchains = &m_swapchain->vkSwapchain;
+		presentInfo.pSwapchains = &m_swapchain->m_vkSwapchain;
 		presentInfo.pImageIndices = &imageIndex;
 
 		result = vkQueuePresentKHR(m_logicalDevice->presentationQueue, &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
 			m_swapchain->recreateSwapchain(logicalDevice, physicalDevice, m_surface->vkSurface, framebufferSize.width, framebufferSize.height);
-			m_swapchainFramebuffers->recreateSwapchain(logicalDevice, m_swapchain->swapchainImages, m_renderPass->vkRenderPass,
-				m_depthBufferImageView->imageView, m_swapchain->vkSwapchainExtent);
+			m_swapchainFramebuffers->recreateSwapchain(logicalDevice, m_swapchain->m_swapchainImages, m_renderPass->m_vkRenderPass,
+				m_depthBufferImageView->imageView, m_swapchain->m_vkSwapchainExtent);
 		}
 		else
 		{
@@ -164,17 +159,17 @@ namespace gwa {
 		m_descriptorSetLayout->cleanup(cur_logicalDevice);
 		m_renderPass->cleanup(cur_logicalDevice);
 		m_swapchain->cleanup(cur_logicalDevice);
-		m_surface->cleanup(m_instance->vkInstance);
+		m_surface->cleanup(m_instance.vkInstance_);
 		m_logicalDevice->cleanup();
-		m_instance->cleanup();
+		m_instance.cleanup();
 	}
 	void VulkanRenderAPI::recordCommands(uint32_t imageIndex)
 	{
-		VkExtent2D extent = m_swapchain->vkSwapchainExtent;
+		VkExtent2D extent = m_swapchain->m_vkSwapchainExtent;
 		m_graphicsCommandBuffer->beginCommandBuffer(currentFrame, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-		m_graphicsCommandBuffer->beginRenderPass(m_renderPass->vkRenderPass, extent,
+		m_graphicsCommandBuffer->beginRenderPass(m_renderPass->m_vkRenderPass, extent,
 			m_swapchainFramebuffers->swapchainFramebuffers[imageIndex], currentFrame);
-		m_graphicsCommandBuffer->bindPipeline(m_graphicsPipeline->graphicsPipeline, currentFrame);
+		m_graphicsCommandBuffer->bindPipeline(m_graphicsPipeline->graphicsPipeline_, currentFrame);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -190,17 +185,17 @@ namespace gwa {
 		scissor.extent = extent;
 		m_graphicsCommandBuffer->setScissor(scissor, currentFrame);
 
-		uint32_t firstIndex = 0;
 		for (Mesh mesh: m_meshes)
 		{
-			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers->meshBufferDataList[mesh.meshBufferIndex];
+			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers->getMeshBufferData(mesh.meshBufferIndex);
+			//TODO correct return types
 			VkDeviceSize offsets[] = { 0 };
 			VkBuffer vertexBuffers[] = { meshData.vertexBuffer };
 			m_graphicsCommandBuffer->bindVertexBuffer(vertexBuffers, offsets, currentFrame);
 			m_graphicsCommandBuffer->bindIndexBuffer(meshData.indexBuffer, currentFrame);
 
-			m_graphicsCommandBuffer->pushConstants(m_graphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &mesh.modelMatrix);
-			m_graphicsCommandBuffer->bindDescriptorSet(m_descriptorSet->descriptorSets[currentFrame], m_graphicsPipeline->pipelineLayout, currentFrame);
+			m_graphicsCommandBuffer->pushConstants(m_graphicsPipeline->pipelineLayout_, VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &mesh.modelMatrix);
+			m_graphicsCommandBuffer->bindDescriptorSet(m_descriptorSet->descriptorSets[currentFrame], m_graphicsPipeline->pipelineLayout_, currentFrame);
 
 			m_graphicsCommandBuffer->drawIndexed(meshData.indexCount, currentFrame);
 		}
