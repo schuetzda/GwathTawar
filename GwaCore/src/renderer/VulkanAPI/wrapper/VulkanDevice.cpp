@@ -1,6 +1,5 @@
 #include "VulkanDevice.h"
 #include <cassert>
-#include "VulkanValidation.h"
 #include "GLFW/glfw3.h"
 #include "SwapchainDetails.h"
 #include "QueueFamilyIndices.h"
@@ -8,11 +7,17 @@
 
 namespace gwa
 {
-	void VulkanDevice::init(const Window* const window, VkInstance instance, const std::vector<const char*>& deviceExtensions)
+	VulkanDevice::VulkanDevice(const Window* const window, VkInstance instance, const std::vector<const char*>& deviceExtensions):instance_(instance)
 	{
 		createSurface(window, instance);
 		createPhysicalDevice(instance, deviceExtensions);
 		createLogicalDevice(deviceExtensions);
+	}
+
+	void VulkanDevice::cleanup()
+	{
+		vkDestroySurfaceKHR(instance_, vkSurface_, nullptr);
+		vkDestroyDevice(vkLogicalDevice_, nullptr);
 	}
 
 	void VulkanDevice::createSurface(const Window* const window, VkInstance instance)

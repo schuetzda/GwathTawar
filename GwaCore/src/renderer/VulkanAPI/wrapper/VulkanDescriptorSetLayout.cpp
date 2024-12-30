@@ -4,10 +4,8 @@
 #include <cassert>
 namespace gwa
 {
-	void VulkanDescriptorSetLayout::init(VkDevice vkLogicalDevice)
+	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice logicalDevice):logicalDevice_(logicalDevice)
 	{
-		vkLogicalDevice_ = vkLogicalDevice;
-		
 		// MVPMat Binding Info
 		VkDescriptorSetLayoutBinding vpLayoutBinding = {};
 		vpLayoutBinding.binding = 0;						// Where is the data being bound to?
@@ -35,12 +33,12 @@ namespace gwa
 		layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 		layoutCreateInfo.pBindings = layoutBindings.data();				// array of binding infos
 
-		VkResult result = vkCreateDescriptorSetLayout(vkLogicalDevice_, &layoutCreateInfo, nullptr, &m_vkDescriptorSetLayout);
+		VkResult result = vkCreateDescriptorSetLayout(logicalDevice_, &layoutCreateInfo, nullptr, &descriptorSetLayout_);
 		assert(result == VK_SUCCESS);
 
 	}
 	void VulkanDescriptorSetLayout::cleanup()
 	{
-		vkDestroyDescriptorSetLayout(vkLogicalDevice_, m_vkDescriptorSetLayout,nullptr);
+		vkDestroyDescriptorSetLayout(logicalDevice_, descriptorSetLayout_,nullptr);
 	}
 }

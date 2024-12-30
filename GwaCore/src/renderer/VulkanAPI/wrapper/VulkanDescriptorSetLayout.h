@@ -6,15 +6,15 @@ namespace gwa
 	{
 	public:
 		VulkanDescriptorSetLayout() = default;
-		void init(VkDevice vkLogicalDevice);
+		explicit VulkanDescriptorSetLayout(VkDevice logicalDevice);
 		void cleanup();
 		
 		VkDescriptorSetLayout getDescriptorSetLayout()
 		{
-			return vkDescriptorSetLayout_;
+			return descriptorSetLayout_;
 		}
 	private:
-		VkDescriptorSetLayout vkDescriptorSetLayout_;
-		VkDevice vkLogicalDevice_;
+		VkDescriptorSetLayout descriptorSetLayout_{};
+		VkDevice logicalDevice_{};
 	};
 }

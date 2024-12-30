@@ -9,9 +9,27 @@ It can contain multiple subpasses. The image layout of an image changes inside a
 
 namespace gwa
 {
-	void VulkanRenderPass::init(const VulkanDevice* const device, VkFormat swapchainImageFormat)
+	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
 	{
-		vkLogicalDevice_ = device->getLogicalDevice();
+		for (VkFormat format : formats)
+		{
+			// Get properties for given format o nthis device
+			VkFormatProperties properties;
+			vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
+			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
+			{
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
+				return format;
+			}
+		}
+		assert(false);
+		return formats[0];
+	}
+	
+	VulkanRenderPass::VulkanRenderPass(const VulkanDevice* const device, VkFormat swapchainImageFormat):logicalDevice_(device->getLogicalDevice())
+	{
 		// Color Attachments of render pass. All subpasses have access to this.
 		VkAttachmentDescription colorAttachment = {};
 		colorAttachment.format = swapchainImageFormat;						// Format of attachment
@@ -102,33 +120,13 @@ namespace gwa
 		renderPassCreateInfo.dependencyCount = subpassDepSize;
 		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
-		VkResult result = vkCreateRenderPass(vkLogicalDevice_, &renderPassCreateInfo, nullptr, &vkRenderPass_);
+		VkResult result = vkCreateRenderPass(logicalDevice_, &renderPassCreateInfo, nullptr, &vkRenderPass_);
 		assert(result == VK_SUCCESS);
-
 	}
 
-	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
-	{
-		for (VkFormat format : formats)
-		{
-			// Get properties for given format o nthis device
-			VkFormatProperties properties;
-			vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
-			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
-			{
-				return format;
-			}
-			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
-				return format;
-			}
-		}
-		assert(false);
-		return formats[0];
-	}
-	
 	void VulkanRenderPass::cleanup()
 	{
-		vkDestroyRenderPass(vkLogicalDevice_, vkRenderPass_, nullptr);
+		vkDestroyRenderPass(logicalDevice_, vkRenderPass_, nullptr);
 	}
 
 }

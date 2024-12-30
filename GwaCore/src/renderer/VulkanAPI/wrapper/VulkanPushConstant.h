@@ -5,14 +5,13 @@ namespace gwa {
 	{
 	public:
 		VulkanPushConstant() = default;
-
-		void init(VkShaderStageFlags vkShaderStageFlags, uint32_t offset, uint32_t size);
+		VulkanPushConstant(VkShaderStageFlags vkShaderStageFlags, uint32_t offset, uint32_t size);
 
 		VkPushConstantRange getRange() const
 		{
 			return vkPushConstantRange_;
 		}
 	private:
-		VkPushConstantRange vkPushConstantRange_;
+		VkPushConstantRange vkPushConstantRange_{};
 	};
 }

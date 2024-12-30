@@ -5,10 +5,8 @@
 #include <array>
 #include "QueueFamilyIndices.h"
 namespace gwa {
-
-	void VulkanSwapchain::init(VulkanDevice* const device, int framebufferWidth, int framebufferHeight)
+	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight):device_(device)
 	{
-		device_ = device;
 		createSwapchain(framebufferWidth, framebufferHeight);
 	}
 
@@ -166,7 +164,7 @@ namespace gwa {
 	}
 
 
-	void VulkanSwapchain::cleanup() 
+	void VulkanSwapchain::cleanup()
 	{
 		vkDeviceWaitIdle(device_->getLogicalDevice());
 		for (auto image : swapchainImages_)

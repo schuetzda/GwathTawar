@@ -6,12 +6,18 @@ namespace gwa
 	class VulkanDescriptorSet
 	{
 	public:
+		VulkanDescriptorSet() = default;
 		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize);
 
-		std::vector<VkDescriptorSet> descriptorSets;
-
-		void cleanup(VkDevice logicalDevice);
+		void cleanup();
+		const std::vector<VkDescriptorSet>& getDescriptorSets() const
+		{
+			return descriptorSets_;
+		}
 	private:
-		VkDescriptorPool descriptorPool;
+		VkDescriptorPool descriptorPool_;
+		std::vector<VkDescriptorSet> descriptorSets_;
+
+		VkDevice logicalDevice_;
 	};
 }

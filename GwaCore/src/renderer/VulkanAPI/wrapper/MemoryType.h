@@ -1,3 +1,4 @@
+#pragma once
 #include <vulkan/vulkan_core.h>
 #include <stdexcept>
 #include <cassert>

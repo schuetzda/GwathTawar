@@ -9,9 +9,9 @@ namespace gwa
 	{
 	public:
 		VulkanDevice() = default;
+		VulkanDevice(const Window* const window, VkInstance instance, const std::vector<const char*>& deviceExtensions);
 
-		void init(const Window* const window, VkInstance instance, const std::vector<const char*>& deviceExtensions);
-
+		void cleanup();
 		VkSurfaceKHR getSurface() const
 		{
 			return vkSurface_;
@@ -47,13 +47,14 @@ namespace gwa
 
 		void createLogicalDevice(const std::vector<const char*>& deviceExtensions);
 		
-		VkSurfaceKHR vkSurface_;
+		VkSurfaceKHR vkSurface_{};
 		
-		VkPhysicalDevice vkPhysicalDevice_;
+		VkPhysicalDevice vkPhysicalDevice_{};
 
-		VkDevice vkLogicalDevice_;
-		VkQueue vkGraphicsQueue_;
-		VkQueue vkPresentationQueue_;
+		VkDevice vkLogicalDevice_{};
+		VkQueue vkGraphicsQueue_{};
+		VkQueue vkPresentationQueue_{};
+		VkInstance instance_;
 
 	};
 }

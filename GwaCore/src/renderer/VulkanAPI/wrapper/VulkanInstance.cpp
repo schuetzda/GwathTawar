@@ -1,17 +1,14 @@
 #include <GLFW/glfw3.h>
-
 #include "VulkanInstance.h"
 #include <cassert>
 #include <vector>
-#include "renderer/VulkanAPI/MemoryType.h"
 #include "VulkanValidation.h"
 
 namespace gwa
 {
-	void VulkanInstance::init(const std::string& appName, const std::string& engineName, uint32_t appVersion, uint32_t engineVersion, uint32_t apiVersion,
-		const std::vector<const char*>* validationLayers)
+	VulkanInstance::VulkanInstance(const std::string& appName, const std::string& engineName, uint32_t appVersion, uint32_t engineVersion,
+		uint32_t apiVersion, const std::vector<const char*>* validationLayers):m_enableValidationLayers(!validationLayers->empty())
 	{
-		m_enableValidationLayers = !validationLayers->empty();
 		if (m_enableValidationLayers) {
 			assert(checkValidationLayerSupport(validationLayers));
 		}

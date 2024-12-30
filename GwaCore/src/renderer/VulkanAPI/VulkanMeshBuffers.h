@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "VulkanBuffer.h"
 #include <span>
 #include "vkTypes.h"
 

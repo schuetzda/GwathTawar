@@ -3,7 +3,7 @@
 #include <cassert>
 namespace gwa
 {
-	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags):logicalDevice_(logicalDevice)
 	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -24,11 +24,12 @@ namespace gwa
 		viewCreateInfo.subresourceRange.layerCount = 1;					// number of array levels to view
 
 		//Create image view and return it
-		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
+		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView_);
 		assert(result == VK_SUCCESS);
+
 	}
-	void VulkanImageView::cleanup(VkDevice logicalDevice)
+	void VulkanImageView::cleanup()
 	{
-		vkDestroyImageView(logicalDevice, imageView, nullptr);
+		vkDestroyImageView(logicalDevice_, imageView_, nullptr);
 	}
-}
+	}

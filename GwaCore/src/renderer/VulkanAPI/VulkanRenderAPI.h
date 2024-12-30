@@ -1,20 +1,7 @@
 #pragma once
 #include <core/Window.h>
-#include "VulkanInstance.h"
-#include "VulkanSurface.h"
-#include "VulkanPhysicalDevice.h"
 #include "renderer/RenderAPI.h"
-#include "VulkanLogicalDevice.h"
-#include "VulkanPipeline.h"
-#include "VulkanImage.h"
-#include "VulkanImageView.h"
-#include "VulkanSwapchainFramebuffers.h"
-#include "VulkanCommandPool.h"
 #include "VulkanCommandBuffers.h"
-#include "VulkanUniformBuffers.h"
-#include "VulkanDescriptorSet.h"
-#include "VulkanSemaphore.h"
-#include "VulkanFence.h"
 #include "vkTypes.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -26,6 +13,14 @@
 #include "wrapper/VulkanDescriptorSetLayout.h"
 #include "wrapper/VulkanPushConstant.h"
 #include "wrapper/VulkanPipeline.h"
+#include "wrapper/VulkanImage.h"
+#include "wrapper/VulkanImageView.h"
+#include "wrapper/VulkanSwapchainFramebuffers.h"
+#include "wrapper/VulkanCommandPool.h"
+#include "wrapper/VulkanDescriptorSet.h"
+#include "wrapper/VulkanSemaphore.h"
+#include "wrapper/VulkanFence.h"
+#include "wrapper/VulkanUniformBuffers.h"
 
 namespace gwa {
 	class VulkanRenderAPI: public RenderAPI 
@@ -41,7 +36,7 @@ namespace gwa {
 		void updateModel(int modelId, const glm::mat4& newModel) override;
 
 	private:
-		const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+		const uint32_t maxFramesInFlight_ = 2;
 		uint32_t currentFrame = 0;
 		
 		VulkanInstance m_instance;
@@ -51,16 +46,16 @@ namespace gwa {
 		VulkanDescriptorSetLayout m_descriptorSetLayout;
 		VulkanPushConstant m_pushConstant;
 		VulkanPipeline m_graphicsPipeline;
-		std::unique_ptr<VulkanImage> m_depthBufferImage;
-		std::unique_ptr<VulkanImageView> m_depthBufferImageView;
-		std::unique_ptr<VulkanSwapchainFramebuffers> m_swapchainFramebuffers; 
-		std::unique_ptr<VulkanCommandPool> m_graphicsCommandPool;
-		std::unique_ptr<VulkanCommandBuffers> m_graphicsCommandBuffer;
-		std::unique_ptr<VulkanUniformBuffers> m_mvpUniformBuffers;
-		std::unique_ptr<VulkanDescriptorSet> m_descriptorSet;
-		std::unique_ptr<VulkanSemaphore> m_renderFinished;
-		std::unique_ptr<VulkanSemaphore> m_imageAvailable;
-		std::unique_ptr<VulkanFence> m_drawFences;
+		VulkanImage m_depthBufferImage;
+		VulkanImageView m_depthBufferImageView;
+		VulkanSwapchainFramebuffers m_swapchainFramebuffers; 
+		VulkanCommandPool m_graphicsCommandPool;
+		VulkanCommandBuffers m_graphicsCommandBuffer;
+		VulkanUniformBuffers m_mvpUniformBuffers;
+		VulkanDescriptorSet m_descriptorSet;
+		VulkanSemaphore m_renderFinished;
+		VulkanSemaphore m_imageAvailable;
+		VulkanFence m_drawFences;
 		std::unique_ptr<VulkanMeshBuffers> m_meshBuffers;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};

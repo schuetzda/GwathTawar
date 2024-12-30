@@ -1,7 +1,7 @@
 #include "VulkanMeshBuffers.h"
 #include <cstring>
 #include "VulkanCommandBuffers.h"
-#include "MemoryType.h"
+#include "wrapper/MemoryType.h"
 namespace gwa
 {
 

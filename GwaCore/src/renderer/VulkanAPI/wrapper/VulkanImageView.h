@@ -5,9 +5,17 @@ namespace gwa
 	class VulkanImageView
 	{
 	public:
+		VulkanImageView() = default;
 		VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-		void cleanup(VkDevice logicalDevice);
+		void cleanup();
+		 
+		VkImageView getImageView() const
+		{
+			return imageView_;
+		}
+	private:
+		VkImageView imageView_{};
 
-		VkImageView imageView;
+		VkDevice logicalDevice_{};
 	};
 }

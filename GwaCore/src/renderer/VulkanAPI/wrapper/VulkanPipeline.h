@@ -8,17 +8,25 @@
 		class VulkanPipeline
 		{
 		public:
-			VulkanPipeline()= default;
-			void init(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout);
+			VulkanPipeline() = default;
+			VulkanPipeline(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, 
+				const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout);
 			void cleanup();
-
+			VkPipeline getPipeline() const
+			{
+				return pipeline_;
+			}
+			VkPipelineLayout getPipelineLayout() const
+			{
+				return pipelineLayout_;
+			}
 		private:
 			VkShaderModule createShaderModule(const std::vector<char>& code);
 
-			VkPipeline graphicsPipeline_;
-			VkPipelineLayout pipelineLayout_;
+			VkPipeline pipeline_{};
+			VkPipelineLayout pipelineLayout_{};
 
-			VkDevice vkLogicalDevice_;
+			VkDevice logicalDevice_{};
 	};
 	}
 

@@ -7,6 +7,7 @@ namespace gwa
 	class VulkanCommandBuffers
 	{
 	public:
+		VulkanCommandBuffers() = default;
 		VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const uint32_t commandBufferCount);
 		void beginCommandBuffer(const uint32_t currentIndex, VkCommandBufferUsageFlags flags);
 		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, const uint32_t currentIndex);
@@ -20,6 +21,7 @@ namespace gwa
 		void bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, const int currentIndex);
 		void drawIndexed(uint32_t indexCount, const int currentIndex);
 		void endRenderPass(const int currentIndex);
-		std::vector<VkCommandBuffer> commandBuffers;
+
+		std::vector<VkCommandBuffer> commandBuffers = {};
 	};
 }

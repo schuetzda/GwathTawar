@@ -8,12 +8,11 @@ namespace gwa
 	class VulkanInstance
 	{
 	public:
-		
 		VulkanInstance() = default;
+		VulkanInstance(const std::string& appName, const std::string& engineName, uint32_t appVersion, uint32_t engineVersion, uint32_t apiVersion, 
+			const std::vector<const char*>* validationLayers);
 		~VulkanInstance() = default;
 		
-		void init(const std::string& appName, const std::string& engineName, uint32_t appVersion, uint32_t engineVersion, uint32_t apiVersion, 
-			const std::vector<const char*>* validationLayers);
 		void cleanup();
 		bool checkValidationLayerSupport(const std::vector<const char*>* validationLayers) const;
 		
@@ -27,9 +26,9 @@ namespace gwa
 
 		void createDebugMessenger();
 
-		bool m_enableValidationLayers;
-		VkDebugUtilsMessengerEXT m_debugMessenger;
+		bool m_enableValidationLayers = false;
+		VkDebugUtilsMessengerEXT m_debugMessenger{};
 
-		VkInstance vkInstance_;
+		VkInstance vkInstance_{};
 	};
 }

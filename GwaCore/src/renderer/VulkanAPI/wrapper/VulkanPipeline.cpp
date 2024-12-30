@@ -4,10 +4,10 @@
 #include <array>
 #include <cassert>
 namespace gwa {
-	void VulkanPipeline::init(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout)
+	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets,
+		VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, 
+		VkDescriptorSetLayout descriptorSetLayout): logicalDevice_(logicalDevice)
 	{
-		vkLogicalDevice_ = logicalDevice;
-
 		std::vector<char> vertexShaderCode = readBinaryFile("src/shaders/vert.spv");
 		std::vector<char> fragmentShaderCode = readBinaryFile("src/shaders/frag.spv");
 
@@ -184,7 +184,7 @@ namespace gwa {
 		pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	// Existing pipeline to derive from
 		pipelineCreateInfo.basePipelineIndex = -1;				//What is the base pipeline, all other pipelines are derivatives of it for optimization
 
-		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline_);
+		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline_);
 		assert(result == VK_SUCCESS);
 		// Destroy Shader Modules, no longer needed after Pipeline created
 		vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
@@ -193,8 +193,8 @@ namespace gwa {
 	}
 	void VulkanPipeline::cleanup()
 	{
-		vkDestroyPipeline(vkLogicalDevice_, graphicsPipeline_, nullptr);
-		vkDestroyPipelineLayout(vkLogicalDevice_, pipelineLayout_, nullptr);
+		vkDestroyPipeline(logicalDevice_, pipeline_, nullptr);
+		vkDestroyPipelineLayout(logicalDevice_, pipelineLayout_, nullptr);
 	}
 	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code)
 	{
@@ -204,7 +204,7 @@ namespace gwa {
 		shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*> (code.data());
 
 		VkShaderModule shaderModule;
-		VkResult result = vkCreateShaderModule(vkLogicalDevice_, &shaderModuleCreateInfo, nullptr, &shaderModule);
+		VkResult result = vkCreateShaderModule(logicalDevice_, &shaderModuleCreateInfo, nullptr, &shaderModule);
 		assert(result == VK_SUCCESS);
 
 		return shaderModule;

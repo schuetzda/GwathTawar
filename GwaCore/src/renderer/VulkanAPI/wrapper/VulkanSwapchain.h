@@ -17,15 +17,19 @@ namespace gwa {
 
 	public:
 		VulkanSwapchain() = default;
+		VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
 		~VulkanSwapchain() = default;
 
-		void init(VulkanDevice* const device, int framebufferWidth, int framebufferHeight);
 		void cleanup();
 		void recreateSwapchain(int framebufferWidth, int framebufferHeight);
 
 		VkSwapchainKHR getSwapchain() const
 		{
 			return vkSwapchain_;
+		}
+		const VkSwapchainKHR* getSwapchainPtr() 
+		{
+			return  &vkSwapchain_;
 		}
 		VkFormat getImageFormat() const
 		{
@@ -39,6 +43,10 @@ namespace gwa {
 		{
 			return swapchainImages_;
 		}
+		uint32_t getSwapchainImagesSize() const
+		{
+			return static_cast<uint32_t>(swapchainImages_.size());
+		}
 
 	private:
 		void createSwapchain(int framebufferWidth, int framebufferHeight);
@@ -47,11 +55,11 @@ namespace gwa {
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
 		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	
-		VkSwapchainKHR vkSwapchain_;
-		VkFormat vkSwapchainImageFormat_;
-		VkExtent2D vkSwapchainExtent_;
-		std::vector<VulkanSwapchainImage> swapchainImages_;
+		VkSwapchainKHR vkSwapchain_{};
+		VkFormat vkSwapchainImageFormat_{};
+		VkExtent2D vkSwapchainExtent_{};
+		std::vector<VulkanSwapchainImage> swapchainImages_ = std::vector<VulkanSwapchainImage>(0);
 
-		VulkanDevice* const device_;
+		const VulkanDevice* device_{nullptr};
 	};
 }

@@ -4,9 +4,9 @@
 #include <cassert>
 namespace gwa
 {
-	void VulkanImage::init(VulkanDevice* device, VkExtent2D extent, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags)
+	VulkanImage::VulkanImage(const VulkanDevice* const device, VkExtent2D extent, VkFormat format, VkImageTiling tiling, 
+		VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags):logicalDevice_(device->getLogicalDevice())
 	{
-		logicalDevice_ = device->getLogicalDevice();
 		// CREATE IMAGE
 		//Image Creation Info
 		VkImageCreateInfo imageCreateInfo = {};

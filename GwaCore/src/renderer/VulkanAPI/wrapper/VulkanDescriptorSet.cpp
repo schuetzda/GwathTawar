@@ -3,7 +3,8 @@
 #include <cassert>
 namespace gwa
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize)
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers,
+		const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize): logicalDevice_(logicalDevice)
 	{
 		//---DescriptorPool---
 
@@ -28,23 +29,23 @@ namespace gwa
 		poolCreateInfo.pPoolSizes = descriptorPoolSizes.data();										// Pool Sizes to create pool with
 
 		// Create Descriptor Pool
-		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
+		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool_);
 		assert(result == VK_SUCCESS);
 
 		//---Descriptor Set---
-		descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+		descriptorSets_.resize(MAX_FRAMES_IN_FLIGHT);
 
 		//Each sets has the same layout
 		std::vector<VkDescriptorSetLayout> setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 
 		VkDescriptorSetAllocateInfo setAllocInfo = {};
 		setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		setAllocInfo.descriptorPool = descriptorPool;
+		setAllocInfo.descriptorPool = descriptorPool_;
 		setAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 		setAllocInfo.pSetLayouts = setLayouts.data();
 
 		//Allocate descriptorSet 
-		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
+		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets_.data());
 		assert(result == VK_SUCCESS);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -58,7 +59,7 @@ namespace gwa
 			// Data about connection between binding and buffer
 			VkWriteDescriptorSet vpSetWrite = {};
 			vpSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			vpSetWrite.dstSet = descriptorSets[i];
+			vpSetWrite.dstSet = descriptorSets_[i];
 			vpSetWrite.dstBinding = 0;				// Binding to update matches with binding on layout/shader)
 			vpSetWrite.dstArrayElement = 0;		// Index in array to update
 			vpSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -92,8 +93,8 @@ namespace gwa
 		}
 	}
 
-	void VulkanDescriptorSet::cleanup(VkDevice logicalDevice)
+	void VulkanDescriptorSet::cleanup()
 	{
-		vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
+		vkDestroyDescriptorPool(logicalDevice_, descriptorPool_, nullptr);
 	}
 }
