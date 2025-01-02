@@ -27,15 +27,17 @@ namespace gwa {
 			0, 1, 2,
 			2, 3, 0
 		};
+
 		s_renderAPI->m_meshes.emplace_back();
 		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices1), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
 		s_renderAPI->m_meshes.emplace_back();
 		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices2), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
 		s_renderAPI->init(window);
+		s_renderAPI->uboViewProj.view = camera.getViewMatrix();
 	}
 	void Renderer::run(const Window* window) 
 	{
-		float now = (float)window->getTime();
+		float now = window->getTime();
 		deltaTime = now - lasttime;
 		lasttime = now;
 
@@ -52,7 +54,10 @@ namespace gwa {
 		firstModel = glm::rotate(firstModel, glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
 
 		secondModel = glm::translate(secondModel, glm::vec3(0.0f, 0.0f, -3.0f));
-		secondModel = glm::rotate(secondModel, glm::radians(-angle * 10), glm::vec3(0.0f, 0.0f, 1.0f));
+		secondModel = glm::rotate(secondModel, glm::radians(-angle * 10), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		camera.onUpdate();
+		s_renderAPI->uboViewProj.view = camera.getViewMatrix();
 
 		s_renderAPI->updateModel(0, firstModel);
 		s_renderAPI->updateModel(1, secondModel);

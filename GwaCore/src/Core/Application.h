@@ -20,6 +20,11 @@ namespace gwa
 		static Application& getInstance() { return *s_Instance; }
 
 		void PushLayer(Layer* layer);
+
+		const Window& getWindow()
+		{
+			return m_window;
+		}
 		
 	private:
 		Application(Application const& copy) = delete;

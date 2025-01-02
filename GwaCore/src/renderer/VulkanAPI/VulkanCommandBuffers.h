@@ -8,7 +8,7 @@ namespace gwa
 	{
 	public:
 		VulkanCommandBuffers() = default;
-		VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const uint32_t commandBufferCount);
+		VulkanCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, const uint32_t commandBufferCount);
 		void beginCommandBuffer(const uint32_t currentIndex, VkCommandBufferUsageFlags flags);
 		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, const uint32_t currentIndex);
 		void bindPipeline(VkPipeline pipeline, const uint32_t currentIndex);
@@ -22,6 +22,11 @@ namespace gwa
 		void drawIndexed(uint32_t indexCount, const int currentIndex);
 		void endRenderPass(const int currentIndex);
 
-		std::vector<VkCommandBuffer> commandBuffers = {};
+		const VkCommandBuffer* getCommandBuffer(const int currentIndex)
+		{
+			return &commandBuffers_[currentIndex];
+		}
+	private:
+		std::vector<VkCommandBuffer> commandBuffers_ = {};
 	};
 }

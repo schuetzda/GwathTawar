@@ -110,7 +110,7 @@ namespace gwa {
 		rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;		// Whether to discard data and skip rasterizer. Never create fragments, only suitable for pipeline without framebuffer output.
 		rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;		// How to handle filling points between vertices
 		rasterizerCreateInfo.lineWidth = 1.f;							// How thick lines should be when drawn
-		rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;			// Which face of a triangle to cull
+		rasterizerCreateInfo.cullMode = VK_CULL_MODE_NONE;			// Which face of a triangle to cull
 		rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;		// Winding to determine which side is front
 		rasterizerCreateInfo.depthBiasEnable = VK_FALSE;				// Whether to add depth to fragments (good for stopping shadow acne)
 

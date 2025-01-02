@@ -56,16 +56,12 @@ namespace gwa {
 		VulkanSemaphore m_renderFinished;
 		VulkanSemaphore m_imageAvailable;
 		VulkanFence m_drawFences;
-		std::unique_ptr<VulkanMeshBuffers> m_meshBuffers;
+		VulkanMeshBuffers m_meshBuffers;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 		
 		//TODO temp fix, move Mesehs and camera to correct spot
-		struct UboViewProj {
-			glm::mat4 projection;
-			glm::mat4 view;
-		};		
-		UboViewProj uboViewProj;
+		
 	};
 }
 

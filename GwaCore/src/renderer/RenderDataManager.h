@@ -5,9 +5,8 @@
 #include <vector>
 namespace gwa
 {
-	class RenderData
+	struct RenderData
 	{
-	public:
 		RenderData(std::span<Vertex> vertices, std::span<uint32_t> indices):vertices(vertices), indices(indices)
 		{
 
@@ -18,13 +17,17 @@ namespace gwa
 	class RenderDataManager
 	{
 	public:
-		//TODO make constant
 		void addModelData(std::span<Vertex> vertices, std::span<uint32_t> indices, Mesh* meshToBind);
 		std::vector<RenderData>& getRenderDataToSubmit() {
-			return renderDataToSubmit;
+			return renderDataToSubmit_;
 		}
-		std::vector<Mesh*> meshesToBind;
+
+		void setMeshBufferIndex(uint32_t meshIndex, uint32_t meshBufferIndex)
+		{
+			meshesToBind_[meshIndex]->meshBufferIndex = meshBufferIndex;
+		}
 	private:
-		std::vector<RenderData> renderDataToSubmit;
+		std::vector<Mesh*> meshesToBind_;
+		std::vector<RenderData> renderDataToSubmit_;
 	};
 }

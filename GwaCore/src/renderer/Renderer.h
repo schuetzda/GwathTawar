@@ -1,6 +1,7 @@
 #pragma once
-#include <Core/Window.h>
+#include <core/Window.h>
 #include <renderer/RenderAPI.h>
+#include "renderer/PerspectiveCamera.h"
 namespace gwa
 {
 	class Renderer
@@ -16,5 +17,6 @@ namespace gwa
 		float angle = 0.f;
 		float deltaTime = 0.f;
 		float lasttime = 0.f;
+		Camera camera;
 	};
 }

@@ -26,8 +26,13 @@ namespace gwa {
 		
 		RenderDataManager renderDataManager;
 		std::vector<Mesh> m_meshes; //TODO move to protected
+		struct UboViewProj {
+			glm::mat4 projection;
+			glm::mat4 view;
+		} uboViewProj;
 	protected:
 	private:
 		static API s_API;
+		
 	};
 }

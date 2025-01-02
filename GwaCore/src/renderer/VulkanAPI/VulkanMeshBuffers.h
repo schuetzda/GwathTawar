@@ -14,16 +14,14 @@ namespace gwa
 			uint32_t indexCount;
 		};
 
-		VulkanMeshBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice) :logicalDevice(logicalDevice), physicalDevice(physicalDevice) 
-		{
-		
-		}
-		
+		VulkanMeshBuffers() = default;
+		VulkanMeshBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice) :logicalDevice_(logicalDevice), physicalDevice_(physicalDevice) {}
+
 		uint32_t addBuffer(std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
 		MeshBufferData getMeshBufferData(const uint32_t meshBufferIndex)
 		{
-			assert(meshBufferIndex + 1 <= meshBufferDataList.size());
-			return meshBufferDataList[meshBufferIndex];
+			assert(meshBufferIndex + 1 <= meshBufferDataList_.size());
+			return meshBufferDataList_[meshBufferIndex];
 		}
 		void cleanup();
 	private:
@@ -31,10 +29,11 @@ namespace gwa
 		void createBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags bufferProperties);
 		void createMeshBuffer(VkBuffer& meshBuffer, VkDeviceMemory& bufferMemory, VkQueue transferQueue, VkCommandPool transferCommandPool, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, const void* vertData);
 
-		std::vector<MeshBufferData> meshBufferDataList;
-		std::vector<VkDeviceMemory> vertexBufferMemoryList;
-		std::vector<VkDeviceMemory> indexBufferMemoryList;
-		VkDevice logicalDevice;
-		VkPhysicalDevice physicalDevice;
+		std::vector<MeshBufferData> meshBufferDataList_;
+		std::vector<VkDeviceMemory> vertexBufferMemoryList_;
+		std::vector<VkDeviceMemory> indexBufferMemoryList_;
+
+		VkDevice logicalDevice_;
+		VkPhysicalDevice physicalDevice_;
 	};
 }

@@ -46,15 +46,15 @@ namespace gwa {
 
 		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		
-		m_meshBuffers = std::make_unique<VulkanMeshBuffers>(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+		m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 100.0f);
-		uboViewProj.view = glm::lookAt(glm::vec3(3.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
 				
 		for (int i=0; i< renderDataManager.getRenderDataToSubmit().size(); ++i)
 		{
-			renderDataManager.meshesToBind[i]->meshBufferIndex = m_meshBuffers->addBuffer(renderDataManager.getRenderDataToSubmit()[i].vertices, renderDataManager.getRenderDataToSubmit()[i].indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+			const uint32_t bufferIndex = m_meshBuffers.addBuffer(renderDataManager.getRenderDataToSubmit()[i].vertices, renderDataManager.getRenderDataToSubmit()[i].indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+			renderDataManager.setMeshBufferIndex(i, bufferIndex);
 		}
 		
 		m_graphicsCommandBuffer = VulkanCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
@@ -94,7 +94,7 @@ namespace gwa {
 
 		m_mvpUniformBuffers.updateUniformBuffers(imageIndex, sizeof(UboViewProj), &uboViewProj);
 		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
-		vkResetCommandBuffer(m_graphicsCommandBuffer.commandBuffers[currentFrame], 0);
+		vkResetCommandBuffer(*m_graphicsCommandBuffer.getCommandBuffer(currentFrame), 0);
 
 		recordCommands(imageIndex);
 
@@ -108,7 +108,7 @@ namespace gwa {
 		};
 		submitInfo.pWaitDstStageMask = waitStages.data();				//Stages to check semaphores
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &m_graphicsCommandBuffer.commandBuffers[currentFrame];
+		submitInfo.pCommandBuffers = m_graphicsCommandBuffer.getCommandBuffer(currentFrame);
 		submitInfo.signalSemaphoreCount = 1;					// Number of semaphores to signal
 		submitInfo.pSignalSemaphores = &renderFinished[currentFrame];			// Semaphores to signal when command buffer finishes
 
@@ -141,7 +141,7 @@ namespace gwa {
 	void VulkanRenderAPI::shutdown() {
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
 		
-		m_meshBuffers->cleanup();
+		m_meshBuffers.cleanup();
 		m_drawFences.cleanup();
 		m_renderFinished.cleanup();
 		m_imageAvailable.cleanup();
@@ -182,7 +182,7 @@ namespace gwa {
 
 		for (Mesh mesh: m_meshes)
 		{
-			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers->getMeshBufferData(mesh.meshBufferIndex);
+			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(mesh.meshBufferIndex);
 			//TODO correct return types
 			VkDeviceSize offsets[] = { 0 };
 			VkBuffer vertexBuffers[] = { meshData.vertexBuffer };
