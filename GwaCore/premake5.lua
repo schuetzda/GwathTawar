@@ -11,8 +11,6 @@
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"externals/glm/glm/**.hpp",
-		"externals/glm/glm/**.inl",
 		"externals/stb_image/**.h"
 	}
 	
@@ -22,6 +20,7 @@
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.cgltf}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 	

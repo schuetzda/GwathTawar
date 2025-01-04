@@ -1,5 +1,5 @@
 #include "VulkanPipeline.h"
-#include "tools/FileReader.h"
+#include "io/FileReader.h"
 #include <stdexcept>
 #include <array>
 #include <cassert>
@@ -8,8 +8,8 @@ namespace gwa {
 		VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, 
 		VkDescriptorSetLayout descriptorSetLayout): logicalDevice_(logicalDevice)
 	{
-		std::vector<char> vertexShaderCode = readBinaryFile("src/shaders/vert.spv");
-		std::vector<char> fragmentShaderCode = readBinaryFile("src/shaders/frag.spv");
+		std::vector<char> vertexShaderCode = FileReader::readBinaryFile<char>("src/shaders/vert.spv");
+		std::vector<char> fragmentShaderCode = FileReader::readBinaryFile<char>("src/shaders/frag.spv");
 
 		VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
 		VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);

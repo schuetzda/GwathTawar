@@ -1,6 +1,9 @@
 #include "Renderer.h"
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include "io/gltfImporter.h"
+#include <filesystem>
+#include <vector>
 namespace gwa {
 
 	std::unique_ptr<RenderAPI> Renderer::s_renderAPI = RenderAPI::Create();
@@ -8,6 +11,7 @@ namespace gwa {
 
 	void Renderer::init(const Window* window) const
 	{
+		/*
 		std::vector<Vertex> meshVertices1 = {
 		{ { -0.4, 0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
 		{ { -0.4, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	    // 1
@@ -26,12 +30,26 @@ namespace gwa {
 		std::vector<uint32_t> meshIndices = {
 			0, 1, 2,
 			2, 3, 0
-		};
+		}; */
+		std::vector<glm::vec3> vertices;
+		std::vector<uint32_t> indices;
+		std::vector<Vertex> vertex;
+				ResourceManager manager;
+		std::filesystem::path assetPath("./assets/Rivendell");
+		std::string gltfFileName("Rivendell.gltf");
+		bool exists = std::filesystem::exists(assetPath);
+		gltfImporter::loadResource(manager, assetPath, gltfFileName, vertices, indices);
+
+		for (int i = 0; i < vertices.size(); ++i)
+		{
+			Vertex newVertex;
+			newVertex.position = vertices[i];
+			newVertex.color = glm::vec3(1.f, 0.5f, 0.5f);
+			vertex.push_back(newVertex);
+		}
 
 		s_renderAPI->m_meshes.emplace_back();
-		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices1), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
-		s_renderAPI->m_meshes.emplace_back();
-		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(meshVertices2), std::span<uint32_t>(meshIndices), &s_renderAPI->m_meshes.back());
+		s_renderAPI->renderDataManager.addModelData(std::span<Vertex>(vertex), std::span<uint32_t>(indices), &s_renderAPI->m_meshes.back());
 		s_renderAPI->init(window);
 		s_renderAPI->uboViewProj.view = camera.getViewMatrix();
 	}
@@ -60,7 +78,6 @@ namespace gwa {
 		s_renderAPI->uboViewProj.view = camera.getViewMatrix();
 
 		s_renderAPI->updateModel(0, firstModel);
-		s_renderAPI->updateModel(1, secondModel);
 
 		s_renderAPI->draw(window);
 	}

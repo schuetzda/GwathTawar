@@ -22,6 +22,7 @@ workspace "GwathTawar"
 	IncludeDir["stb_image"] = "%{wks.location}/GwaCore/externals/stb_image"
 	IncludeDir["GLFW"] = "%{wks.location}/GwaCore/externals/GLFW/include"
 	IncludeDir["glm"] = "%{wks.location}/GwaCore/externals/glm"
+    IncludeDir["cgltf"] = "%{wks.location}/GwaCore/externals/cgltf"
 	IncludeDir["SPIRV_Cross"] = "%{wks.location}/GwaCore/externals/SPIRV-Cross"
 	IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 
