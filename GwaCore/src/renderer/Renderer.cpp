@@ -34,10 +34,9 @@ namespace gwa {
 		std::vector<glm::vec3> vertices;
 		std::vector<uint32_t> indices;
 		std::vector<Vertex> vertex;
-				ResourceManager manager;
+		ResourceManager manager;
 		std::filesystem::path assetPath("./assets/Rivendell");
 		std::string gltfFileName("Rivendell.gltf");
-		bool exists = std::filesystem::exists(assetPath);
 		gltfImporter::loadResource(manager, assetPath, gltfFileName, vertices, indices);
 
 		for (int i = 0; i < vertices.size(); ++i)

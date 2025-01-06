@@ -14,7 +14,7 @@ namespace gwa
 		
 		createMeshBuffer(meshBufferData.vertexBuffer, vertexBufferMemoryList_.back(), transferQueue, transferCommandPool, vertexBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertices.data());
-
+		
 		//Index Buffer
 		indexBufferMemoryList_.emplace_back();
 		const VkDeviceSize indexBufferSize = sizeof(indices[0]) * indices.size();
