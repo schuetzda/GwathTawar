@@ -5,45 +5,32 @@
 #include <memory>
 #include "Layer.h"
 #include <vector>
-#include "renderer/Renderer.h"
+#include "Game.h"
+#include <resources/ResourceManager.h>
+#include "QuaternionCamera.h"
+#include "renderer/RenderAPI.h"
+
 int main(int argc, char** argv);
 
 namespace gwa
 {
-
+	struct AppInfo
+	{
+		std::string appTitle;
+		uint32_t appWidth;
+		uint32_t appHeight;
+	};
 	class Application {
 	public:
-		explicit Application(const std::string& title, uint32_t width, uint32_t height);
-		
-		virtual ~Application();
-		
-		static Application& getInstance() { return *s_Instance; }
-
-		void PushLayer(Layer* layer);
-
-		const Window& getWindow()
-		{
-			return m_window;
-		}
-		
+		explicit Application(const AppInfo& info, Game* game);
+		~Application();
+		void init();
+		void run();
 	private:
-		Application(Application const& copy) = delete;
-		Application& operator=(Application const& copy) = delete;
-
-		void run() const;
-
 		Window m_window;
-
-		std::vector<Layer*> m_layerStack;
-
-		static Application* s_Instance;
-		friend int ::main(int argc, char** argv);
-
-		//TODO Change scope of renderer. Decide where it is accessible.
-		std::unique_ptr<Renderer> m_renderer;
+		Game* m_game;
+		ResourceManager resourceManager;
+		QuaternionCamera camera;
+		static std::unique_ptr<RenderAPI> renderAPI;
 	};
-
-	std::unique_ptr<Application> createApplication();
-
-	
 }

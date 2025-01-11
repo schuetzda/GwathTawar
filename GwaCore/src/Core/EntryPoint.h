@@ -1,12 +1,7 @@
 #pragma once
-
 #include "Application.h"
 
-extern std::unique_ptr<gwa::Application> gwa::createApplication();
-
-int main(int argc, char** argv)
+namespace gwa
 {
-	auto app = gwa::createApplication();
-
-	app->run();
+	void startApplication(const AppInfo& info, Game* game);
 }

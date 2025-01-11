@@ -31,10 +31,7 @@ namespace gwa
 
 	struct TexturedMeshRenderObject
 	{
-		uint32_t vertexBufferId;
-		uint32_t indexBufferId;
-		uint32_t normalBufferId;
-		uint32_t texcoordBufferId;
+		uint32_t bufferID;
 		glm::mat4 modelMatrix;
 	};
 }

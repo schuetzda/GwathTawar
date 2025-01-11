@@ -1,8 +1,8 @@
 #include "QuaternionCamera.h"
-#include "core/Input.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
+#include "Window.h"
 namespace gwa
 
 {
@@ -16,10 +16,12 @@ namespace gwa
 
 		getViewMatrix();
 	}
-	void QuaternionCamera::onUpdate()
+
+	// NOTE: The callback here should be replaced by proper event handling with callback functions once ecs is implemented.
+	void QuaternionCamera::onUpdate(const Window& window)
 	{
-		glm::vec2 mousePosition = Input::getMousePosition();
-		if (Input::isMousePressed(0))
+		glm::vec2 mousePosition = window.getMousePosition();
+		if (window.isMousePressed(0))
 		{
 			glm::vec2 diff = mousePosition - previousMousePos_;
 
@@ -28,21 +30,21 @@ namespace gwa
 
 			orientation_ = glm::normalize(qYaw) * glm::normalize(qPitch) * orientation_;
 		}
-		if (Input::isKeyPressed(87))
+		if (window.isKeyPressed(87))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, -1.0f)) * 1.f;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, -1.0f)) * cspeed_;
 		}
-		if (Input::isKeyPressed(83))
+		if (window.isKeyPressed(83))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, 1.0f)) * 1.f;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, 1.0f)) * cspeed_;
 		}
-		if (Input::isKeyPressed(65))
+		if (window.isKeyPressed(65))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(-1.0f, 0.0f, 0.0f)) * 1.f;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(-1.0f, 0.0f, 0.0f)) * cspeed_;
 		}
-		if (Input::isKeyPressed(68))
+		if (window.isKeyPressed(68))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(1.0f, 0.0f, 0.0f)) * 1.f;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(1.0f, 0.0f, 0.0f)) * cspeed_;
 		}
 		previousMousePos_ = mousePosition;
 	}

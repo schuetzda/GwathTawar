@@ -7,7 +7,7 @@ namespace gwa
 	{
 	public:
        static bool loadResource(ResourceManager& resourceManager, const std::filesystem::path& assetDirectory,
-            const std::string& gltfFileName, std::vector<glm::vec3>& vertices, std::vector<uint32_t>& indices);
+            const std::string& gltfFileName);
 	private:
         template <typename InType, typename OutType>
         static void convertToVector(const std::vector<std::byte>& originalData, std::vector<OutType>& resultData, size_t numElements, size_t offset = 0) {

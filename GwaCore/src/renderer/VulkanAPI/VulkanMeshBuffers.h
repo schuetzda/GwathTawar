@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <span>
 #include "vkTypes.h"
+#include <glm/glm.hpp>
 
 namespace gwa
 {
@@ -17,7 +18,7 @@ namespace gwa
 		VulkanMeshBuffers() = default;
 		VulkanMeshBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice) :logicalDevice_(logicalDevice), physicalDevice_(physicalDevice) {}
 
-		uint32_t addBuffer(std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
+		uint32_t addBuffer(std::span<glm::vec3> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
 		MeshBufferData getMeshBufferData(const uint32_t meshBufferIndex)
 		{
 			assert(meshBufferIndex + 1 <= meshBufferDataList_.size());

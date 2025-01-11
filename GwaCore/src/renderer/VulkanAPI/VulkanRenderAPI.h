@@ -28,13 +28,11 @@ namespace gwa {
 	public:
 		VulkanRenderAPI() = default;
 
-		void init(const Window *  window) override;
-		void draw(const Window *  window) override;
+		void init(const Window *  window, ResourceManager& resourceManager) override;
+		void draw(const Window* window, const std::vector<TexturedMeshRenderObject>& meshes) override;
 		void shutdown() override;
 
-		void recordCommands(uint32_t imageIndex);
-		void updateModel(int modelId, const glm::mat4& newModel) override;
-
+		void recordCommands(uint32_t imageIndex, const std::vector<TexturedMeshRenderObject>& renderObjects);
 	private:
 		const uint32_t maxFramesInFlight_ = 2;
 		uint32_t currentFrame = 0;

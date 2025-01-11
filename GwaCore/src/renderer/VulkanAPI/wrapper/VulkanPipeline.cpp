@@ -39,7 +39,7 @@ namespace gwa {
 		// VK_VERTEX_INPUT_RATE_INSTANCE: Move on to a vertex for the next instance
 
 		// How the data for an attribute is defined within a vertex
-		const uint32_t attributeDescriptionsSize = 2;
+		const uint32_t attributeDescriptionsSize = 1;
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 		attributeDescriptions.resize(attributeDescriptionsSize);
 
@@ -47,13 +47,14 @@ namespace gwa {
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;	// Format the data will take. Also defines size of format
 		attributeDescriptions[0].offset = attributeDescriptionOffsets[0];
-
+		
+		/* TODO COLOR
 		// Colour Attribute
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = attributeDescriptionOffsets[1];
-
+*/
 
 		// VERTEX INPUT (TODO: Put in vertex descriptions when resources are created) Vertex -> Primitives
 		VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};

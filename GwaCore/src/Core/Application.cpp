@@ -1,28 +1,22 @@
 #include "Application.h"
 #include <cassert>
+#include <renderer/RenderAPI.h>
 namespace gwa
 {
-	Application* Application::s_Instance = nullptr;
-
-	Application::Application(const std::string& title, uint32_t width = 1920, uint32_t height = 1080):m_window(Window(title, width, height))
+	std::unique_ptr<RenderAPI> Application::renderAPI = RenderAPI::Create();
+	Application::Application(const AppInfo& info, Game* game):m_window(Window(info.appTitle, info.appWidth, info.appHeight)), m_game(game)
 	{
-		// Only one instance of Application is allowed
-		assert(!s_Instance);
-		s_Instance = this;
-
-		m_renderer = std::make_unique<Renderer>();
-		m_renderer->init(&m_window);
-		
 	}
 
 	Application::~Application() = default;
 
-	void Application::PushLayer(Layer* layer)
+	void Application::init()
 	{
-		m_layerStack.push_back(layer);
+		m_game->init(resourceManager);
+		renderAPI->init(&m_window, resourceManager);
 	}
 
-	void Application::run() const
+	void Application::run() 
 	{
 		float lasttime = 0.f;
 		while (!m_window.shouldClose())
@@ -30,16 +24,14 @@ namespace gwa
 			float time = m_window.getTime();
 			float timestep = time - lasttime;
 			lasttime = time;
-
-			for (Layer* layer : m_layerStack)
-			{
-				layer->OnUpdate(timestep);
-			}
-
-			m_renderer->run(&m_window);
+			
 			m_window.update();
+			camera.onUpdate(m_window);
+			m_game->run(timestep, resourceManager);
+			renderAPI->uboViewProj.view = camera.getViewMatrix();
+			renderAPI->draw(&m_window, resourceManager.getRenderObjects());
 		}
-		m_renderer->shutdown();
+		m_game->shutdown();
 		m_window.shutDown();
 	}
 }

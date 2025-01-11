@@ -5,7 +5,7 @@
 namespace gwa
 {
 
-	uint32_t VulkanMeshBuffers::addBuffer(std::span<Vertex> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
+	uint32_t VulkanMeshBuffers::addBuffer(std::span<glm::vec3> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
 	{
 		MeshBufferData meshBufferData;
 		//Vertex Buffer

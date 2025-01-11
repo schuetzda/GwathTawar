@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <glm/glm.hpp>
 
 namespace gwa
 {
@@ -23,14 +24,18 @@ namespace gwa
 		void shutDown() const;
 		float getTime() const;
 		const std::string& getAppTitle() const;
+		void* getWindowHandle() const;
+		bool isMousePressed(int32_t button) const;
+		bool isKeyPressed(int32_t button) const;
+		glm::vec2 getMousePosition() const;
 
 		WindowSize getFramebufferSize() const;
 
-		void* getWindowHandle() const;
 	private:
 		void init() const;
 
 		const std::string& appTitle;
+
 		uint32_t width;
 		uint32_t height;
 	};

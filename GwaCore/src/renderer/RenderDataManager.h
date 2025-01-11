@@ -7,17 +7,17 @@ namespace gwa
 {
 	struct RenderData
 	{
-		RenderData(std::span<Vertex> vertices, std::span<uint32_t> indices):vertices(vertices), indices(indices)
+		RenderData(std::span<glm::vec3> vertices, std::span<uint32_t> indices):vertices(vertices), indices(indices)
 		{
 
 		}
-		std::span<Vertex> vertices;
+		std::span<glm::vec3> vertices;
 		std::span<uint32_t> indices;
 	};
 	class RenderDataManager
 	{
 	public:
-		void addModelData(std::span<Vertex> vertices, std::span<uint32_t> indices, Mesh* meshToBind);
+		void addModelData(std::span<glm::vec3> vertices, std::span<uint32_t> indices, Mesh* meshToBind);
 		std::vector<RenderData>& getRenderDataToSubmit() {
 			return renderDataToSubmit_;
 		}
