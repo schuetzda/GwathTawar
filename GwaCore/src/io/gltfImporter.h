@@ -1,12 +1,14 @@
 #pragma once
 #include "resources/ResourceManager.h"
 #include <filesystem>
+#include "ecs/Registry.h"
+#include "resources/ResourceManager.h"
 namespace gwa
 {
 	class gltfImporter
 	{
 	public:
-       static bool loadResource(ResourceManager& resourceManager, const std::filesystem::path& assetDirectory,
+       static bool loadResource(gwa::ntity::Registry& registry, const std::filesystem::path& assetDirectory,
             const std::string& gltfFileName);
 	private:
         template <typename InType, typename OutType>

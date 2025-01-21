@@ -9,6 +9,7 @@
 #include <resources/ResourceManager.h>
 #include "QuaternionCamera.h"
 #include "renderer/RenderAPI.h"
+#include "ecs/Registry.h"
 
 int main(int argc, char** argv);
 
@@ -29,7 +30,7 @@ namespace gwa
 	private:
 		Window m_window;
 		Game* m_game;
-		ResourceManager resourceManager;
+		ntity::Registry registry;
 		QuaternionCamera camera;
 		static std::unique_ptr<RenderAPI> renderAPI;
 	};

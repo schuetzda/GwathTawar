@@ -2,8 +2,8 @@
 #include <GwathTawar.h>
 class MyProject: public gwa::Game
 {
-	void init(gwa::ResourceManager& resourceManager) override;
-	void run(float ts, gwa::ResourceManager& resourceManager) override;
+	void init(gwa::ntity::Registry& registry) override;
+	void run(float ts, gwa::ntity::Registry& registry) override;
 	void shutdown() override;
 };
 

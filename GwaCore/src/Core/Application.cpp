@@ -12,8 +12,17 @@ namespace gwa
 
 	void Application::init()
 	{
-		m_game->init(resourceManager);
-		renderAPI->init(&m_window, resourceManager);
+		std::array<uint32_t, 2> componentEstimate{3, 3};
+		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 5);
+
+		TexturedMeshBufferMemory tex(3, 2);
+		uint32_t ent = registry.registerEntity();
+		registry.addComponent<TexturedMeshBufferMemory>(ent, tex);
+		uint32_t ent2 = registry.registerEntity();
+		TexturedMeshBufferMemory tex2(1, 1);
+		
+		m_game->init(registry);
+		renderAPI->init(&m_window, registry);
 	}
 
 	void Application::run() 
@@ -27,9 +36,9 @@ namespace gwa
 			
 			m_window.update();
 			camera.onUpdate(m_window);
-			m_game->run(timestep, resourceManager);
+			m_game->run(timestep, registry);
 			renderAPI->uboViewProj.view = camera.getViewMatrix();
-			renderAPI->draw(&m_window, resourceManager.getRenderObjects());
+			renderAPI->draw(&m_window, registry);
 		}
 		m_game->shutdown();
 		m_window.shutDown();

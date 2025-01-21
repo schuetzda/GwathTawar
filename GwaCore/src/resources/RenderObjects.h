@@ -1,33 +1,62 @@
 #pragma once
 #include <cstdint>
 #include <glm/glm.hpp>
-#include <renderer/VulkanAPI/vkTypes.h>
+#include <memory> 
 #include <vector>
 namespace gwa
 {
-	struct TexturedMeshBufferData
-	{
-		std::vector<glm::vec3>& m_vertices;
-		std::vector<uint32_t>& m_indices;
-		std::vector<glm::vec3>& m_normals;
-		std::vector<glm::vec2>& m_texcoords;
+    struct TexturedMeshBufferMemory
+    {
+        std::unique_ptr<std::vector<glm::vec3>> vertices;
+        std::unique_ptr<std::vector<uint32_t>> indices;
+        std::unique_ptr<std::vector<glm::vec3>> normals;
+        std::unique_ptr<std::vector<glm::vec2>> texcoords;
 
-		TexturedMeshBufferData(std::vector<glm::vec3>& vertices, std::vector<uint32_t>& indices, std::vector<glm::vec3>& normals, std::vector<glm::vec2>& texcoords)
-			:m_vertices(vertices), m_indices(indices), m_normals(normals), m_texcoords(texcoords)
-		{}
-	};
+        TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
+            : vertices(std::make_unique<std::vector<glm::vec3>>(verticesCount)),
+            indices(std::make_unique<std::vector<uint32_t>>(indicesCount)),
+            normals(std::make_unique<std::vector<glm::vec3>>(verticesCount)),
+            texcoords(std::make_unique<std::vector<glm::vec2>>(verticesCount))
+        {}
 
-	struct TexturedMeshBufferMemory
-	{
-		std::vector<glm::vec3> vertices;
-		std::vector<uint32_t> indices;
-		std::vector<glm::vec3> normals;
-		std::vector<glm::vec2> texcoords;
+        // Move constructor
+        TexturedMeshBufferMemory(TexturedMeshBufferMemory&& other) noexcept
+            : vertices(std::move(other.vertices)),
+            indices(std::move(other.indices)),
+            normals(std::move(other.normals)),
+            texcoords(std::move(other.texcoords))
+        {}
 
-		TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount): vertices(std::vector<glm::vec3>(verticesCount)), indices(std::vector<uint32_t>(indicesCount)),
-			normals(std::vector<glm::vec3>(verticesCount)), texcoords(std::vector<glm::vec2>(verticesCount))
-		{}
-	};
+        // Move assignment operator
+        TexturedMeshBufferMemory& operator=(TexturedMeshBufferMemory&& other) noexcept {
+            if (this != &other) {
+                vertices = std::move(other.vertices);
+                indices = std::move(other.indices);
+                normals = std::move(other.normals);
+                texcoords = std::move(other.texcoords);
+            }
+            return *this;
+        }
+
+        // Copy constructor (optional, depending on needs)
+        TexturedMeshBufferMemory(const TexturedMeshBufferMemory& other)
+            : vertices(std::make_unique<std::vector<glm::vec3>>(*other.vertices)),
+            indices(std::make_unique<std::vector<uint32_t>>(*other.indices)),
+            normals(std::make_unique<std::vector<glm::vec3>>(*other.normals)),
+            texcoords(std::make_unique<std::vector<glm::vec2>>(*other.texcoords))
+        {}
+
+        // Copy assignment operator (optional)
+        TexturedMeshBufferMemory& operator=(const TexturedMeshBufferMemory& other) {
+            if (this != &other) {
+                vertices = std::make_unique<std::vector<glm::vec3>>(*other.vertices);
+                indices = std::make_unique<std::vector<uint32_t>>(*other.indices);
+                normals = std::make_unique<std::vector<glm::vec3>>(*other.normals);
+                texcoords = std::make_unique<std::vector<glm::vec2>>(*other.texcoords);
+            }
+            return *this;
+        }
+    };
 
 	struct TexturedMeshRenderObject
 	{

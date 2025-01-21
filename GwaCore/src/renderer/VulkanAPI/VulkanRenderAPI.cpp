@@ -5,10 +5,11 @@
 #include <array>
 #include <stdexcept>
 #include <glm/gtc/matrix_transform.hpp>
-#include <resources/ResourceManager.h>
+#include "ecs/Registry.h"
+#include "resources/RenderObjects.h"
 
 namespace gwa {
-	void VulkanRenderAPI::init(const Window *  window, ResourceManager& resourceManager) 
+	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry) 
 	{
 		
 #ifdef GWA_DEBUG
@@ -51,11 +52,10 @@ namespace gwa {
 		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 1000.0f);
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
-		std::vector<TexturedMeshBufferData>& renderData = resourceManager.getTexturedMeshRenderData();
-		for (int i=0; i< renderData.size(); ++i)
+		
+		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
-			const uint32_t bufferIndex = m_meshBuffers.addBuffer(renderData[i].m_vertices, renderData[i].m_indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
-			resourceManager.addRenderObject(bufferIndex, i);
+			TexturedMeshBufferMemory* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
 		}
 		
 		m_graphicsCommandBuffer = VulkanCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
@@ -70,7 +70,7 @@ namespace gwa {
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
 	}
 
-	void VulkanRenderAPI::draw(const Window *  window, const std::vector<TexturedMeshRenderObject>& meshes)
+	void VulkanRenderAPI::draw(const Window *  window, gwa::ntity::Registry& registry)
 	{
 		WindowSize framebufferSize = window->getFramebufferSize();
 		const std::vector<VkSemaphore>& imageAvailabe = m_imageAvailable.getSemaphores();
@@ -97,7 +97,7 @@ namespace gwa {
 		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
 		vkResetCommandBuffer(*m_graphicsCommandBuffer.getCommandBuffer(currentFrame), 0);
 
-		recordCommands(imageIndex, meshes);
+		recordCommands(imageIndex, registry);
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -159,7 +159,7 @@ namespace gwa {
 		m_device.cleanup();
 		m_instance.cleanup();
 	}
-	void VulkanRenderAPI::recordCommands(uint32_t imageIndex, const std::vector<TexturedMeshRenderObject>& renderObjects)
+	void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
 	{
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
 		m_graphicsCommandBuffer.beginCommandBuffer(currentFrame, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
@@ -180,7 +180,7 @@ namespace gwa {
 		scissor.offset = { 0, 0 };
 		scissor.extent = extent;
 		m_graphicsCommandBuffer.setScissor(scissor, currentFrame);
-		
+		/*
 		for (TexturedMeshRenderObject renderObject: renderObjects)
 		{
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject.bufferID);
@@ -195,6 +195,7 @@ namespace gwa {
 
 			m_graphicsCommandBuffer.drawIndexed(meshData.indexCount, currentFrame);
 		}
+		*/
 		
 		m_graphicsCommandBuffer.endRenderPass(currentFrame);
 		m_graphicsCommandBuffer.endCommandBuffer(currentFrame);

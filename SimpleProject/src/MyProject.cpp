@@ -6,29 +6,19 @@
 #include <array>
 
 
-void MyProject::init(gwa::ResourceManager& resourceManager)
+void MyProject::init(gwa::ntity::Registry& registry)
 {
-	struct Car {
-		int velocity;
-		glm::vec3 speed;
-	};
-
-	gwa::ntity::Registry reg;
-	gwa::ntity::Registry reg2;
-	std::array<uint32_t, 3> test {10, 10, 10};
-	reg.initComponentList<Car, int, double>(test, 2000);
-	
-
 	std::filesystem::path assetPath("./assets/Rivendell");
 	std::string gltfFileName("Rivendell.gltf");
-	gwa::gltfImporter::loadResource(resourceManager, assetPath, gltfFileName);
+	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
+
 }
 
-void MyProject::run(float ts, gwa::ResourceManager& resourceManager)
+void MyProject::run(float ts, gwa::ntity::Registry& registry)
 {
 	glm::mat4 firstModel(1.0f);
 	firstModel = glm::translate(firstModel, glm::vec3(0.0f, 0.0f, -2.5f));
-	resourceManager.updateModel(0, firstModel);
+	//resourceManager.updateModel(0, firstModel);
 }
 
 void MyProject::shutdown()

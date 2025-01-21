@@ -2,8 +2,7 @@
 #include <core/Window.h>
 #include <memory>
 #include <glm/glm.hpp>
-#include "resources/ResourceManager.h"
-
+#include "ecs/Registry.h"
 namespace gwa {
 
 	class RenderAPI
@@ -16,8 +15,8 @@ namespace gwa {
 	public:
 		virtual ~RenderAPI() = default;
 
-		virtual void init(const Window* window, ResourceManager& resourceManager) = 0;
-		virtual void draw(const Window* window, const std::vector<TexturedMeshRenderObject>& meshes) = 0;
+		virtual void init(const Window* window, gwa::ntity::Registry& registry) = 0;
+		virtual void draw(const Window* window, gwa::ntity::Registry& registry) = 0;
 		virtual void shutdown() = 0;
 
 		static API GetAPI() { return s_API; }
