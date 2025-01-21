@@ -89,6 +89,15 @@ namespace gwa::ntity
 			const uint32_t typeID = TypeIDGenerator::type<Component>();
 			return componentTable[typeID].getComponent<Component>(index);
 		}
+
+		template<typename Component>
+		std::pair<Component*, uint32_t> getComponentWithEntity(uint32_t index)
+		{
+			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			uint32_t entityID = denseComponentList[typeID][index];
+			Component* component = componentTable[typeID].getComponent<Component>(index);
+			return std::pair<Component*, uint32_t>(component, entityID);
+		}
 	private:
 		uint32_t getNewEntityID()
 		{

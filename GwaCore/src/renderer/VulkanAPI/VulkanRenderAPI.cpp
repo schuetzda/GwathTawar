@@ -55,7 +55,12 @@ namespace gwa {
 		
 		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
-			TexturedMeshBufferMemory* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
+			TexturedMeshBufferMemory * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
+			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+			uint32_t entityID = registry.registerEntity();
+			TexturedMeshRenderObject renderObject;
+			renderObject.bufferID = id;
+			registry.addComponent<TexturedMeshRenderObject>(entityID, renderObject);
 		}
 		
 		m_graphicsCommandBuffer = VulkanCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
@@ -180,22 +185,23 @@ namespace gwa {
 		scissor.offset = { 0, 0 };
 		scissor.extent = extent;
 		m_graphicsCommandBuffer.setScissor(scissor, currentFrame);
-		/*
-		for (TexturedMeshRenderObject renderObject: renderObjects)
+		
+		for (uint32_t i=0; i < registry.getComponentCount<TexturedMeshRenderObject>(); i++)
 		{
-			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject.bufferID);
+			TexturedMeshRenderObject* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
+			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
 			VkDeviceSize offsets[] = { 0 };
 			VkBuffer vertexBuffers[] = { meshData.vertexBuffer };
 			m_graphicsCommandBuffer.bindVertexBuffer(vertexBuffers, offsets, currentFrame);
 			m_graphicsCommandBuffer.bindIndexBuffer(meshData.indexBuffer, currentFrame);
 
-			m_graphicsCommandBuffer.pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &renderObject.modelMatrix);
+			m_graphicsCommandBuffer.pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &renderObject->modelMatrix);
 			m_graphicsCommandBuffer.bindDescriptorSet(m_descriptorSet.getDescriptorSets()[currentFrame], m_graphicsPipeline.getPipelineLayout(), currentFrame);
 
 			m_graphicsCommandBuffer.drawIndexed(meshData.indexCount, currentFrame);
 		}
-		*/
+		
 		
 		m_graphicsCommandBuffer.endRenderPass(currentFrame);
 		m_graphicsCommandBuffer.endCommandBuffer(currentFrame);

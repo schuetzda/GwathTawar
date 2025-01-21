@@ -18,7 +18,7 @@ namespace gwa
 		VulkanMeshBuffers() = default;
 		VulkanMeshBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice) :logicalDevice_(logicalDevice), physicalDevice_(physicalDevice) {}
 
-		uint32_t addBuffer(std::span<glm::vec3> vertices, std::span<uint32_t> indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
+		uint32_t addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
 		MeshBufferData getMeshBufferData(const uint32_t meshBufferIndex)
 		{
 			assert(meshBufferIndex + 1 <= meshBufferDataList_.size());
