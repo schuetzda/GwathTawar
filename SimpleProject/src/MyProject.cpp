@@ -9,8 +9,8 @@
 
 void MyProject::init(gwa::ntity::Registry& registry)
 {
-	std::filesystem::path assetPath("./assets/Damaged Helmet");
-	std::string gltfFileName("DamagedHelmet.gltf");
+	std::filesystem::path assetPath("./assets/VC");
+	std::string gltfFileName("VC.gltf");
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
 
 }
@@ -24,7 +24,6 @@ void MyProject::run(float ts, gwa::ntity::Registry& registry)
 		gwa::TexturedMeshRenderObject* renderObject = registry.getComponent<gwa::TexturedMeshRenderObject>(i);
 		renderObject->modelMatrix = firstModel;
 	}
-	//resourceManager.updateModel(0, firstModel);
 }
 
 void MyProject::shutdown()

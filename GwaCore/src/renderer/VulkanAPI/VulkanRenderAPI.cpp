@@ -49,7 +49,7 @@ namespace gwa {
 		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		
 		m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
-		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 1000.0f);
+		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 10000.0f);
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
 		

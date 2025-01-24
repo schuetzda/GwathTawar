@@ -75,7 +75,8 @@ namespace gwa
 					{
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[positionAttributeIndex].data->buffer_view->buffer->uri],
 							*meshBufferData.vertices, curPrimitive.attributes[positionAttributeIndex].data->count,
-							curPrimitive.attributes[positionAttributeIndex].data->buffer_view->offset);
+							curPrimitive.attributes[positionAttributeIndex].data->buffer_view->offset
+						+ curPrimitive.attributes[positionAttributeIndex].data->offset);
 					}
 					else
 					{
@@ -87,13 +88,15 @@ namespace gwa
 					{
 						convertToVector<uint32_t, uint32_t>(bufferMemoryMap[curPrimitive.indices->buffer_view->buffer->uri],
 							*meshBufferData.indices, curPrimitive.indices->count,
-							curPrimitive.indices->buffer_view->offset);
+							curPrimitive.indices->buffer_view->offset
+							+ curPrimitive.indices->offset);
 					}
 					else if (curPrimitive.indices->component_type == cgltf_component_type_r_16u)
 					{
 						convertToVector<uint_least16_t, uint32_t>(bufferMemoryMap[curPrimitive.indices->buffer_view->buffer->uri],
 							*meshBufferData.indices, curPrimitive.indices->count,
-							curPrimitive.indices->buffer_view->offset);
+							curPrimitive.indices->buffer_view->offset
+						+ curPrimitive.indices->offset);
 					}
 					else
 					{
@@ -105,7 +108,8 @@ namespace gwa
 					{
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[normalAttributeIndex].data->buffer_view->buffer->uri],
 							*meshBufferData.normals, curPrimitive.attributes[normalAttributeIndex].data->count,
-							curPrimitive.attributes[normalAttributeIndex].data->buffer_view->offset);
+							curPrimitive.attributes[normalAttributeIndex].data->buffer_view->offset
+							+ curPrimitive.attributes[normalAttributeIndex].data->offset);
 					}
 
 					// Texcoords
@@ -113,8 +117,10 @@ namespace gwa
 					{
 						convertToVector<glm::vec2, glm::vec2>(bufferMemoryMap[curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->buffer->uri],
 							*meshBufferData.texcoords, curPrimitive.attributes[texcoordAttributeIndex].data->count,
-							curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->offset);
+							curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->offset
+							+ curPrimitive.attributes[texcoordAttributeIndex].data->offset);
 					}
+					
 					uint32_t meshEntity = registry.registerEntity();
 					registry.addComponent<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
 				}
