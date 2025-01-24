@@ -1,5 +1,7 @@
 #pragma once
-
+/**
+* Mapping pressed keys to ids. This is identical to glfw's key mapping.
+*/
 //Keyboard
 #define GWA_KEY_SPACE              32
 #define GWA_KEY_APOSTROPHE         39  

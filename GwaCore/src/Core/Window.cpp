@@ -27,14 +27,14 @@ namespace gwa
 	}
 	const std::string& Window::getAppTitle() const
 	{
-		return appTitle;
+		return appTitle_;
 	}
 	WindowSize Window::getFramebufferSize() const
 	{
 		int framebufferWidth = 0;
 		int framebufferHeight = 0;
 		glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-		return WindowSize{ width, height };
+		return WindowSize{ width_, height_ };
 	}
 
 	void* Window::getWindowHandle() const
@@ -50,7 +50,7 @@ namespace gwa
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-		window = glfwCreateWindow(width, height, appTitle.c_str(), nullptr, nullptr);
+		window = glfwCreateWindow(width_, height_, appTitle_.c_str(), nullptr, nullptr);
 	}
 	bool Window::isMousePressed(int32_t button) const
 	{

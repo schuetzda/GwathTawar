@@ -15,7 +15,7 @@ namespace gwa
 		void setViewport(const VkViewport& viewport, const uint32_t currentIndex);
 		void setScissor(const VkRect2D& scissor, const uint32_t currentIndex);
 		void endCommandBuffer(const uint32_t currentIndex);
-		void bindVertexBuffer(const VkBuffer* vertexBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const;
+		void bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const;
 		void bindIndexBuffer(VkBuffer indexBuffer, const uint32_t currrentIndex) const;
 		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, glm::mat4* model);
 		void bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, const int currentIndex);

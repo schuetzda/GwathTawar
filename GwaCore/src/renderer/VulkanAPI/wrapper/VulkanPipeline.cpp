@@ -30,38 +30,36 @@ namespace gwa {
 
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexCreateInfo, fragmentCreateInfo };
 
-		// How the data for a single vertex is as a whole
-		VkVertexInputBindingDescription bindingDescription = {};
-		bindingDescription.binding = 0;								// Can bind multiple streams of data, this defines which one
+		std::array<VkVertexInputBindingDescription, 2> bindingDescriptions = {};
+		// Binding 0: Position
+		bindingDescriptions[0].binding = 0;
+		bindingDescriptions[0].stride = stride;
+		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		bindingDescription.stride = stride;					// Size of a single vertex object
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;	// VK_VERTEX_INPUT_RATE_VERTEX: Move on to the next vertex
-		// VK_VERTEX_INPUT_RATE_INSTANCE: Move on to a vertex for the next instance
+		// Binding 1: Normal
+		bindingDescriptions[1].binding = 1;
+		bindingDescriptions[1].stride = stride;
+		bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		// How the data for an attribute is defined within a vertex
-		const uint32_t attributeDescriptionsSize = 1;
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-		attributeDescriptions.resize(attributeDescriptionsSize);
-
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+		// Attribute 0: Position
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;	// Format the data will take. Also defines size of format
-		attributeDescriptions[0].offset = attributeDescriptionOffsets[0];
-		
-		/* TODO COLOR
-		// Colour Attribute
-		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[0].offset = 0;
+
+		// Attribute 1: Normal
+		attributeDescriptions[1].binding = 1;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = attributeDescriptionOffsets[1];
-*/
+		attributeDescriptions[1].offset = 0;
 
 		// VERTEX INPUT (TODO: Put in vertex descriptions when resources are created) Vertex -> Primitives
 		VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
 		vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
-		vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;		//List of Vertex Binding Description (data spacing, stride info,...)
-		vertexInputCreateInfo.vertexAttributeDescriptionCount = attributeDescriptionsSize;
+		vertexInputCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+		vertexInputCreateInfo.pVertexBindingDescriptions = bindingDescriptions.data();		//List of Vertex Binding Description (data spacing, stride info,...)
+		vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();	//data format
 
 		// INPUT ASSEMBLYconst 

@@ -16,7 +16,7 @@ namespace gwa
             assert(offset + numElements * sizeof(InType) <= originalData.size());
 
             const InType* ptr = reinterpret_cast<const InType*>(originalData.data()+ offset);
-            if constexpr (std::is_same<InType, OutType>::is_same())
+            if constexpr (std::is_same_v<InType, OutType>)
             {
                 resultData = std::vector<OutType>(ptr, ptr + numElements);
             }

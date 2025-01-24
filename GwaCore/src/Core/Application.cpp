@@ -9,11 +9,11 @@ namespace gwa
 	}
 
 	Application::~Application() = default;
-
+	
 	void Application::init()
 	{
-		std::array<uint32_t, 2> componentEstimate{3, 3};
-		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 5);
+		std::array<uint32_t, 2> componentEstimate{ 1000, 1000};
+		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 170);
 		m_game->init(registry);
 		renderAPI->init(&m_window, registry);
 	}

@@ -3,7 +3,6 @@
 #include <string>
 #include "Window.h"
 #include <memory>
-#include "Layer.h"
 #include <vector>
 #include "Game.h"
 #include <resources/ResourceManager.h>
@@ -25,13 +24,21 @@ namespace gwa
 	public:
 		explicit Application(const AppInfo& info, Game* game);
 		~Application();
+		
+		/**
+		*	@brief: Initializes all resources of the application that can be that are loaded into memory before the application is running.
+		*/
 		void init();
+
+		/**
+		* @brief The render loop of the engine.
+		*/
 		void run();
 	private:
 		Window m_window;
 		Game* m_game;
-		ntity::Registry registry;
+		ntity::Registry registry; //The register for the ecs system of the application
 		QuaternionCamera camera;
-		static std::unique_ptr<RenderAPI> renderAPI;
+		static std::unique_ptr<RenderAPI> renderAPI; //TODO change RenderAPI to not be singleton
 	};
 }

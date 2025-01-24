@@ -12,13 +12,14 @@ namespace gwa
 		struct MeshBufferData {
 			VkBuffer indexBuffer;
 			VkBuffer vertexBuffer;
+			VkBuffer normalBuffer;
 			uint32_t indexCount;
 		};
 
 		VulkanMeshBuffers() = default;
 		VulkanMeshBuffers(VkDevice logicalDevice, VkPhysicalDevice physicalDevice) :logicalDevice_(logicalDevice), physicalDevice_(physicalDevice) {}
 
-		uint32_t addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
+		uint32_t addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool);
 		MeshBufferData getMeshBufferData(const uint32_t meshBufferIndex)
 		{
 			assert(meshBufferIndex + 1 <= meshBufferDataList_.size());
@@ -32,6 +33,7 @@ namespace gwa
 
 		std::vector<MeshBufferData> meshBufferDataList_;
 		std::vector<VkDeviceMemory> vertexBufferMemoryList_;
+		std::vector<VkDeviceMemory> normalBufferMemoryList_;
 		std::vector<VkDeviceMemory> indexBufferMemoryList_;
 
 		VkDevice logicalDevice_;

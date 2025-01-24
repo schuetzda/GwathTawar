@@ -35,7 +35,7 @@ namespace gwa {
 
 		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
-		std::vector<uint32_t> offset = { 0 }; //TODO move
+		std::vector<uint32_t> offset = { 0, 0 }; //TODO move
 		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), sizeof(glm::vec3), offset, m_renderPass.getRenderPass(), m_swapchain.getSwapchainExtent(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
 
 		m_depthBufferImage = VulkanImage(&m_device, m_swapchain.getSwapchainExtent(),m_renderPass.getDepthFormat(),
@@ -55,13 +55,14 @@ namespace gwa {
 		
 		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
-			TexturedMeshBufferMemory * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
-			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+			TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
+			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->normals, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
 			uint32_t entityID = registry.registerEntity();
 			TexturedMeshRenderObject renderObject;
 			renderObject.bufferID = id;
-			registry.addComponent<TexturedMeshRenderObject>(entityID, renderObject);
+			registry.addComponent<TexturedMeshRenderObject>(entityID, std::move(renderObject));
 		}
+		registry.flushComponents<TexturedMeshBufferMemory>();
 		
 		m_graphicsCommandBuffer = VulkanCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
@@ -191,9 +192,9 @@ namespace gwa {
 			TexturedMeshRenderObject* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
-			VkDeviceSize offsets[] = { 0 };
-			VkBuffer vertexBuffers[] = { meshData.vertexBuffer };
-			m_graphicsCommandBuffer.bindVertexBuffer(vertexBuffers, offsets, currentFrame);
+			VkDeviceSize offsets[] = { 0, 0 };
+			VkBuffer vertexBuffers[] = { meshData.vertexBuffer, meshData.normalBuffer };
+			m_graphicsCommandBuffer.bindVertexBuffer(vertexBuffers,2, offsets, currentFrame);
 			m_graphicsCommandBuffer.bindIndexBuffer(meshData.indexBuffer, currentFrame);
 
 			m_graphicsCommandBuffer.pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &renderObject->modelMatrix);

@@ -21,7 +21,6 @@ namespace gwa
 			if (result != cgltf_result_success)
 			{
 				cgltf_free(gltfDataPtr.get());
-				gltfDataPtr.release();
 				return false;
 			}
 		}
@@ -117,11 +116,12 @@ namespace gwa
 							curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->offset);
 					}
 					uint32_t meshEntity = registry.registerEntity();
-					registry.addComponent<TexturedMeshBufferMemory>(meshEntity, meshBufferData);
+					registry.addComponent<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
 				}
 			}
 		}
 
+		bufferMemoryMap.clear();
 		cgltf_free(gltfDataPtr.get());
 		gltfDataPtr.release();
 		return true;

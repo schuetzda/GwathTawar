@@ -69,9 +69,9 @@ namespace gwa
 		vkEndCommandBuffer(commandBuffers_[currentIndex]);
 	}
 
-	void VulkanCommandBuffers::bindVertexBuffer(const VkBuffer* vertexBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const
+	void VulkanCommandBuffers::bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const
 	{
-		vkCmdBindVertexBuffers(commandBuffers_[currentIndex], 0, 1, vertexBuffers, offsets);
+		vkCmdBindVertexBuffers(commandBuffers_[currentIndex], 0, numBuffers, vertexBuffers, offsets);
 	}
 
 	void VulkanCommandBuffers::bindIndexBuffer(VkBuffer indexBuffer, const uint32_t currrentIndex) const
