@@ -54,8 +54,8 @@ namespace gwa::ntity
 			const uint32_t typeID = TypeIDGenerator::type<Component>();
 
 			assert(typeID < denseComponentList.size());
-			denseComponentList[typeID].push_back(sparseComponentList[typeID].size() - 1);
-			sparseComponentList[typeID][entityID] = denseComponentList[typeID].size() - 1;
+			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
+			sparseComponentList[typeID][entityID] = static_cast<uint32_t>(denseComponentList[typeID].size() - 1);
 			componentTable[typeID].addComponent<Component>(std::forward<Component>(component));
 		}
 
@@ -94,7 +94,7 @@ namespace gwa::ntity
 		}
 
 		template<typename Component>
-		uint32_t getComponentCount()
+		size_t getComponentCount()
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>();
 			return denseComponentList[typeID].size();

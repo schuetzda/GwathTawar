@@ -26,7 +26,7 @@ namespace gwa::ntity
 		Component* getComponent(uint32_t index)
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
-			assert(index < reservedComponentsCount_); //TODO make data array bigger
+			assert(index < reservedComponentsCount_);
 			return static_cast<Component*>(componentData_) + index;
 		}
 
@@ -34,6 +34,14 @@ namespace gwa::ntity
 		void addComponent(Component&& component)
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
+			if (currentComponentsCount_ >= reservedComponentsCount_)
+			{
+				reservedComponentsCount_ = reservedComponentsCount_ * 2;
+				void* newPtr = malloc(sizeof(Component) * reservedComponentsCount_);
+				std::memcpy(newPtr, componentData_, sizeof(Component) * currentComponentsCount_);
+				free(componentData_);
+				componentData_ = newPtr;
+			}
 			Component* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
 			new(currentPointer) Component(std::forward<Component>(component));
 			currentComponentsCount_++;
@@ -102,11 +110,14 @@ namespace gwa::ntity
 			return currentComponentsCount_;
 		}
 
+		bool operator==(const ComponentTable& other) const = delete;
+
 		~ComponentTable() {
 			if (componentData_) {
 				free(componentData_);
 			}
 		}
+	
 	private:
 		void* componentData_ = nullptr;
 		std::type_index typeID_{std::type_index(typeid(void))};

@@ -3,6 +3,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include "Window.h"
+#include "InputKeys.h"
 namespace gwa
 
 {
@@ -29,6 +30,16 @@ namespace gwa
 			glm::quat qPitch = glm::angleAxis(diff.y*0.01f, glm::vec3(1, 0, 0));
 
 			orientation_ = glm::normalize(qYaw) * glm::normalize(qPitch) * orientation_;
+		}
+		if (window.isKeyPressed(GWA_KEY_E))
+		{
+			glm::quat qRoll = glm::angleAxis(0.01f, glm::vec3(0, 0, 1));
+			orientation_ = glm::normalize(qRoll) * orientation_;
+		}
+		if (window.isKeyPressed(GWA_KEY_Q))
+		{
+			glm::quat qRoll = glm::angleAxis(-0.01f, glm::vec3(0, 0, 1));
+			orientation_ = glm::normalize(qRoll) * orientation_;
 		}
 		if (window.isKeyPressed(87))
 		{

@@ -9,8 +9,8 @@
 
 void MyProject::init(gwa::ntity::Registry& registry)
 {
-	std::filesystem::path assetPath("./assets/VC");
-	std::string gltfFileName("VC.gltf");
+	std::filesystem::path assetPath("./assets/Sponza");
+	std::string gltfFileName("Sponza.gltf");
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
 
 }

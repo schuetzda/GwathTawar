@@ -12,8 +12,8 @@ namespace gwa
 	
 	void Application::init()
 	{
-		std::array<uint32_t, 2> componentEstimate{ 1000, 1000};
-		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 170);
+		std::array<uint32_t, 2> componentEstimate{ 1, 1};
+		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 1);
 		m_game->init(registry);
 		renderAPI->init(&m_window, registry);
 	}

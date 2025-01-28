@@ -192,8 +192,8 @@ namespace gwa {
 			TexturedMeshRenderObject* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
-			VkDeviceSize offsets[] = { 0, 0 };
-			VkBuffer vertexBuffers[] = { meshData.vertexBuffer, meshData.normalBuffer };
+			VkDeviceSize offsets[2] = { 0, 0 };
+			VkBuffer vertexBuffers[2] = { meshData.vertexBuffer, meshData.normalBuffer };
 			m_graphicsCommandBuffer.bindVertexBuffer(vertexBuffers,2, offsets, currentFrame);
 			m_graphicsCommandBuffer.bindIndexBuffer(meshData.indexBuffer, currentFrame);
 
