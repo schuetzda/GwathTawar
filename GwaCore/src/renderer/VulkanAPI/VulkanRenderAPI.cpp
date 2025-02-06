@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "ecs/Registry.h"
 #include "resources/RenderObjects.h"
+#include "wrapper/VulkanUtility.h"
 
 namespace gwa {
 	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry) 
@@ -38,8 +39,8 @@ namespace gwa {
 		std::vector<uint32_t> offset = { 0, 0 }; //TODO move
 		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), sizeof(glm::vec3), offset, m_renderPass.getRenderPass(), m_swapchain.getSwapchainExtent(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
 
-		m_depthBufferImage = VulkanImage(&m_device, m_swapchain.getSwapchainExtent(),m_renderPass.getDepthFormat(),
-			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -64,7 +65,7 @@ namespace gwa {
 		}
 		registry.flushComponents<TexturedMeshBufferMemory>();
 		
-		m_graphicsCommandBuffer = VulkanCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
+		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
 		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
 
@@ -101,7 +102,7 @@ namespace gwa {
 
 		m_mvpUniformBuffers.updateUniformBuffers(imageIndex, sizeof(UboViewProj), &uboViewProj);
 		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
-		vkResetCommandBuffer(*m_graphicsCommandBuffer.getCommandBuffer(currentFrame), 0);
+		vkResetCommandBuffer(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 0);
 
 		recordCommands(imageIndex, registry);
 
@@ -115,7 +116,7 @@ namespace gwa {
 		};
 		submitInfo.pWaitDstStageMask = waitStages.data();				//Stages to check semaphores
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = m_graphicsCommandBuffer.getCommandBuffer(currentFrame);
+		submitInfo.pCommandBuffers = m_graphicsCommandBuffers[currentFrame].getCommandBuffer();
 		submitInfo.signalSemaphoreCount = 1;					// Number of semaphores to signal
 		submitInfo.pSignalSemaphores = &renderFinished[currentFrame];			// Semaphores to signal when command buffer finishes
 
@@ -168,10 +169,10 @@ namespace gwa {
 	void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
 	{
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
-		m_graphicsCommandBuffer.beginCommandBuffer(currentFrame, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-		m_graphicsCommandBuffer.beginRenderPass(m_renderPass.getRenderPass(), extent,
-			m_swapchainFramebuffers.getFramebuffers()[imageIndex], currentFrame);
-		m_graphicsCommandBuffer.bindPipeline(m_graphicsPipeline.getPipeline(), currentFrame);
+		m_graphicsCommandBuffers[currentFrame].beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+		m_graphicsCommandBuffers[currentFrame].beginRenderPass(m_renderPass.getRenderPass(), extent,
+			m_swapchainFramebuffers.getFramebuffers()[imageIndex]);
+		m_graphicsCommandBuffers[currentFrame].bindPipeline(m_graphicsPipeline.getPipeline());
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
@@ -180,12 +181,12 @@ namespace gwa {
 		viewport.height = (float)extent.height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
-		m_graphicsCommandBuffer.setViewport(viewport, currentFrame);
+		m_graphicsCommandBuffers[currentFrame].setViewport(viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = extent;
-		m_graphicsCommandBuffer.setScissor(scissor, currentFrame);
+		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);
 		
 		for (uint32_t i=0; i < registry.getComponentCount<TexturedMeshRenderObject>(); i++)
 		{
@@ -194,17 +195,17 @@ namespace gwa {
 			//TODO correct return types
 			VkDeviceSize offsets[2] = { 0, 0 };
 			VkBuffer vertexBuffers[2] = { meshData.vertexBuffer, meshData.normalBuffer };
-			m_graphicsCommandBuffer.bindVertexBuffer(vertexBuffers,2, offsets, currentFrame);
-			m_graphicsCommandBuffer.bindIndexBuffer(meshData.indexBuffer, currentFrame);
+			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,2, offsets);
+			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
-			m_graphicsCommandBuffer.pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, currentFrame, &renderObject->modelMatrix);
-			m_graphicsCommandBuffer.bindDescriptorSet(m_descriptorSet.getDescriptorSets()[currentFrame], m_graphicsPipeline.getPipelineLayout(), currentFrame);
+			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, &renderObject->modelMatrix);
+			m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(m_descriptorSet.getDescriptorSets()[currentFrame], m_graphicsPipeline.getPipelineLayout());
 
-			m_graphicsCommandBuffer.drawIndexed(meshData.indexCount, currentFrame);
+			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
 		
 		
-		m_graphicsCommandBuffer.endRenderPass(currentFrame);
-		m_graphicsCommandBuffer.endCommandBuffer(currentFrame);
+		m_graphicsCommandBuffers[currentFrame].endRenderPass();
+		m_graphicsCommandBuffers[currentFrame].endCommandBuffer();
 	}
 }

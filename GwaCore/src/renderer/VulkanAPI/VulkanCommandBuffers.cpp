@@ -4,32 +4,34 @@
 
 namespace gwa
 {
-	VulkanCommandBuffers::VulkanCommandBuffers(const VkDevice logicalDevice, const VkCommandPool commandPool, const uint32_t commandBufferCount)
+	VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer commandBuffer)
 	{
-		commandBuffers_.resize(commandBufferCount);
-
+		commandBuffer_ = commandBuffer;
+	}
+	VulkanCommandBuffer::VulkanCommandBuffer(VkDevice logicalDevice, VkCommandPool commandPool)
+	{
 		VkCommandBufferAllocateInfo cbAllocInfo = {};
 		cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		cbAllocInfo.commandPool = commandPool;
 		cbAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;	// Primary: Buffer you submit directly to queue. Can't be called by other buffers.
 
-		cbAllocInfo.commandBufferCount = commandBufferCount;
+		cbAllocInfo.commandBufferCount = 1;
 
-		VkResult result = vkAllocateCommandBuffers(logicalDevice, &cbAllocInfo, commandBuffers_.data());
+		VkResult result = vkAllocateCommandBuffers(logicalDevice, &cbAllocInfo, &commandBuffer_);
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffers::beginCommandBuffer(const uint32_t currentIndex, VkCommandBufferUsageFlags flags)
+	void VulkanCommandBuffer::beginCommandBuffer(VkCommandBufferUsageFlags flags)
 	{
 		VkCommandBufferBeginInfo bufferBeginInfo = {};
 		bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		bufferBeginInfo.flags = flags;
 		// Start recording commands to command buffer
-		VkResult result = vkBeginCommandBuffer(commandBuffers_[currentIndex], &bufferBeginInfo);
+		VkResult result = vkBeginCommandBuffer(commandBuffer_, &bufferBeginInfo);
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffers::beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, const uint32_t currentIndex)
+	void VulkanCommandBuffer::beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer)
 	{
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -46,63 +48,76 @@ namespace gwa
 		renderPassBeginInfo.clearValueCount = clearValuesSize;
 		renderPassBeginInfo.framebuffer = framebuffer;
 
-		vkCmdBeginRenderPass(commandBuffers_[currentIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffer_, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
-	void VulkanCommandBuffers::bindPipeline(VkPipeline pipeline, const uint32_t currentIndex)
+	void VulkanCommandBuffer::bindPipeline(VkPipeline pipeline)
 	{
-		vkCmdBindPipeline(commandBuffers_[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+		vkCmdBindPipeline(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	}
 
-	void VulkanCommandBuffers::setViewport(const VkViewport& viewport, const uint32_t currentIndex)
+	void VulkanCommandBuffer::pipelineBarrier(VkImageMemoryBarrier barrier)
 	{
-		vkCmdSetViewport(commandBuffers_[currentIndex], 0, 1, &viewport);
+		vkCmdPipelineBarrier(
+			commandBuffer_,
+			0 /* TODO */, 0 /* TODO */,
+			0,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier
+		);
 	}
 
-	void VulkanCommandBuffers::setScissor(const VkRect2D& scissor, const uint32_t currentIndex)
+	void VulkanCommandBuffer::setViewport(const VkViewport& viewport)
 	{
-		vkCmdSetScissor(commandBuffers_[currentIndex], 0, 1, &scissor);
+		vkCmdSetViewport(commandBuffer_, 0, 1, &viewport);
 	}
 
-	void VulkanCommandBuffers::endCommandBuffer(const uint32_t currentIndex)
+	void VulkanCommandBuffer::setScissor(const VkRect2D& scissor)
 	{
-		vkEndCommandBuffer(commandBuffers_[currentIndex]);
+		vkCmdSetScissor(commandBuffer_, 0, 1, &scissor);
 	}
 
-	void VulkanCommandBuffers::bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const
+	void VulkanCommandBuffer::endCommandBuffer()
 	{
-		vkCmdBindVertexBuffers(commandBuffers_[currentIndex], 0, numBuffers, vertexBuffers, offsets);
+		vkEndCommandBuffer(commandBuffer_);
 	}
 
-	void VulkanCommandBuffers::bindIndexBuffer(VkBuffer indexBuffer, const uint32_t currrentIndex) const
+	void VulkanCommandBuffer::bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets) const
 	{
-		vkCmdBindIndexBuffer(commandBuffers_[currrentIndex], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindVertexBuffers(commandBuffer_, 0, numBuffers, vertexBuffers, offsets);
 	}
 
-	void VulkanCommandBuffers::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, glm::mat4* model)
+	void VulkanCommandBuffer::bindIndexBuffer(VkBuffer indexBuffer) const
+	{
+		vkCmdBindIndexBuffer(commandBuffer_, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	}
+
+	void VulkanCommandBuffer::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model)
 	{
 		vkCmdPushConstants(
-			commandBuffers_[currentIndex],
+			commandBuffer_,
 			pipelineLayout, flags,
 			0,
 			sizeof(*model),
 			model);
 	}
 
-	void VulkanCommandBuffers::bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, const int currentIndex) 
+	void VulkanCommandBuffer::bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) 
 	{
-		vkCmdBindDescriptorSets(commandBuffers_[currentIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+		vkCmdBindDescriptorSets(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
 			0, 1, &descriptorSet, 0, nullptr);
 	}
 
-	void VulkanCommandBuffers::drawIndexed(uint32_t indexCount, const int currentIndex)
+	void VulkanCommandBuffer::drawIndexed(uint32_t indexCount)
 	{
-		vkCmdDrawIndexed(commandBuffers_[currentIndex], indexCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(commandBuffer_, indexCount, 1, 0, 0, 0);
 	}
 
-	void VulkanCommandBuffers::endRenderPass(const int currentIndex)
+	void VulkanCommandBuffer::endRenderPass()
 	{
-		vkCmdEndRenderPass(commandBuffers_[currentIndex]);
+		vkCmdEndRenderPass(commandBuffer_);
 	}
 
+	
 }

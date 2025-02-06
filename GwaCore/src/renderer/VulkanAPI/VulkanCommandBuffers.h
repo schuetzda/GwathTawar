@@ -4,29 +4,33 @@
 #include "vkTypes.h"
 namespace gwa
 {
-	class VulkanCommandBuffers
+	class VulkanCommandBuffer
 	{
 	public:
-		VulkanCommandBuffers() = default;
-		VulkanCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, const uint32_t commandBufferCount);
-		void beginCommandBuffer(const uint32_t currentIndex, VkCommandBufferUsageFlags flags);
-		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, const uint32_t currentIndex);
-		void bindPipeline(VkPipeline pipeline, const uint32_t currentIndex);
-		void setViewport(const VkViewport& viewport, const uint32_t currentIndex);
-		void setScissor(const VkRect2D& scissor, const uint32_t currentIndex);
-		void endCommandBuffer(const uint32_t currentIndex);
-		void bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets, const uint32_t currentIndex) const;
-		void bindIndexBuffer(VkBuffer indexBuffer, const uint32_t currrentIndex) const;
-		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, const uint32_t currentIndex, glm::mat4* model);
-		void bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout, const int currentIndex);
-		void drawIndexed(uint32_t indexCount, const int currentIndex);
-		void endRenderPass(const int currentIndex);
+		VulkanCommandBuffer() = default;
+		explicit VulkanCommandBuffer(VkCommandBuffer commandBuffer);
+		VulkanCommandBuffer(VkDevice logicalDevice, VkCommandPool commandPool);
+		void beginCommandBuffer(VkCommandBufferUsageFlags flags);
+		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer);
+		void bindPipeline(VkPipeline pipeline);
+		void pipelineBarrier(VkImageMemoryBarrier barrier);
+		void setViewport(const VkViewport& viewport);
+		void setScissor(const VkRect2D& scissor);
+		void endCommandBuffer();
+		void bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets) const;
+		void bindIndexBuffer(VkBuffer indexBuffer) const;
+		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model);
+		void bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout);
+		void drawIndexed(uint32_t indexCount);
+		void endRenderPass();
 
-		const VkCommandBuffer* getCommandBuffer(const int currentIndex)
+		const VkCommandBuffer* getCommandBuffer()
 		{
-			return &commandBuffers_[currentIndex];
+			return &commandBuffer_;
 		}
 	private:
-		std::vector<VkCommandBuffer> commandBuffers_ = {};
+		VkCommandBuffer commandBuffer_ = {};
 	};
+
+	std::vector <VulkanCommandBuffer> initCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, uint32_t commandBufferCount);
 }

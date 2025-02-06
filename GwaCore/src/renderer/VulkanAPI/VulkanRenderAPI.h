@@ -48,7 +48,7 @@ namespace gwa {
 		VulkanImageView m_depthBufferImageView;
 		VulkanSwapchainFramebuffers m_swapchainFramebuffers; 
 		VulkanCommandPool m_graphicsCommandPool;
-		VulkanCommandBuffers m_graphicsCommandBuffer;
+		std::vector<VulkanCommandBuffer> m_graphicsCommandBuffers;
 		VulkanUniformBuffers m_mvpUniformBuffers;
 		VulkanDescriptorSet m_descriptorSet;
 		VulkanSemaphore m_renderFinished;

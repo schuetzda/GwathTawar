@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <vulkan/vulkan.h>
 namespace gwa
 {
 	class TextureImage
@@ -8,7 +9,7 @@ namespace gwa
 		TextureImage() = default;
 		TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice);
 	private:
-		void createTextureImage(std::filesystem::path path);
+		void transitionImageLayout(VkImage image, VkFormat format, VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout);
 		
 		VkDevice logicalDevice_{0};
 	};

@@ -7,8 +7,8 @@ namespace gwa
 	{
 	public:
 		VulkanImage() = default;
-		VulkanImage(const VulkanDevice* const device, VkExtent2D extent, VkFormat format, VkImageTiling tiling, 
-			VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
+		VulkanImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, 
+			VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
 		void cleanup();
 
 		VkImage getImage() const

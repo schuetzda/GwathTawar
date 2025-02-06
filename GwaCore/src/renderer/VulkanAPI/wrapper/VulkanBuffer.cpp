@@ -1,6 +1,7 @@
 #include "VulkanBuffer.h"
 #include <cassert>
-#include "MemoryType.h"
+#include "VulkanUtility.h"
+#include <renderer/VulkanAPI/VulkanCommandBuffers.h>
 
 namespace gwa
 {
@@ -26,7 +27,7 @@ namespace gwa
 		VkMemoryAllocateInfo memoryAllocInfo = {};
 		memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		memoryAllocInfo.allocationSize = memRequirements.size;
-		memoryAllocInfo.memoryTypeIndex = MemoryType::findMemoryTypeIndex(physicalDevice, memRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flag
+		memoryAllocInfo.memoryTypeIndex = vulkanutil::findMemoryTypeIndex(physicalDevice, memRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flag
 			bufferProperties);							//VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : CPU can interact with memory
 		//VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Allows placement of data straight into buffer after mapping
 		result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &bufferMemory_);
@@ -41,4 +42,5 @@ namespace gwa
 		vkDestroyBuffer(logicalDevice_, buffer_, nullptr);
 		vkFreeMemory(logicalDevice_, bufferMemory_, nullptr);
 	}
-}
+
+	}

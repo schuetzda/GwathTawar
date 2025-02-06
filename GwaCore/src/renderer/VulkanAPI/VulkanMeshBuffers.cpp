@@ -1,7 +1,7 @@
 #include "VulkanMeshBuffers.h"
 #include <cstring>
 #include "VulkanCommandBuffers.h"
-#include "wrapper/MemoryType.h"
+#include "wrapper/VulkanUtility.h"
 namespace gwa
 {
 
@@ -32,33 +32,33 @@ namespace gwa
 		return static_cast<uint32_t>(meshBufferDataList_.size()-1);
 	}
 
-	void VulkanMeshBuffers::copyBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
+	void VulkanMeshBuffers::copyAndSubmitBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize)
 	{
 		//Create buffer
-		VulkanCommandBuffers transferCommandBuffer = VulkanCommandBuffers(logicalDevice_, transferCommandPool, 1);
-		transferCommandBuffer.beginCommandBuffer(0, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+		VulkanCommandBuffer transferCommandBuffer = VulkanCommandBuffer(logicalDevice_, transferCommandPool);
+		transferCommandBuffer.beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 		// Region of data to copy from and to
 		VkBufferCopy bufferCopyRegion = {};
 		bufferCopyRegion.srcOffset = 0;		// Where to we copy from the src
 		bufferCopyRegion.dstOffset = 0;
 		bufferCopyRegion.size = bufferSize;
 
-		vkCmdCopyBuffer(*transferCommandBuffer.getCommandBuffer(0), srcBuffer, dstBuffer, 1, &bufferCopyRegion);
+		vkCmdCopyBuffer(*transferCommandBuffer.getCommandBuffer(), srcBuffer, dstBuffer, 1, &bufferCopyRegion);
 
-		transferCommandBuffer.endCommandBuffer(0);
+		transferCommandBuffer.endCommandBuffer();
 
 		// Queue submission information
 		// TODO put somewhere else
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = transferCommandBuffer.getCommandBuffer(0);
+		submitInfo.pCommandBuffers = transferCommandBuffer.getCommandBuffer();
 
 		// For now since we only load one mesh there is no need for synchronization/ parallization
 		vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(transferQueue);
 
-		vkFreeCommandBuffers(logicalDevice_, transferCommandPool, 1, transferCommandBuffer.getCommandBuffer(0));
+		vkFreeCommandBuffers(logicalDevice_, transferCommandPool, 1, transferCommandBuffer.getCommandBuffer());
 	}
 
 	void VulkanMeshBuffers::createBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags bufferProperties)
@@ -82,7 +82,7 @@ namespace gwa
 		VkMemoryAllocateInfo memoryAllocInfo = {};
 		memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		memoryAllocInfo.allocationSize = memRequirements.size;
-		memoryAllocInfo.memoryTypeIndex = MemoryType::findMemoryTypeIndex(physicalDevice_, memRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flag
+		memoryAllocInfo.memoryTypeIndex = vulkanutil::findMemoryTypeIndex(physicalDevice_, memRequirements.memoryTypeBits,		// Index of memory type on Physical Device that has required bit flag
 			bufferProperties);							//VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : CPU can interact with memory
 		//VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : Allows placement of data straight into buffer after mapping
 		result = vkAllocateMemory(logicalDevice_, &memoryAllocInfo, nullptr, &bufferMemory);
@@ -108,7 +108,7 @@ namespace gwa
 
 		createBuffer(meshBuffer, meshBufferMemory, bufferSize, usageFlags, propertyFlags);
 
-		copyBuffer(transferQueue, transferCommandPool, stagingBuffer, meshBuffer, bufferSize);
+		copyAndSubmitBuffer(transferQueue, transferCommandPool, stagingBuffer, meshBuffer, bufferSize);
 		
 		vkDestroyBuffer(logicalDevice_, stagingBuffer, nullptr);
 		vkFreeMemory(logicalDevice_, stagingBufferMemory, nullptr);
