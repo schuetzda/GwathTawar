@@ -1,5 +1,5 @@
 #include "VulkanDescriptorSetLayout.h"
-#include <vector>
+#include <array>
 #include <stdexcept>
 #include <cassert>
 namespace gwa
@@ -14,7 +14,14 @@ namespace gwa
 		vpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		vpLayoutBinding.pImmutableSamplers = nullptr;		// For Texture: Can make sampler unchangeable by specifying layout
 
-		std::vector<VkDescriptorSetLayoutBinding> layoutBindings = { vpLayoutBinding };
+		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+		samplerLayoutBinding.binding = 1;
+		samplerLayoutBinding.descriptorCount = 1;
+		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerLayoutBinding.pImmutableSamplers = nullptr;
+		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = { vpLayoutBinding, samplerLayoutBinding};
 
 		/* NOT IN USE, for reference of Dynamic UBO
 		// Model Binding Info

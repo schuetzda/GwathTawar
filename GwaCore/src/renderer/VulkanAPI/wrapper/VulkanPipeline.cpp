@@ -30,7 +30,7 @@ namespace gwa {
 
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexCreateInfo, fragmentCreateInfo };
 
-		std::array<VkVertexInputBindingDescription, 2> bindingDescriptions = {};
+		std::array<VkVertexInputBindingDescription, 3> bindingDescriptions = {};
 		// Binding 0: Position
 		bindingDescriptions[0].binding = 0;
 		bindingDescriptions[0].stride = stride;
@@ -41,7 +41,12 @@ namespace gwa {
 		bindingDescriptions[1].stride = stride;
 		bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+		//Binding 2: Texcoords
+		bindingDescriptions[2].binding = 2;
+		bindingDescriptions[2].stride = 8;
+		bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
 		// Attribute 0: Position
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -54,7 +59,12 @@ namespace gwa {
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = 0;
 
-		// VERTEX INPUT (TODO: Put in vertex descriptions when resources are created) Vertex -> Primitives
+		// Attribute 2: Texcoords
+		attributeDescriptions[2].binding = 2;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].offset = 0;
+
 		VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
 		vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());

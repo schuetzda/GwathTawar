@@ -49,28 +49,33 @@ namespace gwa {
 
 		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		
+		
 		m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 10000.0f);
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
-		
+
+		m_texture = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), "./assets/Damaged Helmet/Default_albedo.jpg", m_graphicsCommandPool.getCommandPool());
+		m_textureView = VulkanImageView(m_device.getLogicalDevice(), m_texture.getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+
 		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
-			TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
-			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->normals, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+					TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
+			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->normals,*meshBufferMemory->texcoords, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
 			uint32_t entityID = registry.registerEntity();
 			TexturedMeshRenderObject renderObject;
 			renderObject.bufferID = id;
 			registry.addComponent<TexturedMeshRenderObject>(entityID, std::move(renderObject));
 		}
-		registry.flushComponents<TexturedMeshBufferMemory>();
+		//registry.flushComponents<TexturedMeshBufferMemory>();
 		
 		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
 		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
 
 		m_descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
-			maxFramesInFlight_, sizeof(UboViewProj));
+			maxFramesInFlight_, sizeof(UboViewProj),m_textureView.getImageView(), m_textureSampler.getImageSampler());
 
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
@@ -149,6 +154,7 @@ namespace gwa {
 	void VulkanRenderAPI::shutdown() {
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
 		
+		m_textureView.cleanup();
 		m_meshBuffers.cleanup();
 		m_drawFences.cleanup();
 		m_renderFinished.cleanup();
@@ -193,9 +199,9 @@ namespace gwa {
 			TexturedMeshRenderObject* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
-			VkDeviceSize offsets[2] = { 0, 0 };
-			VkBuffer vertexBuffers[2] = { meshData.vertexBuffer, meshData.normalBuffer };
-			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,2, offsets);
+			std::array<VkDeviceSize,3> offsets = { 0, 0, 0 };
+			VkBuffer vertexBuffers[3] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
+			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,offsets.size(), offsets.data());
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
 			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, &renderObject->modelMatrix);

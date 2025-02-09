@@ -21,6 +21,8 @@
 #include "wrapper/VulkanSemaphore.h"
 #include "wrapper/VulkanFence.h"
 #include "wrapper/VulkanUniformBuffers.h"
+#include "TextureImage.h"
+#include "wrapper/VulkanImageSampler.h"
 
 namespace gwa {
 	class VulkanRenderAPI: public RenderAPI 
@@ -55,6 +57,9 @@ namespace gwa {
 		VulkanSemaphore m_imageAvailable;
 		VulkanFence m_drawFences;
 		VulkanMeshBuffers m_meshBuffers;
+		TextureImage m_texture;
+		VulkanImageView m_textureView;
+		VulkanImageSampler m_textureSampler;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 		

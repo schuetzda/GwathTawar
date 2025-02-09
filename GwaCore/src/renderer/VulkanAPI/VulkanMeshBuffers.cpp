@@ -5,7 +5,7 @@
 namespace gwa
 {
 
-	uint32_t VulkanMeshBuffers::addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
+	uint32_t VulkanMeshBuffers::addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texcoords, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
 	{
 		MeshBufferData meshBufferData;
 		//Vertex Buffer
@@ -19,6 +19,11 @@ namespace gwa
 		const VkDeviceSize normalBufferSize = sizeof(normals[0]) * normals.size();
 		createMeshBuffer(meshBufferData.normalBuffer, normalBufferMemoryList_.back(), transferQueue, transferCommandPool, normalBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normals.data());
+
+		texcoordBufferMemoryList_.emplace_back();
+		const VkDeviceSize texcoordBufferSize = sizeof(texcoords[0]) * texcoords.size();
+		createMeshBuffer(meshBufferData.texcoordBuffer, texcoordBufferMemoryList_.back(), transferQueue, transferCommandPool, texcoordBufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texcoords.data());
 		
 		//Index Buffer
 		indexBufferMemoryList_.emplace_back();

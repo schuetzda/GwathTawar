@@ -113,7 +113,7 @@ namespace gwa
 					}
 
 					// Texcoords
-					if (texcoordAttributeIndex > 0 && curPrimitive.attributes[texcoordAttributeIndex].data->type == cgltf_type_vec2)
+					if (curPrimitive.attributes[texcoordAttributeIndex].data->type == cgltf_type_vec2)
 					{
 						convertToVector<glm::vec2, glm::vec2>(bufferMemoryMap[curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->buffer->uri],
 							*meshBufferData.texcoords, curPrimitive.attributes[texcoordAttributeIndex].data->count,

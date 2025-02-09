@@ -7,7 +7,8 @@ namespace gwa
 	{
 	public:
 		VulkanDescriptorSet() = default;
-		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize);
+		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, 
+			const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize, VkImageView textureImageView, VkSampler textureSampler);
 
 		void cleanup();
 		const std::vector<VkDescriptorSet>& getDescriptorSets() const

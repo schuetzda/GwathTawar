@@ -1,18 +1,20 @@
 #include "VulkanDescriptorSet.h"
 #include <stdexcept>
 #include <cassert>
+#include <array>
 namespace gwa
 {
 	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers,
-		const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize): logicalDevice_(logicalDevice)
+		const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize, VkImageView textureImageView, VkSampler textureSampler): logicalDevice_(logicalDevice)
 	{
 		//---DescriptorPool---
 
 		// Type of descriptors + how many DESCRIPTORS, not descriptor sets (combined makes the pool size)
-		VkDescriptorPoolSize vpPoolSize = {};
-		vpPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		vpPoolSize.descriptorCount = static_cast<uint32_t> (uniformBuffers.size());
-		std::vector<VkDescriptorPoolSize> descriptorPoolSizes = { vpPoolSize };
+		std::array<VkDescriptorPoolSize, 2> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
 		// Dynamic Model Pool for Dynamic Uniform Buffer. NOT IN USE, for reference only
 		/*VkDescriptorPoolSize modelPoolSize = {};
@@ -21,12 +23,11 @@ namespace gwa
 		descriptorPoolSizes.push_back(modelPoolSize)
 		*/
 
-		// Data to create Descriptor Pool
-		VkDescriptorPoolCreateInfo poolCreateInfo = {};
+		VkDescriptorPoolCreateInfo poolCreateInfo{};
 		poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolCreateInfo.maxSets = static_cast<uint32_t> (MAX_FRAMES_IN_FLIGHT);		// Maximum number of Descriptor Sets that can be created from pool
-		poolCreateInfo.poolSizeCount = static_cast<uint32_t> (descriptorPoolSizes.size());											// Amount of Pool Sizes being passed
-		poolCreateInfo.pPoolSizes = descriptorPoolSizes.data();										// Pool Sizes to create pool with
+		poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolCreateInfo.pPoolSizes = poolSizes.data();
+		poolCreateInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
 		// Create Descriptor Pool
 		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool_);
@@ -56,16 +57,28 @@ namespace gwa
 			vpBufferInfo.offset = 0;						// position of start of data
 			vpBufferInfo.range = dataSize;			// size of daa
 
+			VkDescriptorImageInfo imageInfo{};
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = textureImageView;
+			imageInfo.sampler = textureSampler;
+
 			// Data about connection between binding and buffer
-			VkWriteDescriptorSet vpSetWrite = {};
-			vpSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			vpSetWrite.dstSet = descriptorSets_[i];
-			vpSetWrite.dstBinding = 0;				// Binding to update matches with binding on layout/shader)
-			vpSetWrite.dstArrayElement = 0;		// Index in array to update
-			vpSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			vpSetWrite.descriptorCount = 1;		// Amount to update
-			vpSetWrite.pBufferInfo = &vpBufferInfo;// Information of buffer data to bind
-			std::vector<VkWriteDescriptorSet> setWrites = { vpSetWrite };
+			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = descriptorSets_[i];
+			descriptorWrites[0].dstBinding = 0;				// Binding to update matches with binding on layout/shader)
+			descriptorWrites[0].dstArrayElement = 0;		// Index in array to update
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[0].descriptorCount = 1;		// Amount to update
+			descriptorWrites[0].pBufferInfo = &vpBufferInfo;// Information of buffer data to bind
+
+			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[1].dstSet = descriptorSets_[i];
+			descriptorWrites[1].dstBinding = 1;
+			descriptorWrites[1].dstArrayElement = 0;
+			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorCount = 1;
+			descriptorWrites[1].pImageInfo = &imageInfo;
 
 			/* NOT IN USE, for reference of Dynamic UBO
 			VkDescriptorBufferInfo modelBufferInfo = {};
@@ -84,11 +97,8 @@ namespace gwa
 			modelSetWrite.pBufferInfo = &modelBufferInfo;
 			setWrites.push_back(modelSetWrite);*/
 
-			//List of Descriptor Set Writes
-
-
 			// Update the descriptor sets with new buffer/ binding info
-			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0, nullptr);
+			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 		}
 	}

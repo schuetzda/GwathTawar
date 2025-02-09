@@ -74,7 +74,7 @@ namespace gwa
 
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(currentPhysicalDevice, vkSurface_);
 		swapChainValid = !swapchainDetails.presentationModes.empty() && !swapchainDetails.formats.empty();
-		score = static_cast<int>(indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.geometryShader);
+		score = static_cast<int>(indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.geometryShader && deviceFeatures.samplerAnisotropy);
 
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 			score *= 1000;
@@ -141,6 +141,8 @@ namespace gwa
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 		VkPhysicalDeviceFeatures phDeviceFeatures = {};
+		phDeviceFeatures.samplerAnisotropy = VK_TRUE;
+
 		deviceCreateInfo.pEnabledFeatures = &phDeviceFeatures;		//Set tessShader, etc here
 
 		VkResult result = vkCreateDevice(vkPhysicalDevice_, &deviceCreateInfo, nullptr, &vkLogicalDevice_);
