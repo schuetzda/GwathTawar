@@ -5,10 +5,10 @@
 #include <memory>
 #include <vector>
 #include "Game.h"
-#include <resources/ResourceManager.h>
 #include "QuaternionCamera.h"
 #include "renderer/RenderAPI.h"
 #include "ecs/Registry.h"
+#include "ecs/components/RenderObjects.h"
 
 int main(int argc, char** argv);
 

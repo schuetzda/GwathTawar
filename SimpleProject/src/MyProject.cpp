@@ -4,13 +4,12 @@
 #include <io/gltfImporter.h>
 #include "ecs/Registry.h"
 #include <array>
-#include "resources/RenderObjects.h"
 
 
 void MyProject::init(gwa::ntity::Registry& registry)
 {
-	std::filesystem::path assetPath("./assets/Damaged Helmet");
-	std::string gltfFileName("DamagedHelmet.gltf");
+	std::filesystem::path assetPath("./assets/FlightHelmet");
+	std::string gltfFileName("FlightHelmet.gltf");
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
 
 }

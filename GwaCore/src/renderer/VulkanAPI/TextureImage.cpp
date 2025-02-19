@@ -1,32 +1,23 @@
 #include "TextureImage.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include "wrapper/VulkanBuffer.h"
 #include <renderer/VulkanAPI/VulkanCommandBuffers.h>
+#include <ecs/components/RenderObjects.h>
 namespace gwa
 {
-    TextureImage::TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice,VkQueue graphicsQueue, std::filesystem::path path, VkCommandPool commandPool)
+    TextureImage::TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice,VkQueue graphicsQueue, const Texture& texture, VkCommandPool commandPool)
     {
-        int texWidth{ 0 };
-        int texHeight{ 0 }, texChannels{ 0 };
-        //stbi_set_flip_vertically_on_load(false);
-        stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        assert(pixels);
+        VkDeviceSize imageSize = texture.width * texture.height * 4;
         VulkanBuffer stagingBuffer = VulkanBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         void* data;
         vkMapMemory(logicalDevice, stagingBuffer.getBufferMemory(), 0, imageSize, 0, &data);
-        memcpy(data, pixels, imageSize);
+        memcpy(data, texture.pixels.get(), imageSize);
         vkUnmapMemory(logicalDevice, stagingBuffer.getBufferMemory());
 
-        stbi_image_free(pixels);
-
-        textureImage_ = VulkanImage(logicalDevice, physicalDevice, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB,
+        textureImage_ = VulkanImage(logicalDevice, physicalDevice, texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         transitionImageLayout(logicalDevice, graphicsQueue, commandPool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(),graphicsQueue, commandPool, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(),graphicsQueue, commandPool, static_cast<uint32_t>(texture.width), static_cast<uint32_t>(texture.height));
         transitionImageLayout(logicalDevice,graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         stagingBuffer.cleanup();

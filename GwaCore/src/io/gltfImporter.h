@@ -1,10 +1,16 @@
 #pragma once
-#include "resources/ResourceManager.h"
 #include <filesystem>
 #include "ecs/Registry.h"
-#include "resources/ResourceManager.h"
+#include "ecs/components/RenderObjects.h"
+
 namespace gwa
 {
+    struct StringViewHash {
+        using is_transparent = void; // Enables heterogeneous lookup
+        size_t operator()(std::string_view sv) const noexcept {
+            return std::hash<std::string_view>{}(sv);
+        }
+    };
 	class gltfImporter
 	{
 	public:

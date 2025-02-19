@@ -52,13 +52,13 @@ namespace gwa {
 		VulkanCommandPool m_graphicsCommandPool;
 		std::vector<VulkanCommandBuffer> m_graphicsCommandBuffers;
 		VulkanUniformBuffers m_mvpUniformBuffers;
-		VulkanDescriptorSet m_descriptorSet;
+		std::vector<VulkanDescriptorSet> m_descriptorSets;
 		VulkanSemaphore m_renderFinished;
 		VulkanSemaphore m_imageAvailable;
 		VulkanFence m_drawFences;
 		VulkanMeshBuffers m_meshBuffers;
-		TextureImage m_texture;
-		VulkanImageView m_textureView;
+		std::vector<TextureImage> m_textures;
+		std::vector<VulkanImageView> m_textureViews;
 		VulkanImageSampler m_textureSampler;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};

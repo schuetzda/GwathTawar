@@ -1,5 +1,4 @@
 #pragma once
-#include "resources/ResourceManager.h"
 #include "ecs/Registry.h"
 namespace gwa
 {
