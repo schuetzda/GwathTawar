@@ -7,16 +7,22 @@
 namespace gwa::ntity
 {
 	/**
-	 * @brief 
+	 * @brief
 	 */
 	class ComponentTable
 	{
-	public:
-		ComponentTable() = default;
-		
 		template<typename Component>
-		void init(uint32_t reservedComponentsCount)		
+		struct Manager;
+	public:
+		ComponentTable() : _memoryManager(nullptr)
 		{
+
+		}
+
+		template<typename Component, typename Mgr = Manager<Component>>
+		void init(uint32_t reservedComponentsCount)
+		{
+			_memoryManager = Mgr::manage;
 			typeID_ = std::type_index(typeid(Component));
 			reservedComponentsCount_ = reservedComponentsCount;
 			componentData_ = malloc(sizeof(Component) * reservedComponentsCount_);
@@ -47,12 +53,11 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
-		template<typename Component>
 		void deleteComponent(uint32_t index)
 		{
-			assert(typeID_ == std::type_index(typeid(Component)));
-			Component* currentPointer = static_cast<Component*>(componentData_) + index;
-			delete currentPointer;
+			_Arguments args;
+			//args._obj = 
+			//_memoryManager(deleteComponent, this, )
 		}
 
 		template<typename Component>
@@ -69,9 +74,9 @@ namespace gwa::ntity
 			}
 			currentComponentsCount_ = 0;
 		}
-				
+
 		template<typename Component>
-		requires std::negation_v<std::is_fundamental<Component>>
+			requires std::negation_v<std::is_fundamental<Component>>
 		void freeTable()
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
@@ -91,11 +96,11 @@ namespace gwa::ntity
 		}
 
 		template<typename Component>
-		requires std::is_fundamental_v<Component>
+			requires std::is_fundamental_v<Component>
 		void freeTable()
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
-			if (componentData_)
+			if (componentData_ && currentComponentsCount_ > 0)
 			{
 				free(componentData_);
 			}
@@ -104,7 +109,7 @@ namespace gwa::ntity
 			currentComponentsCount_ = 0;
 			reservedComponentsCount_ = 0;
 		}
-		
+
 		uint32_t size() const
 		{
 			return currentComponentsCount_;
@@ -113,15 +118,60 @@ namespace gwa::ntity
 		bool operator==(const ComponentTable& other) const = delete;
 
 		~ComponentTable() {
-			if (componentData_) {
+			if (componentData_ && currentComponentsCount_ > 0) {
 				free(componentData_);
 			}
 		}
-	
+
+
+		void* componentData_;
 	private:
-		void* componentData_ = nullptr;
-		std::type_index typeID_{std::type_index(typeid(void))};
+		enum _Operation
+		{
+			access,
+			destroy,
+			clone,
+			info
+		};
+		union _Arguments
+		{
+			void* _obj;
+		};
+
+		void (*_memoryManager)(_Operation, ComponentTable*, _Arguments*);
+
+		template <typename Component>
+		struct Manager
+		{
+			static void manage(_Operation, ComponentTable*, _Arguments*);
+		};
+
+		std::type_index typeID_{ std::type_index(typeid(void)) };
 		uint32_t currentComponentsCount_ = 0;
 		uint32_t reservedComponentsCount_ = 0;
 	};
+
+	template <typename Component>
+	void ComponentTable::Manager<Component>::manage(_Operation operation, ComponentTable* componentTable, _Arguments* args)
+	{
+		Component* ptr = static_cast<Component*>(componentTable->componentData_);
+		switch (operation)
+		{
+		case destroy:
+			if (componentTable->componentData_)
+			{
+				for (uint32_t i = 0; i < componentTable->currentComponentsCount_; i++)
+				{
+					Component* currentPointer = ptr + i;
+					currentPointer->~Component();
+				}
+				free(componentTable->componentData_);
+			}
+			componentTable->componentData_ = nullptr;
+			componentTable->typeID_ = std::type_index(typeid(void));
+			componentTable->currentComponentsCount_ = 0;
+			componentTable->reservedComponentsCount_ = 0;
+			break;
+		}
+	}
 }

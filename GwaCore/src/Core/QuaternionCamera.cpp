@@ -14,6 +14,9 @@ namespace gwa
 		glm::vec3  direction = lookAt - position_;
 		direction = glm::normalize(direction);
 		orientation_ = glm::quatLookAt(direction, glm::vec3(0, 1, 0));
+		qPitch = glm::angleAxis(0.f, glm::vec3(1, 0, 0));
+		qYaw = glm::angleAxis(0.f, glm::vec3(0, 1, 0));
+		qRoll = glm::angleAxis(0.f, glm::vec3(0, 0, 1));
 
 		getViewMatrix();
 	}
@@ -26,20 +29,20 @@ namespace gwa
 		{
 			glm::vec2 diff = mousePosition - previousMousePos_;
 
-			glm::quat qYaw = glm::angleAxis(diff.x*0.01f, glm::vec3(0, 1, 0));
-			glm::quat qPitch = glm::angleAxis(diff.y*0.01f, glm::vec3(1, 0, 0));
+			qPitch = qPitch * glm::angleAxis(diff.y*0.01f, glm::vec3(1, 0, 0));
+		    qYaw = qYaw * glm::angleAxis(diff.x*0.01f, glm::vec3(0, 1, 0));
 
-			orientation_ = glm::normalize(qYaw) * glm::normalize(qPitch) * orientation_;
+			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
 		}
 		if (window.isKeyPressed(GWA_KEY_E))
 		{
-			glm::quat qRoll = glm::angleAxis(0.01f, glm::vec3(0, 0, 1));
-			orientation_ = glm::normalize(qRoll) * orientation_;
+			qRoll = qRoll * glm::angleAxis(0.01f, glm::vec3(0, 0, 1));
+			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
 		}
 		if (window.isKeyPressed(GWA_KEY_Q))
 		{
-			glm::quat qRoll = glm::angleAxis(-0.01f, glm::vec3(0, 0, 1));
-			orientation_ = glm::normalize(qRoll) * orientation_;
+			qRoll = qRoll * glm::angleAxis(-0.01f, glm::vec3(0, 0, 1));
+			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
 		}
 		if (window.isKeyPressed(87))
 		{
@@ -56,6 +59,14 @@ namespace gwa
 		if (window.isKeyPressed(68))
 		{
 			position_ += (glm::conjugate(orientation_) * glm::vec3(1.0f, 0.0f, 0.0f)) * cspeed_;
+		}
+		if (window.isKeyPressed(GWA_KEY_F))
+		{
+			cspeed_ += 0.001f;
+		}
+		if (window.isKeyPressed(GWA_KEY_G))
+		{
+			cspeed_ -= 0.001f;
 		}
 		previousMousePos_ = mousePosition;
 	}

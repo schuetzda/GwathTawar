@@ -17,7 +17,6 @@ namespace gwa
 		int texHeight{ 0 };
 		int texChannels{ 0 };
 		uint8_t* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-		uint64_t imageSize = texWidth * texHeight * 4;
 
 		return Texture(texWidth, texHeight, pixels);
 

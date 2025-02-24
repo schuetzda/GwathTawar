@@ -8,12 +8,12 @@ namespace gwa
 {
     struct Texture
     {
-        uint64_t width{};
-        uint64_t height{};
+        uint32_t width{};
+        uint32_t height{};
         std::unique_ptr<uint8_t> pixels{};
         
         Texture() = default;
-        Texture(uint64_t imageWidth, uint64_t imageHeight, uint8_t* pixelPtr) :width(imageWidth), height(imageHeight), pixels(std::unique_ptr<uint8_t>(pixelPtr))
+        Texture(uint32_t imageWidth, uint32_t imageHeight, uint8_t* pixelPtr) :width(imageWidth), height(imageHeight), pixels(std::unique_ptr<uint8_t>(pixelPtr))
         {
 
         }
@@ -37,7 +37,7 @@ namespace gwa
     
     struct Material
     {
-        std::unique_ptr<Texture[5]> materialTextures;
+        std::array<Texture,2> materialTextures;
         std::unique_ptr<TexturedMeshBufferMemory> uploadObjects;
         uint32_t numberOfRenderObjects;
     };

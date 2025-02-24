@@ -80,8 +80,8 @@ namespace gwa {
 
 		for (VulkanImageView imageView : m_textureViews)
 		{
-			m_descriptorSets.push_back(VulkanDescriptorSet(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
-				maxFramesInFlight_, sizeof(UboViewProj), imageView.getImageView(), m_textureSampler.getImageSampler()));
+			m_descriptorSets.emplace_back(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
+				maxFramesInFlight_, sizeof(UboViewProj), imageView.getImageView(), m_textureSampler.getImageSampler());
 		}
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);

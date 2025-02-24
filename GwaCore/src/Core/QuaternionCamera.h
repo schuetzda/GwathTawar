@@ -30,6 +30,9 @@ namespace gwa
 		glm::vec3 position_;
 		glm::quat orientation_;
 		glm::vec2 previousMousePos_;
-		const float cspeed_ = 0.05f;
+		float cspeed_ = 0.05f;
+		glm::quat qPitch;
+		glm::quat qYaw;
+		glm::quat qRoll;
 	};
 }
