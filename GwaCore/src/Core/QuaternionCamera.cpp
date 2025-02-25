@@ -32,17 +32,17 @@ namespace gwa
 			qPitch = qPitch * glm::angleAxis(diff.y*0.01f, glm::vec3(1, 0, 0));
 		    qYaw = qYaw * glm::angleAxis(diff.x*0.01f, glm::vec3(0, 1, 0));
 
-			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
+			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
 		}
 		if (window.isKeyPressed(GWA_KEY_E))
 		{
 			qRoll = qRoll * glm::angleAxis(0.01f, glm::vec3(0, 0, 1));
-			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
+			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
 		}
 		if (window.isKeyPressed(GWA_KEY_Q))
 		{
 			qRoll = qRoll * glm::angleAxis(-0.01f, glm::vec3(0, 0, 1));
-			orientation_ =  glm::normalize(qPitch) * glm::normalize(qYaw) * glm::normalize(qRoll);
+			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
 		}
 		if (window.isKeyPressed(87))
 		{

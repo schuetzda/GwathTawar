@@ -25,7 +25,7 @@ namespace gwa::ntity
 			constexpr size_t numberOfComponentTypes = sizeof...(Component);
 			sparseComponentList.resize(numberOfComponentTypes);
 			componentTables.resize(numberOfComponentTypes);
-			componentTables.reserve(1000);
+			//componentTables.reserve(1000);
 			denseComponentList.resize(numberOfComponentTypes);
 
 			for (uint32_t i = 0; i < numberOfComponentTypes; ++i)
@@ -93,7 +93,7 @@ namespace gwa::ntity
 				sparseComponentList[typeID][entity] = INVALID_ENTITY_ID;
 			}
 			denseComponentList[typeID].clear();
-			componentTables[typeID].flushTable<Component>();
+			componentTables[typeID].flushTable();
 		}
 
 		void deleteEntity(uint32_t enitityID)
