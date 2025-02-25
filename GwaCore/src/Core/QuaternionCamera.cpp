@@ -14,9 +14,17 @@ namespace gwa
 		glm::vec3  direction = lookAt - position_;
 		direction = glm::normalize(direction);
 		orientation_ = glm::quatLookAt(direction, glm::vec3(0, 1, 0));
-		qPitch = glm::angleAxis(0.f, glm::vec3(1, 0, 0));
-		qYaw = glm::angleAxis(0.f, glm::vec3(0, 1, 0));
-		qRoll = glm::angleAxis(0.f, glm::vec3(0, 0, 1));
+
+		glm::vec3 eulerAngles = glm::eulerAngles(orientation_);
+
+		float pitch = eulerAngles.x;
+		float yaw = eulerAngles.y;
+		float roll = eulerAngles.z;
+
+		// Convert extracted Euler angles back into individual quaternions
+		qPitch = glm::angleAxis(pitch, glm::vec3(1, 0, 0));
+		qYaw = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
+		qRoll = glm::angleAxis(roll, glm::vec3(0, 0, 1));
 
 		getViewMatrix();
 	}
