@@ -10,27 +10,57 @@ namespace gwa
     {
         uint32_t width{};
         uint32_t height{};
-        std::unique_ptr<uint8_t> pixels{};
+        std::unique_ptr<uint8_t[]> pixels;
         
         Texture() = default;
-        Texture(uint32_t imageWidth, uint32_t imageHeight, uint8_t* pixelPtr) :width(imageWidth), height(imageHeight), pixels(std::unique_ptr<uint8_t>(pixelPtr))
+        Texture(uint32_t imageWidth, uint32_t imageHeight, uint8_t* pixelPtr) :width(imageWidth), height(imageHeight), pixels(std::unique_ptr<uint8_t[]>(pixelPtr))
         {
 
+        }
+        Texture(const Texture& other) :width(other.width), height(other.height) 
+        {
+            if (other.pixels)
+            {
+                size_t pixelCount = width * height * 4; // Assuming 4 bytes per pixel (RGBA)
+                pixels = std::make_unique<uint8_t[]>(pixelCount);
+                std::copy(other.pixels.get(), other.pixels.get() + pixelCount, pixels.get());
+            }
+        }
+
+        Texture& operator=(const Texture& a)
+        {
+            if (this != &a) // Prevent self-assignment
+            {
+                width = a.width;
+                height = a.height;
+                size_t pixelCount = width * height * 4; // Assuming 4 bytes per pixel (RGBA)
+
+                if (a.pixels) // If the source texture has pixel data
+                {
+                    pixels = std::make_unique<uint8_t[]>(pixelCount); // Allocate new memory
+                    std::copy(a.pixels.get(), a.pixels.get() + pixelCount, pixels.get()); // Copy the data
+                }
+                else
+                {
+                    pixels.reset(); // Reset to null if source has no pixels
+                }
+            }
+            return *this;
         }
     };
 
     struct TexturedMeshBufferMemory
     {
-        std::unique_ptr<std::vector<glm::vec3>> vertices;
-        std::unique_ptr<std::vector<uint32_t>> indices;
-        std::unique_ptr<std::vector<glm::vec3>> normals;
-        std::unique_ptr<std::vector<glm::vec2>> texcoords;
+        std::vector<glm::vec3> vertices;
+        std::vector<uint32_t> indices;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec2> texcoords;
         std::array<Texture,2> materialTextures;
         TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
-            : vertices(std::make_unique<std::vector<glm::vec3>>(verticesCount)),
-            indices(std::make_unique<std::vector<uint32_t>>(indicesCount)),
-            normals(std::make_unique<std::vector<glm::vec3>>(verticesCount)),
-            texcoords(std::make_unique<std::vector<glm::vec2>>(verticesCount))
+            : vertices(std::vector<glm::vec3>(verticesCount)),
+            indices(std::vector<uint32_t>(indicesCount)),
+            normals(std::vector<glm::vec3>(verticesCount)),
+            texcoords(std::vector<glm::vec2>(verticesCount))
         {}
     };
 

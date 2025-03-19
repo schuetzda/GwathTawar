@@ -1,6 +1,7 @@
 #include "Application.h"
 #include <cassert>
 #include <renderer/RenderAPI.h>
+#include <iostream>
 namespace gwa
 {
 	std::unique_ptr<RenderAPI> Application::renderAPI = RenderAPI::Create();
@@ -12,7 +13,8 @@ namespace gwa
 	
 	void Application::init()
 	{
-		std::array<uint32_t, 2> componentEstimate{ 10, 10};
+		const std::array<uint32_t, 2> componentEstimate{ 10, 10};
+		TexturedMeshBufferMemory t(2, 2);
 		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 10);
 		m_game->init(registry);
 		renderAPI->init(&m_window, registry);

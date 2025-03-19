@@ -27,12 +27,14 @@ namespace gwa
 		 */
 		glm::mat4 getViewMatrix() const;
 	private:
+		void updateOrientationQuat();
+
 		glm::vec3 position_;
 		glm::quat orientation_;
 		glm::vec2 previousMousePos_;
 		float cspeed_ = 0.05f;
-		glm::quat qPitch;
-		glm::quat qYaw;
-		glm::quat qRoll;
+		float pitch;
+		float yaw;
+		float roll;
 	};
 }

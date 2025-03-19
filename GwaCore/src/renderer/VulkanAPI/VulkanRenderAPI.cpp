@@ -64,7 +64,7 @@ namespace gwa {
 			m_textures.push_back(textureImage);
 			m_textureViews.push_back(VulkanImageView(m_device.getLogicalDevice(), m_textures.back().getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT));
 
-			const uint32_t id = m_meshBuffers.addBuffer(*meshBufferMemory->vertices, *meshBufferMemory->normals,*meshBufferMemory->texcoords, *meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+			const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals,meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
 			uint32_t entityID = registry.registerEntity();
 			TexturedMeshRenderObject renderObject;
 			renderObject.bufferID = id;

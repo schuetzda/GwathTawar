@@ -20,12 +20,12 @@ namespace gwa::ntity
 		
 		Registry() = default;
 		template<typename... Component>
+			requires std::conjunction_v<std::is_copy_constructible<std::decay_t<Component>>...>
 		void initComponentList(const std::array<uint32_t, sizeof...(Component)>& expectedNumberOfComponents, uint32_t expectedNumberOfEntities)
 		{
 			constexpr size_t numberOfComponentTypes = sizeof...(Component);
 			sparseComponentList.resize(numberOfComponentTypes);
 			componentTables.resize(numberOfComponentTypes);
-			//componentTables.reserve(1000);
 			denseComponentList.resize(numberOfComponentTypes);
 
 			for (uint32_t i = 0; i < numberOfComponentTypes; ++i)
@@ -83,6 +83,17 @@ namespace gwa::ntity
 			componentTables[typeID].addComponent<Component>(std::forward<Component>(component));
 		}
 
+		template<typename Component, typename ...Args>
+		void emplace_back(uint32_t entityID, Args&&... args)
+		{
+			const uint32_t typeID = TypeIDGenerator::type<Component>();
+
+			assert(typeID < denseComponentList.size());
+			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
+			sparseComponentList[typeID][entityID] = static_cast<uint32_t>(denseComponentList[typeID].size() - 1);
+			componentTables[typeID].emplace_back<Component>(std::forward<Args>(args)...);
+		}
+
 		template<typename Component>
 		void flushComponents()
 		{
@@ -93,7 +104,7 @@ namespace gwa::ntity
 				sparseComponentList[typeID][entity] = INVALID_ENTITY_ID;
 			}
 			denseComponentList[typeID].clear();
-			componentTables[typeID].flushTable();
+			componentTables[typeID].reset();
 		}
 
 		void deleteEntity(uint32_t enitityID)
@@ -142,7 +153,7 @@ namespace gwa::ntity
 			for (uint32_t typeID : typeIDs)
 			{
 				uint32_t typeSize = static_cast<uint32_t>(denseComponentList[typeID].size());
-				if (minSize > denseComponentList[typeID].size())
+				if (minSize > typeSize)
 				{
 					minSizeType = typeID;
 				}

@@ -47,24 +47,6 @@ namespace gwa
 				bufferMemoryMap.emplace(key, FileReader::readBinaryFile<std::byte>(bufferPath));
 			}
 		}
-
-		// Read textures
-		std::vector<Texture> imageTextures(gltfDataPtr->textures_count);
-		for (uint32_t i = 0; i < gltfDataPtr->textures_count; i++)
-		{
-			std::filesystem::path imageURI(gltfDataPtr->textures[i].image->uri);
-			imageURI = assetDirectory / imageURI;
-			if (!std::filesystem::exists(imageURI))
-			{
-				std::cerr << "Error during gltfImport! Texture path:" << imageURI.string() << " does not exist /n";
-				imageTextures[i] = Texture(0, 0, nullptr);
-			}
-			else
-			{
-					
-			}
-		}
-
 		
 		for (int meshIndex = 0; meshIndex < gltfDataPtr->meshes_count; ++meshIndex)
 		{
@@ -95,7 +77,7 @@ namespace gwa
 						texcoordAttributeIndex = attributeIndex;
 						break;
 					default:
-						std::cerr << "Primitive type: " << curPrimitive.attributes[attributeIndex].name << " not supported \n";
+						std::cerr << " Primitive type: " << curPrimitive.attributes[attributeIndex].name << " not supported \n";
 						break;
 					}
 				}
@@ -108,7 +90,7 @@ namespace gwa
 					//Position
 					if (curPrimitive.attributes[positionAttributeIndex].data->type == cgltf_type_vec3) {
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[positionAttributeIndex].data->buffer_view->buffer->uri],
-							*meshBufferData.vertices, curPrimitive.attributes[positionAttributeIndex].data->count,
+							meshBufferData.vertices, curPrimitive.attributes[positionAttributeIndex].data->count,
 							curPrimitive.attributes[positionAttributeIndex].data->buffer_view->offset
 						+ curPrimitive.attributes[positionAttributeIndex].data->offset);
 					}
@@ -121,14 +103,14 @@ namespace gwa
 					if (curPrimitive.indices->component_type == cgltf_component_type_r_32u)
 					{
 						convertToVector<uint32_t, uint32_t>(bufferMemoryMap[curPrimitive.indices->buffer_view->buffer->uri],
-							*meshBufferData.indices, curPrimitive.indices->count,
+							meshBufferData.indices, curPrimitive.indices->count,
 							curPrimitive.indices->buffer_view->offset
 							+ curPrimitive.indices->offset);
 					}
 					else if (curPrimitive.indices->component_type == cgltf_component_type_r_16u)
 					{
 						convertToVector<uint_least16_t, uint32_t>(bufferMemoryMap[curPrimitive.indices->buffer_view->buffer->uri],
-							*meshBufferData.indices, curPrimitive.indices->count,
+							meshBufferData.indices, curPrimitive.indices->count,
 							curPrimitive.indices->buffer_view->offset
 						+ curPrimitive.indices->offset);
 					}
@@ -141,7 +123,7 @@ namespace gwa
 					if (curPrimitive.attributes[normalAttributeIndex].data->type == cgltf_type_vec3)
 					{
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[normalAttributeIndex].data->buffer_view->buffer->uri],
-							*meshBufferData.normals, curPrimitive.attributes[normalAttributeIndex].data->count,
+							meshBufferData.normals, curPrimitive.attributes[normalAttributeIndex].data->count,
 							curPrimitive.attributes[normalAttributeIndex].data->buffer_view->offset
 							+ curPrimitive.attributes[normalAttributeIndex].data->offset);
 					}
@@ -150,7 +132,7 @@ namespace gwa
 					if (curPrimitive.attributes[texcoordAttributeIndex].data->type == cgltf_type_vec2)
 					{
 						convertToVector<glm::vec2, glm::vec2>(bufferMemoryMap[curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->buffer->uri],
-							*meshBufferData.texcoords, curPrimitive.attributes[texcoordAttributeIndex].data->count,
+							meshBufferData.texcoords, curPrimitive.attributes[texcoordAttributeIndex].data->count,
 							curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->offset
 							+ curPrimitive.attributes[texcoordAttributeIndex].data->offset);
 					}

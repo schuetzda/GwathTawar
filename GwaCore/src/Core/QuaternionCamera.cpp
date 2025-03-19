@@ -17,14 +17,9 @@ namespace gwa
 
 		glm::vec3 eulerAngles = glm::eulerAngles(orientation_);
 
-		float pitch = eulerAngles.x;
-		float yaw = eulerAngles.y;
-		float roll = eulerAngles.z;
-
-		// Convert extracted Euler angles back into individual quaternions
-		qPitch = glm::angleAxis(pitch, glm::vec3(1, 0, 0));
-		qYaw = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
-		qRoll = glm::angleAxis(roll, glm::vec3(0, 0, 1));
+		pitch = eulerAngles.x;
+		yaw = eulerAngles.y;
+		roll = eulerAngles.z;
 
 		getViewMatrix();
 	}
@@ -36,21 +31,25 @@ namespace gwa
 		if (window.isMousePressed(0))
 		{
 			glm::vec2 diff = mousePosition - previousMousePos_;
+			pitch += glm::radians(diff.y*0.5f);
+			yaw += glm::radians(diff.x*0.5f);
 
-			qPitch = qPitch * glm::angleAxis(diff.y*0.01f, glm::vec3(1, 0, 0));
-		    qYaw = qYaw * glm::angleAxis(diff.x*0.01f, glm::vec3(0, 1, 0));
+			pitch = fmod(pitch, 2 * glm::pi<float>());
+			yaw = fmod(yaw, 2 * glm::pi<float>());
 
-			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
+			updateOrientationQuat();
 		}
 		if (window.isKeyPressed(GWA_KEY_E))
 		{
-			qRoll = qRoll * glm::angleAxis(0.01f, glm::vec3(0, 0, 1));
-			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
+			roll += glm::radians(0.1f);
+
+			updateOrientationQuat();
 		}
 		if (window.isKeyPressed(GWA_KEY_Q))
 		{
-			qRoll = qRoll * glm::angleAxis(-0.01f, glm::vec3(0, 0, 1));
-			orientation_ =  glm::normalize(qRoll) * glm::normalize(qPitch) * glm::normalize(qYaw);
+			roll -= glm::radians(0.1f);
+
+			updateOrientationQuat();
 		}
 		if (window.isKeyPressed(87))
 		{
@@ -83,5 +82,13 @@ namespace gwa
 		glm::mat4 viewMatrix = glm::mat4_cast(orientation_);
 		viewMatrix = glm::translate(viewMatrix, -position_);
 		return viewMatrix;
+	}
+	void QuaternionCamera::updateOrientationQuat()
+	{
+		glm::quat qPitch = glm::angleAxis(pitch, glm::vec3(1, 0, 0));
+		glm::quat qYaw = glm::angleAxis(yaw, glm::vec3(0, 1, 0));
+		glm::quat qRoll = glm::angleAxis(roll, glm::vec3(0, 0, 1));
+
+		orientation_ = glm::normalize(qRoll * qPitch * qYaw);
 	}
 }
