@@ -136,7 +136,7 @@ namespace gwa::ntity
 			{
 				Component* currentPointer = static_cast<Component*>(componentData_) + i;
 				Component* newComponentPtr = static_cast<Component*>(newPtr) + i;
-				new (newComponentPtr) Component(std::move(*currentPointer));
+				new (newComponentPtr) Component(*currentPointer);
 				currentPointer->~Component();
 			}
 			free(componentData_);

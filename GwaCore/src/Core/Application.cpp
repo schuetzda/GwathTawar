@@ -15,9 +15,10 @@ namespace gwa
 	{
 		const std::array<uint32_t, 2> componentEstimate{ 10, 10};
 		TexturedMeshBufferMemory t(2, 2);
-		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 10);
+		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 1000);
 		m_game->init(registry);
 		renderAPI->init(&m_window, registry);
+		registry.addComponent<float>(1, 1.2f);
 	}
 
 	void Application::run() 

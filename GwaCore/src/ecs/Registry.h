@@ -28,13 +28,14 @@ namespace gwa::ntity
 			componentTables.resize(numberOfComponentTypes);
 			denseComponentList.resize(numberOfComponentTypes);
 
+
 			for (uint32_t i = 0; i < numberOfComponentTypes; ++i)
 			{
 				sparseComponentList[i].reserve(expectedNumberOfEntities);
 				denseComponentList[i].reserve(expectedNumberOfComponents[i]);
 			}
 
-			(..., componentTables[TypeIDGenerator::type<Component>()].init<Component>(expectedNumberOfComponents[TypeIDGenerator::type<Component>()]));
+			(..., componentTables[TypeIDGenerator::type<Component>(true)].init<Component>(expectedNumberOfComponents[TypeIDGenerator::type<Component>(true)]));
 		}
 
 		uint32_t registerEntity()
@@ -58,8 +59,7 @@ namespace gwa::ntity
 		template<typename Component>
 		void addComponentTable(uint32_t expectedNumberOfComponents)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
-			assert(typeID == componentTables.size());
+			assert(TypeIDGenerator::type<Component>(true) == componentTables.size());
 			
 			sparseComponentList.emplace_back();
 			sparseComponentList.back().assign(ntityIDCounter, INVALID_ENTITY_ID);
@@ -75,8 +75,7 @@ namespace gwa::ntity
 		template<typename Component>
 		void addComponent(uint32_t entityID, Component&& component)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
-
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			assert(typeID < denseComponentList.size());
 			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
 			sparseComponentList[typeID][entityID] = static_cast<uint32_t>(denseComponentList[typeID].size() - 1);
@@ -86,7 +85,7 @@ namespace gwa::ntity
 		template<typename Component, typename ...Args>
 		void emplace_back(uint32_t entityID, Args&&... args)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 
 			assert(typeID < denseComponentList.size());
 			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
@@ -97,7 +96,7 @@ namespace gwa::ntity
 		template<typename Component>
 		void flushComponents()
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 
 			for (const uint32_t entity : denseComponentList[typeID])
 			{
@@ -115,7 +114,7 @@ namespace gwa::ntity
 		template<typename Component>
 		std::span<const uint32_t> getEntities()
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			return std::span<const uint32_t>(denseComponentList[typeID]);
 		}
 
@@ -123,21 +122,21 @@ namespace gwa::ntity
 		template<typename Component>
 		size_t getComponentCount()
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			return denseComponentList[typeID].size();
 		}
 
 		template<typename Component>
 		Component* getComponent(uint32_t index)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			return componentTables[typeID].getComponent<Component>(index);
 		}
 
 		template<typename Component>
 		std::span<Component> getComponents()
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			Component* startingComponent = componentTables[typeID].getComponent<Component>(0);
 			return std::span<Component>(startingComponent, componentTables[typeID].size());
 		}
@@ -146,7 +145,7 @@ namespace gwa::ntity
 		std::vector<uint32_t> getEntities()
 		{
 			constexpr size_t numberOfComponentTypes = sizeof...(Component);
-			std::array<uint32_t, numberOfComponentTypes> typeIDs = { TypeIDGenerator::type<Component>()... };
+			std::array<uint32_t, numberOfComponentTypes> typeIDs = { TypeIDGenerator::type<Component>(false)... };
 
 			uint32_t minSizeType = 0;
 			uint32_t minSize = std::numeric_limits<uint32_t>::max();
@@ -182,7 +181,7 @@ namespace gwa::ntity
 		template <typename Component, typename Func>
 		void each(Func&& func)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			for (uint32_t i = 0; i < componentTables[typeID].size(); ++i)
 			{
 				Component * const component = componentTables[typeID].getComponent(i);
@@ -193,7 +192,7 @@ namespace gwa::ntity
 		template<typename Component>
 		std::pair<Component*, uint32_t> getComponentWithEntity(uint32_t index)
 		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			uint32_t entityID = denseComponentList[typeID][index];
 			Component* component = componentTables[typeID].getComponent<Component>(index);
 			return std::pair<Component*, uint32_t>(component, entityID);
