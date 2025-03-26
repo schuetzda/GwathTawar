@@ -77,7 +77,7 @@ namespace gwa
 						texcoordAttributeIndex = attributeIndex;
 						break;
 					default:
-						std::cerr << " Primitive type: " << curPrimitive.attributes[attributeIndex].name << " not supported \n";
+						//std::cerr << " Primitive type: " << curPrimitive.attributes[attributeIndex].name << " not supported \n";
 						break;
 					}
 				}
@@ -85,7 +85,6 @@ namespace gwa
 				//TexturedMesh
 				if (containsIndices && positionAttributeIndex >= 0 && normalAttributeIndex >= 0)
 				{
-					//TODO allocate properly
 					TexturedMeshBufferMemory meshBufferData = TexturedMeshBufferMemory(curPrimitive.attributes[positionAttributeIndex].data->count, curPrimitive.indices->count);
 					//Position
 					if (curPrimitive.attributes[positionAttributeIndex].data->type == cgltf_type_vec3) {
