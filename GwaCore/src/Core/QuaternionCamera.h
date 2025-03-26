@@ -32,7 +32,7 @@ namespace gwa
 		glm::vec3 position_;
 		glm::quat orientation_;
 		glm::vec2 previousMousePos_;
-		float cspeed_ = 0.05f;
+		float cspeed_ = 0.001f;
 		float pitch;
 		float yaw;
 		float roll;

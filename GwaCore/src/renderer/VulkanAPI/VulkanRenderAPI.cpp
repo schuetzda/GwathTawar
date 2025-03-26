@@ -204,7 +204,8 @@ namespace gwa {
 		scissor.extent = extent;
 		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);
 		
-		for (uint32_t i=0; i < registry.getComponentCount<TexturedMeshRenderObject>(); i++)
+		const size_t componentCount = registry.getComponentCount<TexturedMeshRenderObject>();
+		for (uint32_t i=0; i < componentCount; i++)
 		{
 			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);

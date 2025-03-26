@@ -138,6 +138,8 @@ namespace gwa
 					}
 
 					//Textures
+					//NOTE Right now all textures get loaded before creating the descriptor sets. To reduce maximum memory use you can load one texture at a directly before creating the descriptor set
+					// and realase it directly after
 					if (curPrimitive.material->has_pbr_metallic_roughness)
 					{
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
