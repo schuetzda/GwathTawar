@@ -9,7 +9,7 @@
 		{
 		public:
 			VulkanPipeline() = default;
-			VulkanPipeline(VkDevice logicalDevice, uint32_t stride, const std::vector<uint32_t>& attributeDescriptionOffsets, VkRenderPass renderPass, 
+			VulkanPipeline(VkDevice logicalDevice, uint32_t stride, const std::array<uint32_t,2>& attributeDescriptionOffsets, VkRenderPass renderPass, 
 				const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout);
 			void cleanup();
 			VkPipeline getPipeline() const

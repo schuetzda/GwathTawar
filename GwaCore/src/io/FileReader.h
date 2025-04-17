@@ -18,10 +18,7 @@ namespace gwa
         {
             std::ifstream file(filename.c_str(), std::ios::binary | std::ios::ate);
 
-            if (!file.is_open())
-            {
-                throw std::runtime_error("Failed to open a file!");
-            }
+            assert(file.is_open());
 
             size_t fileSize = (size_t)file.tellg();
 

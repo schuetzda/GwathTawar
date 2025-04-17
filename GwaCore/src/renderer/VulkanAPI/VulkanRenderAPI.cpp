@@ -37,7 +37,7 @@ namespace gwa {
 
 		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
-		std::vector<uint32_t> offset = { 0, 0 }; //TODO move
+		std::array<uint32_t,2> offset = { 0, 0 }; //TODO move
 		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), sizeof(glm::vec3), offset, m_renderPass.getRenderPass(), m_swapchain.getSwapchainExtent(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
 
 		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
@@ -68,7 +68,7 @@ namespace gwa {
 			uint32_t entityID = registry.registerEntity();
 			TexturedMeshRenderObject renderObject;
 			renderObject.bufferID = id;
-			registry.addComponent<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+			registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
 		}
 		
 		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
@@ -110,6 +110,7 @@ namespace gwa {
 		{
 			assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 		}
+		
 
 		m_mvpUniformBuffers.updateUniformBuffers(imageIndex, sizeof(UboViewProj), &uboViewProj);
 		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
@@ -154,7 +155,6 @@ namespace gwa {
 			assert(result == VK_SUCCESS);
 		}
 		currentFrame = (currentFrame + 1) % maxFramesInFlight_;
-
 	}
 
 	void VulkanRenderAPI::shutdown() {
@@ -205,14 +205,16 @@ namespace gwa {
 		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);
 		
 		const size_t componentCount = registry.getComponentCount<TexturedMeshRenderObject>();
+		const std::span<const uint32_t> entities = registry.getEntities<TexturedMeshRenderObject>();
 		for (uint32_t i=0; i < componentCount; i++)
 		{
-			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(i);
+			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entities[i]);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
-			std::array<VkDeviceSize,3> offsets = { 0, 0, 0 };
-			VkBuffer vertexBuffers[3] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
-			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,offsets.size(), offsets.data());
+			constexpr uint32_t vertexBufferSize = 3;
+			std::array<VkDeviceSize, vertexBufferSize> offsets = { 0, 0, 0 };
+			const VkBuffer vertexBuffers[vertexBufferSize] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
+			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,static_cast<uint32_t>(offsets.size()), offsets.data());
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
 			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, &renderObject->modelMatrix);

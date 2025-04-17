@@ -16,18 +16,18 @@ namespace gwa::ntity
 		struct Manager;
 	public:
 		/**
-		 * @brief Initializes empty component table without a specific type.
+		 * @brief Initializes an empty component table without a specific type.
 		 */
 		ComponentTable() : _memoryManager(nullptr), componentData_(nullptr)
 		{
 
 		}
-		
+
 		/**
 		*@brief Initializes the table for a specific component type.
 		* @tparam Component The type of the components stored in this table.
 		* @tparam Mgr The memory manager responsible for handling component lifecycle.
-		* @param reservedComponentsCount The initial number of reserved component slots.
+		* @param reservedComponentsCount The expected number of component that can be hold without a memory reallocation
 		*/
 		template<typename Component, typename Mgr = Manager<Component>>
 			requires std::is_copy_constructible_v<std::decay_t<Component>>
@@ -44,7 +44,7 @@ namespace gwa::ntity
 		 * @param other The table being moved.
 		*/
 		ComponentTable(ComponentTable&& other) noexcept
-			:typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_)
+			:typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_), componentData_(nullptr)
 		{
 			if (other._memoryManager == nullptr)
 			{
@@ -60,10 +60,9 @@ namespace gwa::ntity
 
 		/**
 		 * @brief Retrieves a pointer to a component at the specified index.
-		 * @tparam Component The expected component type. Has to be matching to the type used at init().
 		 * @param index The index of the component in the table.
-		 * @return Pointer to the component, or assertion failure if the type or index is invalid.
-		*/
+		 * @return Pointer to the component
+		 */
 		template <typename Component>
 		Component* getComponent(uint32_t index)
 		{
@@ -72,13 +71,39 @@ namespace gwa::ntity
 			return static_cast<Component*>(componentData_) + index;
 		}
 
+				
+		template<typename Component, typename... Args>
+		bool try_emplace(uint32_t entity, Args&&... args)
+		{
+			if (typeID_ == std::type_index(typeid(Component)) && entity < size())
+			{
+				return false;
+			}
+
+			Component const* currentPointer = static_cast<Component*>(componentData_) + entity;
+			new(currentPointer) Component(std::forward<Component, Args>(args)...);
+			return currentPointer != nullptr;
+		}
+		
 		/**
-		 * @brief Adds a new component to the table, expanding memory if necessary.
-		* @tparam Component The type of the component being added.
-		* @param component The component instance to be added.
+		 * @brief Adds a new component to the end of the table, reallocating memory if necessary.
+		* @param component The component to be added.
 		*/
-		template<typename Component>
-		void addComponent(Component&& component)
+		template<typename Component> requires std::is_copy_assignable_v<Component>
+		void emplace_back(Component& component)
+		{
+			assert(typeID_ == std::type_index(typeid(Component)));
+			if (currentComponentsCount_ >= reservedComponentsCount_)
+			{
+				grow<Component>();
+			}
+			Component* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
+			*currentPointer = component;			
+			currentComponentsCount_++;
+		}
+
+		template<typename Component> requires std::is_move_constructible_v<Component>
+		void emplace_back(Component&& component)
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
 			if (currentComponentsCount_ >= reservedComponentsCount_)
@@ -90,7 +115,8 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
-		template<typename Component, typename... Args>
+		
+		template<typename Component, typename... Args> requires std::is_constructible_v<Component, Args...>
 		void emplace_back(Args&&... args)
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
@@ -98,7 +124,7 @@ namespace gwa::ntity
 			{
 				grow<Component>();
 			}
-			Component* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
+			Component const* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
 			new(currentPointer) Component(std::forward<Args>(args)...);
 			currentComponentsCount_++;
 		}
@@ -111,10 +137,10 @@ namespace gwa::ntity
 		bool operator==(const ComponentTable& other) const = delete;
 
 		~ComponentTable() {
-			reset();
+			clear();
 		}
 
-		void reset()
+		void clear()
 		{
 			if (_memoryManager != nullptr)
 				_memoryManager(destroy, this, nullptr);
@@ -125,6 +151,25 @@ namespace gwa::ntity
 			reservedComponentsCount_ = 0;
 		}
 
+		void* begin()
+		{
+			return componentData_;
+		}
+
+		void* end()
+		{
+			_Arguments arg;
+			_memoryManager(ending, this, &arg);
+			return arg._obj;
+		}
+
+		template<typename Component>
+		struct ComponentIterator
+		{
+			static ComponentIterator<Component> begin();
+			static ComponentIterator<Component> end();
+			Component* current;
+		};
 
 	private:
 		template<typename Component>
@@ -146,7 +191,8 @@ namespace gwa::ntity
 		{
 			destroy,
 			transfer,
-			clone
+			clone,
+			ending
 		};
 		union _Arguments
 		{
@@ -192,6 +238,9 @@ namespace gwa::ntity
 			const_cast<ComponentTable*>(componentTable)->_memoryManager = nullptr;
 			break;
 		case clone:
+			break;
+		case ending:
+			args->_obj = const_cast<Component*>(ptr + componentTable->size());
 			break;
 		}
 	}

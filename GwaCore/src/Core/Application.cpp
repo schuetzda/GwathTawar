@@ -25,8 +25,8 @@ namespace gwa
 		float lasttime = 0.f;
 		while (!m_window.shouldClose())
 		{
-			float time = m_window.getTime();
-			float timestep = time - lasttime;
+			const float time = m_window.getTime();
+			const float timestep = time - lasttime;
 			lasttime = time;
 			
 			m_window.update();

@@ -53,7 +53,6 @@ namespace gwa
 		transferCommandBuffer.endCommandBuffer();
 
 		// Queue submission information
-		// TODO put somewhere else
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;

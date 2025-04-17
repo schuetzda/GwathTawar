@@ -29,20 +29,18 @@ namespace gwa
 
         Texture& operator=(const Texture& a)
         {
-            if (this != &a) // Prevent self-assignment
+            if (this != &a)             
             {
                 width = a.width;
                 height = a.height;
-                size_t pixelCount = width * height * 4; // Assuming 4 bytes per pixel (RGBA)
-
-                if (a.pixels) // If the source texture has pixel data
-                {
-                    pixels = std::make_unique<uint8_t[]>(pixelCount); // Allocate new memory
-                    std::copy(a.pixels.get(), a.pixels.get() + pixelCount, pixels.get()); // Copy the data
+                size_t pixelCount = width * height * 4; 
+                if (a.pixels)                {
+                    pixels = std::make_unique<uint8_t[]>(pixelCount);
+                    std::copy(a.pixels.get(), a.pixels.get() + pixelCount, pixels.get()); 
                 }
                 else
                 {
-                    pixels.reset(); // Reset to null if source has no pixels
+                    pixels.reset();
                 }
             }
             return *this;

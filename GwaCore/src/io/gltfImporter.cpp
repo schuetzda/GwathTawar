@@ -154,7 +154,7 @@ namespace gwa
 					}
 					
 					uint32_t meshEntity = registry.registerEntity();
-					registry.addComponent<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
+					registry.emplace<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
 				}
 			}
 		}

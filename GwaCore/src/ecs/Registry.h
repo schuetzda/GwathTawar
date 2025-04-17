@@ -10,10 +10,13 @@
 #include <utility>
 #include <span>
 #include <ranges>
+#include "SparseSet.h"
 
 namespace gwa::ntity
 {
-	constexpr uint32_t INVALID_ENTITY_ID = std::numeric_limits<uint32_t>::max();
+	template<typename... Components>
+	class ComponentView;
+
 	class Registry
 	{
 	public:
@@ -24,20 +27,15 @@ namespace gwa::ntity
 		void initComponentList(const std::array<uint32_t, sizeof...(Component)>& expectedNumberOfComponents, uint32_t expectedNumberOfEntities)
 		{
 			constexpr size_t numberOfComponentTypes = sizeof...(Component);
-			sparseComponentList.resize(numberOfComponentTypes);
-			componentTables.resize(numberOfComponentTypes);
-			denseComponentList.resize(numberOfComponentTypes);
+			sparseSets.resize(numberOfComponentTypes);
 
-
-			for (uint32_t i = 0; i < numberOfComponentTypes; ++i)
-			{
-				sparseComponentList[i].reserve(expectedNumberOfEntities);
-				denseComponentList[i].reserve(expectedNumberOfComponents[i]);
-			}
-
-			(..., componentTables[TypeIDGenerator::type<Component>(true)].init<Component>(expectedNumberOfComponents[TypeIDGenerator::type<Component>(true)]));
+			(..., sparseSets[TypeIDGenerator::type<Component>(true)].init<Component>(expectedNumberOfComponents[TypeIDGenerator::type<Component>(true)], expectedNumberOfEntities));
 		}
 
+		/**
+		 * @brief Register a new Entity
+		 * @return The ID of the created Entity
+		 */
 		uint32_t registerEntity()
 		{
 			if (!deletedEntities_.empty())
@@ -48,154 +46,141 @@ namespace gwa::ntity
 			}
 			uint32_t id = getNewEntityID();
 
-			for (auto& sparseList : sparseComponentList)
+			for (auto& sparseSet : sparseSets)
 			{
-				sparseList.push_back(INVALID_ENTITY_ID);
-				assert(sparseList.size() == id + 1);
+				sparseSet.addEmptyEntity(id);
 			}
 			return id;
 		}
 
+		/**
+		 * @brief Add a new table of Components to the ECS system
+		 * @tparam Component type of the Components
+		 * @param expectedNumberOfComponents Expected number that will be reserved in the datastructure
+		 */
 		template<typename Component>
-		void addComponentTable(uint32_t expectedNumberOfComponents)
+		void initNewComponent(uint32_t expectedNumberOfComponents, uint32_t expectedNumberOfEntites = 0)
 		{
-			assert(TypeIDGenerator::type<Component>(true) == componentTables.size());
-			
-			sparseComponentList.emplace_back();
-			sparseComponentList.back().assign(ntityIDCounter, INVALID_ENTITY_ID);
+			assert(TypeIDGenerator::type<Component>(true) == sparseSets.size());
 
-			denseComponentList.emplace_back();
-			denseComponentList.back().reserve(expectedNumberOfComponents);
-
-			componentTables.emplace_back();
-			componentTables.back().init<Component>(expectedNumberOfComponents);
+			sparseSets.emplace_back();
+			sparseSets.back().init<Component>(expectedNumberOfComponents, expectedNumberOfEntites, ntityIDCounter);		
 		}
 
-
-		template<typename Component>
-		void addComponent(uint32_t entityID, Component&& component)
+		/**
+		 * @brief Assign a component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
+		 * @tparam Component Type of the component. Adding new component types without previous initializiation results in an assertion error.
+		 * @param entityID Entity Index
+		 * @param component Component value to be assigned
+		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
+		 */
+		template<typename Component> requires std::is_move_constructible_v<Component>
+		void emplace(uint32_t entityID, Component&& component)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			assert(typeID < denseComponentList.size());
-			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
-			sparseComponentList[typeID][entityID] = static_cast<uint32_t>(denseComponentList[typeID].size() - 1);
-			componentTables[typeID].addComponent<Component>(std::forward<Component>(component));
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].emplace<Component>(entityID, std::forward<Component>(component));
 		}
 
-		template<typename Component, typename ...Args>
-		void emplace_back(uint32_t entityID, Args&&... args)
+		/**
+		 * @brief Assign a trivial component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
+		 * @tparam Component Type of the component. Adding new component types without previous initializiation results in an assertion error. The type has to be trivially copyable.
+		 * @param entityID Entity Index
+		 * @param component Component value to be assigned
+		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
+		 */
+		template<typename Component> requires std::is_copy_assignable_v<Component>
+		void emplace(uint32_t entityID, Component& component)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-
-			assert(typeID < denseComponentList.size());
-			denseComponentList[typeID].push_back(static_cast<uint32_t>(sparseComponentList[typeID].size() - 1));
-			sparseComponentList[typeID][entityID] = static_cast<uint32_t>(denseComponentList[typeID].size() - 1);
-			componentTables[typeID].emplace_back<Component>(std::forward<Args>(args)...);
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].emplace<Component>(entityID, component);
 		}
 
+		/**
+		 * @brief  Assign a component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
+		 * @tparam Component  Type of the component. Adding new component types without previous initializiation results in an assertion error.
+		 * @tparam ...Args 
+		 * @param entityID Entity Index 
+		 * @param ...args Constructor parameters of the given component type
+		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false 
+		 */
+		template<typename Component, typename ...Args> requires std::is_constructible_v<Component, Args...>
+		bool emplace(uint32_t entityID, Args&&... args)
+		{
+			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
+			assert(typeID < sparseSets.size());
+			sparseSets[typeID].emplace<Component, Args...>(entityID, std::forward<Args>(args)...);
+		}
+
+		/**
+		 * @brief Removes all components of a certain type from all entities
+		 * @tparam Component to be removed from all entities
+		 */
 		template<typename Component>
 		void flushComponents()
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-
-			for (const uint32_t entity : denseComponentList[typeID])
-			{
-				sparseComponentList[typeID][entity] = INVALID_ENTITY_ID;
-			}
-			denseComponentList[typeID].clear();
-			componentTables[typeID].reset();
+			assert(typeID < sparseSets.size());
+			sparseSets[typeID].clearComponents();
 		}
 
+		/**
+		 * @brief Delete an entity and add the ID to the pool of reusable entities
+		 * @param enitityID 
+		 */
 		void deleteEntity(uint32_t enitityID)
 		{
+			//TODO manage life cycle of pending entity Components
 			deletedEntities_.push_back(enitityID);
 		}
 
+		/**
+		 * @brief 
+		 * @tparam Component Type of the Component
+		 * @return span of all entities that have an assigned Component of the given type
+		 */
 		template<typename Component>
 		std::span<const uint32_t> getEntities()
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			return std::span<const uint32_t>(denseComponentList[typeID]);
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].getDenseList();
 		}
-
 		
+		/**
+		 * @brief 
+		 * @tparam Component 
+		 * @return Return the number of entities with the given Component type
+		 */
 		template<typename Component>
 		size_t getComponentCount()
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			return denseComponentList[typeID].size();
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].size();
 		}
 
+		/**
+		 * @brief 
+		 * @tparam Component
+		 * @param index 
+		 * @return component of the type Component of the given entity
+		 */
 		template<typename Component>
-		Component* getComponent(uint32_t index)
+		Component* getComponent(uint32_t entity)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			return componentTables[typeID].getComponent<Component>(index);
-		}
-
-		template<typename Component>
-		std::span<Component> getComponents()
-		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			Component* startingComponent = componentTables[typeID].getComponent<Component>(0);
-			return std::span<Component>(startingComponent, componentTables[typeID].size());
-		}
-
-		template<typename... Component>
-		std::vector<uint32_t> getEntities()
-		{
-			constexpr size_t numberOfComponentTypes = sizeof...(Component);
-			std::array<uint32_t, numberOfComponentTypes> typeIDs = { TypeIDGenerator::type<Component>(false)... };
-
-			uint32_t minSizeType = 0;
-			uint32_t minSize = std::numeric_limits<uint32_t>::max();
-			for (uint32_t typeID : typeIDs)
-			{
-				uint32_t typeSize = static_cast<uint32_t>(denseComponentList[typeID].size());
-				if (minSize > typeSize)
-				{
-					minSizeType = typeID;
-				}
-			}
-
-			std::vector<uint32_t> validEntities;
-			for (uint32_t entity : denseComponentList[minSizeType])
-			{
-				bool invalidID = false;
-				for (uint32_t typeID : typeIDs)
-				{
-					if (sparseComponentList[typeID][entity] == INVALID_ENTITY_ID)
-					{
-						invalidID = true;
-						continue;
-					}
-				}
-				if (!invalidID)
-				{
-					validEntities.push_back(entity);
-				}
-			}
-			return validEntities;
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].get<Component>(entity);
 		}
 
 		template <typename Component, typename Func>
 		void each(Func&& func)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			for (uint32_t i = 0; i < componentTables[typeID].size(); ++i)
-			{
-				Component * const component = componentTables[typeID].getComponent(i);
-				func(component);
-			}
-		}
-
-		template<typename Component>
-		std::pair<Component*, uint32_t> getComponentWithEntity(uint32_t index)
-		{
-			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
-			uint32_t entityID = denseComponentList[typeID][index];
-			Component* component = componentTables[typeID].getComponent<Component>(index);
-			return std::pair<Component*, uint32_t>(component, entityID);
+			assert(typeID < sparseSets.size());
+			sparseSets[typeID].each(func);
 		}
 
 		private:
@@ -205,10 +190,8 @@ namespace gwa::ntity
 		}
 		//NOTE: Since it won't be a big engine we only support up to 32bit number of entites
 		uint32_t ntityIDCounter = 0;
-		std::vector<std::vector<uint32_t>> sparseComponentList;
-		std::vector<std::vector<uint32_t>> denseComponentList;
-		std::vector<ComponentTable> componentTables;
-
+		std::vector<SparseSet> sparseSets;
 		std::vector<uint32_t> deletedEntities_;
+
 	};
 }
