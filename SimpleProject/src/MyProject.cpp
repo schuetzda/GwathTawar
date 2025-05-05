@@ -18,6 +18,12 @@ void MyProject::init(gwa::ntity::Registry& registry)
 		uint32_t entity = registry.registerEntity();
 		registry.emplace(entity, i);
 	}
+	registry.initNewComponent<float>(100);
+	for (uint32_t i = 0; i < 100; ++i)
+	{
+		registry.emplace(i, static_cast<float>(i));
+	}
+	auto view = registry.view<uint32_t, float>();
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)

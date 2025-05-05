@@ -64,7 +64,7 @@ namespace gwa::ntity
 		 * @return Pointer to the component
 		 */
 		template <typename Component>
-		Component* getComponent(uint32_t index)
+		Component* getComponent(uint32_t index) const
 		{
 			assert(typeID_ == std::type_index(typeid(Component)));
 			assert(index < reservedComponentsCount_);
@@ -162,14 +162,6 @@ namespace gwa::ntity
 			_memoryManager(ending, this, &arg);
 			return arg._obj;
 		}
-
-		template<typename Component>
-		struct ComponentIterator
-		{
-			static ComponentIterator<Component> begin();
-			static ComponentIterator<Component> end();
-			Component* current;
-		};
 
 	private:
 		template<typename Component>

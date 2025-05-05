@@ -11,12 +11,10 @@
 #include <span>
 #include <ranges>
 #include "SparseSet.h"
+#include "ComponentView.h"
 
 namespace gwa::ntity
 {
-	template<typename... Components>
-	class ComponentView;
-
 	class Registry
 	{
 	public:
@@ -69,10 +67,10 @@ namespace gwa::ntity
 
 		/**
 		 * @brief Assign a component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
-		 * @tparam Component Type of the component. Adding new component types without previous initializiation results in an assertion error.
+		 * @tparam Component Type of the component. Adding new component types without previous initialization results in an assertion error.
 		 * @param entityID Entity Index
 		 * @param component Component value to be assigned
-		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
+		 * @return Return true on successful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
 		 */
 		template<typename Component> requires std::is_move_constructible_v<Component>
 		void emplace(uint32_t entityID, Component&& component)
@@ -84,10 +82,10 @@ namespace gwa::ntity
 
 		/**
 		 * @brief Assign a trivial component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
-		 * @tparam Component Type of the component. Adding new component types without previous initializiation results in an assertion error. The type has to be trivially copyable.
+		 * @tparam Component Type of the component. Adding new component types without previous initialization results in an assertion error. The type has to be trivially copyable.
 		 * @param entityID Entity Index
 		 * @param component Component value to be assigned
-		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
+		 * @return Return true on successful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
 		 */
 		template<typename Component> requires std::is_copy_assignable_v<Component>
 		void emplace(uint32_t entityID, Component& component)
@@ -99,11 +97,11 @@ namespace gwa::ntity
 
 		/**
 		 * @brief  Assign a component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
-		 * @tparam Component  Type of the component. Adding new component types without previous initializiation results in an assertion error.
+		 * @tparam Component  Type of the component. Adding new component types without previous initialization results in an assertion error.
 		 * @tparam ...Args 
 		 * @param entityID Entity Index 
 		 * @param ...args Constructor parameters of the given component type
-		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false 
+		 * @return Return true on successful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false 
 		 */
 		template<typename Component, typename ...Args> requires std::is_constructible_v<Component, Args...>
 		bool emplace(uint32_t entityID, Args&&... args)
@@ -183,12 +181,22 @@ namespace gwa::ntity
 			sparseSets[typeID].each(func);
 		}
 
+		template<typename... ViewComponents>
+		ComponentView<ViewComponents...> view()
+		{
+			constexpr size_t numberOfComponentTypes = sizeof...(ViewComponents);
+			std::array<const SparseSet*, numberOfComponentTypes> viewSets;
+			size_t i = 0;
+			(..., void(viewSets[i++] = &sparseSets[TypeIDGenerator::type<ViewComponents>(false)]));
+			return ComponentView<ViewComponents...>(viewSets);
+		}
+
 		private:
 		uint32_t getNewEntityID()
 		{
 			return ntityIDCounter++;
 		}
-		//NOTE: Since it won't be a big engine we only support up to 32bit number of entites
+		//NOTE: Since it won't be a big engine we only support up to 32bit number of entities
 		uint32_t ntityIDCounter = 0;
 		std::vector<SparseSet> sparseSets;
 		std::vector<uint32_t> deletedEntities_;

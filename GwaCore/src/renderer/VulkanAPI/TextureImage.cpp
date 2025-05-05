@@ -23,7 +23,7 @@ namespace gwa
         stagingBuffer.cleanup();
     }
 
-    void TextureImage::transitionImageLayout(VkDevice logicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout)
+    void TextureImage::transitionImageLayout(VkDevice logicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout) const
     {
         VulkanCommandBuffer transferBuffer = VulkanCommandBuffer(logicalDevice, commandPool);
         transferBuffer.beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);

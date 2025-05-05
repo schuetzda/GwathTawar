@@ -88,6 +88,16 @@ namespace gwa::ntity
 		}
 
 		/**
+		 * @brief Check whether there exist a component for the given entity
+		 * @param entityID 
+		 * @return 
+		 */
+		bool hasEntity(uint32_t entityID) const
+		{
+			return entityID < sparseList.size() && sparseList[entityID] != INVALID_ENTITY_ID;
+		}
+
+		/**
 		 * @brief Remove all components from the sparse set.
 		 */
 		void clearComponents()
@@ -107,7 +117,7 @@ namespace gwa::ntity
 		 * @return The pointer of the component assigned to the entity or nullptr if no component is assigned
 		 */
 		template<typename Component>
-		Component* get(uint32_t entity)
+		Component* get(uint32_t entity) const
 		{
 			const uint32_t denseListIndex = sparseList[entity];
 			return denseListIndex < denseList.size() ? componentTable.getComponent<Component>(sparseList[entity]): nullptr;
@@ -127,13 +137,12 @@ namespace gwa::ntity
 		 * @brief 
 		 * @return Span of the dense component list 
 		 */
-		std::span<const uint32_t> getDenseList()
+		const std::span<const uint32_t> getDenseList() const
 		{
 			return std::span<const uint32_t>(denseList);
 		}
 
 	private:
-
 		std::vector<uint32_t> sparseList;
 		std::vector<uint32_t> denseList;
 		ComponentTable componentTable;
