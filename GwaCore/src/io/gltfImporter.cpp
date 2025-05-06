@@ -39,12 +39,23 @@ namespace gwa
 		
 		// Read buffers
 		std::unordered_map<std::string, std::vector<std::byte>,StringViewHash, std::equal_to<>> bufferMemoryMap;
-		for (uint32_t i = 0; i < gltfDataPtr->buffers_count; ++i)
+		for (uint32_t i = 0; i < gltfDataPtr->buffers_count; i++)
 		{
 			const std::filesystem::path bufferPath = assetDirectory / gltfDataPtr->buffers[i].uri;
 			std::string_view key = gltfDataPtr->buffers[i].uri;
 			if (!bufferMemoryMap.contains(key)) {
 				bufferMemoryMap.emplace(key, FileReader::readBinaryFile<std::byte>(bufferPath));
+			}
+		}
+
+		std::unordered_map<std::string, std::shared_ptr<Texture>, StringViewHash, std::equal_to<>> textureMemoryMap;
+		for (uint32_t i = 0; i < gltfDataPtr->textures_count; i++)
+		{
+			std::string_view key = gltfDataPtr->textures[i].image->uri;
+			const std::filesystem::path texturePath = assetDirectory / gltfDataPtr->textures[i].image->uri;
+			if (!textureMemoryMap.contains(key))
+			{
+				textureMemoryMap.emplace(key, std::make_shared<Texture>(loadTexture(texturePath.string().c_str())));
 			}
 		}
 		
@@ -144,12 +155,24 @@ namespace gwa
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
 						{
 							std::filesystem::path colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
-							meshBufferData.materialTextures[0] = loadTexture((assetDirectory / colorTexturePath).string().c_str());
+							if (textureMemoryMap.contains(colorTexturePath.string()))
+							{
+								meshBufferData.materialTextures[0] = textureMemoryMap[colorTexturePath.string()];
+							}
+							else {
+								std::cerr << "Texture " << colorTexturePath << " was not preloaded \n";
+							}
 						}
 						if (curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 						{
 							std::filesystem::path metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
-							meshBufferData.materialTextures[1] = loadTexture((assetDirectory / metallicRoughnessTexturePath).string().c_str());
+							if (textureMemoryMap.contains(metallicRoughnessTexturePath.string()))
+							{
+								meshBufferData.materialTextures[1] = textureMemoryMap[metallicRoughnessTexturePath.string()];
+							}
+							else {
+								std::cerr << "Texture " << metallicRoughnessTexturePath << " was not preloaded \n";
+							}
 						}
 					}
 					

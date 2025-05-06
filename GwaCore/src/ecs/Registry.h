@@ -178,7 +178,7 @@ namespace gwa::ntity
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			assert(typeID < sparseSets.size());
-			sparseSets[typeID].each(func);
+			sparseSets[typeID].each(std::forward(func));
 		}
 
 		template<typename... ViewComponents>

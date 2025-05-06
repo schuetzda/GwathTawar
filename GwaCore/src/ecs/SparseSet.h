@@ -137,7 +137,7 @@ namespace gwa::ntity
 		 * @brief 
 		 * @return Span of the dense component list 
 		 */
-		const std::span<const uint32_t> getDenseList() const
+		std::span<const uint32_t> getDenseList() const
 		{
 			return std::span<const uint32_t>(denseList);
 		}

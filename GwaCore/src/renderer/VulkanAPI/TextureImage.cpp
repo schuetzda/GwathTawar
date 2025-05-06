@@ -17,7 +17,7 @@ namespace gwa
             VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         transitionImageLayout(logicalDevice, graphicsQueue, commandPool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(),graphicsQueue, commandPool, static_cast<uint32_t>(texture.width), static_cast<uint32_t>(texture.height));
+        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(),graphicsQueue, commandPool, texture.width, texture.height);
         transitionImageLayout(logicalDevice,graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         stagingBuffer.cleanup();
@@ -85,7 +85,7 @@ namespace gwa
 
         vkFreeCommandBuffers(logicalDevice, commandPool, 1, transferBuffer.getCommandBuffer());
     }
-    void TextureImage::copyBufferToImage(VkDevice logicalDevice, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkCommandPool commandPool, uint32_t width, uint32_t height)
+    void TextureImage::copyBufferToImage(VkDevice logicalDevice, VkBuffer buffer, VkImage image, VkQueue graphicsQueue, VkCommandPool commandPool, uint32_t width, uint32_t height) const
     {
         VulkanCommandBuffer transitionBuffer = VulkanCommandBuffer(logicalDevice, commandPool);
         transitionBuffer.beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);

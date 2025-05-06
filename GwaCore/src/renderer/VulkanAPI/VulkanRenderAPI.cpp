@@ -60,7 +60,7 @@ namespace gwa {
 		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
 			TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
-			TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), meshBufferMemory->materialTextures.at(0), m_graphicsCommandPool.getCommandPool());
+			TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *meshBufferMemory->materialTextures.at(0).get(), m_graphicsCommandPool.getCommandPool());
 			m_textures.push_back(textureImage);
 			m_textureViews.push_back(VulkanImageView(m_device.getLogicalDevice(), m_textures.back().getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT));
 

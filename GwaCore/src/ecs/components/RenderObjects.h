@@ -4,6 +4,7 @@
 #include <memory> 
 #include <vector>
 #include <array>
+
 namespace gwa
 {
     struct Texture
@@ -53,7 +54,7 @@ namespace gwa
         std::vector<uint32_t> indices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
-        std::array<Texture,2> materialTextures;
+        std::array<std::shared_ptr<Texture>,2> materialTextures;
         TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
             : vertices(std::vector<glm::vec3>(verticesCount)),
             indices(std::vector<uint32_t>(indicesCount)),
@@ -61,7 +62,6 @@ namespace gwa
             texcoords(std::vector<glm::vec2>(verticesCount))
         {}
     };
-
     
     struct Material
     {

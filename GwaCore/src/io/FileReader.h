@@ -22,11 +22,9 @@ namespace gwa
 
             size_t fileSize = (size_t)file.tellg();
 
-            // Determine read offset and size
             size_t startOffset = offset.value_or(0);
             size_t readSize = size.value_or(fileSize - startOffset);
 
-            // Check for size constraints
             if (startOffset + readSize > fileSize)
             {
                 std::cerr << "File size: " << fileSize << " is smaller than expected size: " << readSize << std::endl;
@@ -38,8 +36,6 @@ namespace gwa
             file.seekg(startOffset);
 
             file.read(std::bit_cast<char*>(fileBuffer.data()), readSize);
-
-            // Close stream
             file.close();
 
             return fileBuffer;
