@@ -1,7 +1,7 @@
  project "GwaCore"
 	kind "StaticLib"
 	language "C++"
-	cppdialect "C++20"
+	cppdialect "C++23"
 	staticruntime "off"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -19,6 +19,7 @@
             "src",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.cgltf}",
 		"%{IncludeDir.VulkanSDK}"
@@ -27,7 +28,8 @@
 	links
 	{
 		"GLFW",
-		"%{Library.Vulkan}"
+		"%{Library.Vulkan}",
+		"ImGui"
 	}
 	
 	filter "system:windows"

@@ -22,3 +22,6 @@
 [submodule "GwaCore/externals/glm"]
 	path = GwaCore/externals/glm
 	url = https://github.com/g-truc/glm
+[submodule "GwaCore/externals/imgui"]
+	path = GwaCore/externals/imgui
+	url = https://github.com/schuetzda/imgui
