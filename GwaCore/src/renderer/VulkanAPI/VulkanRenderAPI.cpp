@@ -8,6 +8,9 @@
 #include "ecs/Registry.h"
 #include "wrapper/VulkanUtility.h"
 #include "ecs/components/RenderObjects.h"
+#include "wrapper/QueueFamilyIndices.h"
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
 
 
 namespace gwa {
@@ -56,7 +59,6 @@ namespace gwa {
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
 
-
 		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
 			TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
@@ -86,6 +88,38 @@ namespace gwa {
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
+
+		//TODO move
+		VkDescriptorPoolSize pool_sizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+		};
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		pool_info.maxSets = 0;
+		for (VkDescriptorPoolSize& pool_size : pool_sizes)
+			pool_info.maxSets += pool_size.descriptorCount;
+		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+		pool_info.pPoolSizes = pool_sizes;
+		VkDescriptorPool imguiPool;
+		assert(vkCreateDescriptorPool(m_device.getLogicalDevice(), &pool_info, nullptr, &imguiPool) == VK_SUCCESS);
+
+		ImGui_ImplVulkan_InitInfo init_info = {};
+		//init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
+		init_info.Instance = m_instance.getVkInstance();
+		init_info.PhysicalDevice = m_device.getPhysicalDevice();
+		init_info.Device = m_device.getLogicalDevice();
+		init_info.QueueFamily = QueueFamilyIndices::getQueueFamilyIndices(m_device.getPhysicalDevice(), m_device.getSurface()).graphicsFamily;
+		init_info.Queue = m_device.getGraphicsQueue();
+		init_info.PipelineCache = VK_NULL_HANDLE; //NOTE maybe has to change
+		init_info.DescriptorPool = imguiPool;
+		init_info.RenderPass = m_renderPass.getRenderPass();
+		init_info.Subpass = 0;
+		init_info.MinImageCount = 2;
+		init_info.ImageCount = 2;
+		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		ImGui_ImplVulkan_Init(&init_info);
 	}
 
 	void VulkanRenderAPI::draw(const Window *  window, gwa::ntity::Registry& registry)
@@ -117,6 +151,13 @@ namespace gwa {
 		vkResetCommandBuffer(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 0);
 
 		recordCommands(imageIndex, registry);
+
+		// Update and Render additional Platform Windows
+		if (ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -222,8 +263,10 @@ namespace gwa {
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
-		
-		
+		ImGui::Render();
+		auto drawData = ImGui::GetDrawData();
+		ImGui_ImplVulkan_RenderDrawData(drawData, *m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
+
 		m_graphicsCommandBuffers[currentFrame].endRenderPass();
 		m_graphicsCommandBuffers[currentFrame].endCommandBuffer();
 	}

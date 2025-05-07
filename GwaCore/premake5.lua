@@ -19,7 +19,7 @@
             "src",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.imgui}",
+		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.cgltf}",
 		"%{IncludeDir.VulkanSDK}"

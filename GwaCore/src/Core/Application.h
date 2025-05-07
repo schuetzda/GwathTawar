@@ -9,6 +9,7 @@
 #include "renderer/RenderAPI.h"
 #include "ecs/Registry.h"
 #include "ecs/components/RenderObjects.h"
+#include <imgui/ImGuiOverlay.h>
 
 int main(int argc, char** argv);
 
@@ -37,6 +38,7 @@ namespace gwa
 	private:
 		Window m_window;
 		Game* m_game;
+		ImGuiOverlay uiOverlay;
 		ntity::Registry registry; //The register for the ecs system of the application
 		QuaternionCamera camera;
 		static std::unique_ptr<RenderAPI> renderAPI; //TODO change RenderAPI to not be singleton

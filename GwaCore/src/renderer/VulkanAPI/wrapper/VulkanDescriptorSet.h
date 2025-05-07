@@ -15,6 +15,11 @@ namespace gwa
 		{
 			return descriptorSets_;
 		}
+
+		VkDescriptorPool getDescriptorPool() const
+		{
+			return descriptorPool_;
+		}
 	private:
 		VkDescriptorPool descriptorPool_;
 		std::vector<VkDescriptorSet> descriptorSets_;
