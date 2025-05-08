@@ -41,6 +41,8 @@ namespace gwa
 			renderAPI->draw(&m_window, registry);
 		}
 		m_game->shutdown();
+		uiOverlay.shutdown();
+		renderAPI->shutdown();
 		m_window.shutDown();
 	}
 }

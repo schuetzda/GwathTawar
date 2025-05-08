@@ -44,7 +44,7 @@ namespace gwa
 		// Connect memory to image
 		vkBindImageMemory(logicalDevice_, image_, imageMemory_, 0);
 	}
-	void VulkanImage::cleanup()
+	void VulkanImage::cleanup() 
 	{
 		vkDestroyImage(logicalDevice_, image_, nullptr);
 		vkFreeMemory(logicalDevice_, imageMemory_, nullptr);

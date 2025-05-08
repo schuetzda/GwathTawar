@@ -4,7 +4,7 @@
 #include <ecs/components/RenderObjects.h>
 namespace gwa
 {
-    TextureImage::TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice,VkQueue graphicsQueue, const Texture& texture, VkCommandPool commandPool)
+    TextureImage::TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, const Texture& texture, VkCommandPool commandPool) 
     {
         VkDeviceSize imageSize = texture.width * texture.height * 4;
         VulkanBuffer stagingBuffer = VulkanBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -21,6 +21,11 @@ namespace gwa
         transitionImageLayout(logicalDevice,graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         stagingBuffer.cleanup();
+    }
+
+    void TextureImage::cleanup() 
+    {
+        textureImage_.cleanup();
     }
 
     void TextureImage::transitionImageLayout(VkDevice logicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout) const
@@ -125,6 +130,7 @@ namespace gwa
 
         vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(graphicsQueue);
+        
 
         vkFreeCommandBuffers(logicalDevice, commandPool, 1, transitionBuffer.getCommandBuffer());
     }

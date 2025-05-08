@@ -11,6 +11,7 @@
 #include "wrapper/QueueFamilyIndices.h"
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
 
 
 namespace gwa {
@@ -102,7 +103,6 @@ namespace gwa {
 			pool_info.maxSets += pool_size.descriptorCount;
 		pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
-		VkDescriptorPool imguiPool;
 		assert(vkCreateDescriptorPool(m_device.getLogicalDevice(), &pool_info, nullptr, &imguiPool) == VK_SUCCESS);
 
 		ImGui_ImplVulkan_InitInfo init_info = {};
@@ -202,12 +202,21 @@ namespace gwa {
 
 	void VulkanRenderAPI::shutdown() {
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		vkDestroyDescriptorPool(m_device.getLogicalDevice(), imguiPool, nullptr);
 		for (VulkanImageView textureView: m_textureViews)
 			textureView.cleanup();
 
+		for (TextureImage texture : m_textures)
+			texture.cleanup();
+
+		m_textureSampler.cleanup();
 		m_meshBuffers.cleanup();
 		m_drawFences.cleanup();
 		m_renderFinished.cleanup();
+		
 		m_imageAvailable.cleanup();
 		for (VulkanDescriptorSet descriptorSet: m_descriptorSets)
 			descriptorSet.cleanup();

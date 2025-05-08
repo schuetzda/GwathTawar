@@ -9,6 +9,6 @@ namespace gwa
 		void init(Window& window) const;
 		void beforeUIRender() const;
 		void afterUIRender() const;
-		void shutdown();
+		void shutdown() const;
 	};
 }

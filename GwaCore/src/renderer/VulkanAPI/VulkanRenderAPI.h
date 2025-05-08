@@ -60,6 +60,9 @@ namespace gwa {
 		VulkanMeshBuffers m_meshBuffers;
 		std::vector<TextureImage> m_textures;
 		std::vector<VulkanImageView> m_textureViews;
+
+		VkDescriptorPool imguiPool;
+
 		VulkanImageSampler m_textureSampler;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};

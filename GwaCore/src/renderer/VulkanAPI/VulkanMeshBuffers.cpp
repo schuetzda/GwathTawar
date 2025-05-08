@@ -125,11 +125,15 @@ namespace gwa
 		{
 			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].vertexBuffer, nullptr);
 			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].indexBuffer, nullptr);
+			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].normalBuffer, nullptr);
+			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].texcoordBuffer, nullptr);
 		}
 		for (int i = 0; i < indexBufferMemoryList_.size(); ++i)
 		{
 			vkFreeMemory(logicalDevice_, vertexBufferMemoryList_[i], nullptr);
 			vkFreeMemory(logicalDevice_, indexBufferMemoryList_[i], nullptr);
+			vkFreeMemory(logicalDevice_, normalBufferMemoryList_[i], nullptr);
+			vkFreeMemory(logicalDevice_, texcoordBufferMemoryList_[i], nullptr);
 		}
 
 	}

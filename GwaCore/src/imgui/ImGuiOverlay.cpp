@@ -38,7 +38,7 @@ namespace gwa
 	{
 		ImGui::Render();
 	}
-	void ImGuiOverlay::shutdown()
+	void ImGuiOverlay::shutdown() const
 	{
 	}
 }
