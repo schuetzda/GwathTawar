@@ -36,6 +36,7 @@ namespace gwa {
 
 		void recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry);
 	private:
+		void recreateSwapchain(WindowSize framebufferSize);
 		const uint32_t maxFramesInFlight_ = 2;
 		uint32_t currentFrame = 0;
 		

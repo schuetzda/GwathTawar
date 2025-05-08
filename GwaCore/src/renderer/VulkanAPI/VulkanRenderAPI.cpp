@@ -127,6 +127,8 @@ namespace gwa {
 		WindowSize framebufferSize = window->getFramebufferSize();
 		if (framebufferSize.width <= 0 || framebufferSize.height == 0)
 		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
 			return;
 		}
 		const std::vector<VkSemaphore>& imageAvailabe = m_imageAvailable.getSemaphores();
@@ -138,16 +140,7 @@ namespace gwa {
 		VkResult result = vkAcquireNextImageKHR(m_device.getLogicalDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailabe[currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		{
-			vkDeviceWaitIdle(m_device.getLogicalDevice());
-			m_swapchainFramebuffers.cleanup();
-			m_depthBufferImageView.cleanup();
-			m_depthBufferImage.cleanup();
-			m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
-			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
-			m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
-				m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
+			recreateSwapchain(framebufferSize);
 			return;
 		}
 		else
@@ -198,16 +191,7 @@ namespace gwa {
 
 		result = vkQueuePresentKHR(m_device.getPresentationQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-			vkDeviceWaitIdle(m_device.getLogicalDevice());
-			m_swapchainFramebuffers.cleanup();
-			m_depthBufferImageView.cleanup();
-			m_depthBufferImage.cleanup();
-			m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
-			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
-			m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
-				m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
+			recreateSwapchain(framebufferSize);
 		}
 		else
 		{
@@ -282,11 +266,23 @@ namespace gwa {
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
 		//Render Imgui UI
-		ImGui::Render();
 		auto drawData = ImGui::GetDrawData();
 		ImGui_ImplVulkan_RenderDrawData(drawData, *m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
 
 		m_graphicsCommandBuffers[currentFrame].endRenderPass();
 		m_graphicsCommandBuffers[currentFrame].endCommandBuffer();
+	}
+	void VulkanRenderAPI::recreateSwapchain(WindowSize framebufferSize)
+	{
+		vkDeviceWaitIdle(m_device.getLogicalDevice());
+		m_swapchainFramebuffers.cleanup();
+		m_depthBufferImageView.cleanup();
+		m_depthBufferImage.cleanup();
+		m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
+		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
+			m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
 	}
 }
