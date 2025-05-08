@@ -139,7 +139,13 @@ namespace gwa {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		{
 			vkDeviceWaitIdle(m_device.getLogicalDevice());
+			m_swapchainFramebuffers.cleanup();
+			m_depthBufferImageView.cleanup();
+			m_depthBufferImage.cleanup();
 			m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
+			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 			m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
 				m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
 			return;
@@ -192,7 +198,14 @@ namespace gwa {
 
 		result = vkQueuePresentKHR(m_device.getPresentationQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+			vkDeviceWaitIdle(m_device.getLogicalDevice());
+			m_swapchainFramebuffers.cleanup();
+			m_depthBufferImageView.cleanup();
+			m_depthBufferImage.cleanup();
 			m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
+			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 			m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
 				m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
 		}

@@ -49,7 +49,7 @@ namespace gwa {
 		}
 
 	private:
-		void createSwapchain(int framebufferWidth, int framebufferHeight);
+		void createSwapchain(int framebufferWidth, int framebufferHeight, bool recreate);
 		VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const;
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, int framebufferWidth, int framebufferHeight) const;
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;

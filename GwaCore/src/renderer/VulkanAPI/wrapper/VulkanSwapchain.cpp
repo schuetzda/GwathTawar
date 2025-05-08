@@ -7,10 +7,10 @@
 namespace gwa {
 	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight):device_(device)
 	{
-		createSwapchain(framebufferWidth, framebufferHeight);
+		createSwapchain(framebufferWidth, framebufferHeight, false);
 	}
 
-	void VulkanSwapchain::createSwapchain(int framebufferWidth, int framebufferHeight)
+	void VulkanSwapchain::createSwapchain(int framebufferWidth, int framebufferHeight, bool recreateSwapchain= false)
 	{
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(device_->getPhysicalDevice(), device_->getSurface());
 
@@ -60,10 +60,18 @@ namespace gwa {
 		}
 
 		// If old swap chain is destroyed and this one replaces it, then link old one to quickly hand over responsibilites
-		//swapChainCreateInfo.oldSwapchain = swapchain;
-
-		VkResult result = vkCreateSwapchainKHR(device_->getLogicalDevice(), &swapChainCreateInfo, nullptr, &vkSwapchain_);
-		assert(result == VK_SUCCESS);
+		if (recreateSwapchain)
+		{
+			VkSwapchainKHR oldSwapchain = vkSwapchain_;
+			swapChainCreateInfo.oldSwapchain = oldSwapchain;
+			VkResult result = vkCreateSwapchainKHR(device_->getLogicalDevice(), &swapChainCreateInfo, nullptr, &vkSwapchain_);
+			assert(result == VK_SUCCESS);
+			vkDestroySwapchainKHR(device_->getLogicalDevice(), oldSwapchain, nullptr);
+		}
+		else {
+			VkResult result = vkCreateSwapchainKHR(device_->getLogicalDevice(), &swapChainCreateInfo, nullptr, &vkSwapchain_);
+			assert(result == VK_SUCCESS);
+		}
 		//Store for later references
 		vkSwapchainImageFormat_ = surfaceFormat.format;
 		vkSwapchainExtent_ = extent;
@@ -73,14 +81,14 @@ namespace gwa {
 		vkGetSwapchainImagesKHR(device_->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, nullptr);
 		std::vector<VkImage> images(swapchainImageCount);
 		vkGetSwapchainImagesKHR(device_->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, images.data());
-
-		for (VkImage image : images)
+		swapchainImages_.resize(swapchainImageCount);
+		for (uint32_t i = 0; i < swapchainImageCount; i++)
 		{
 			VulkanSwapchainImage swapchainImage = {};
-			swapchainImage.image = image;
-			swapchainImage.imageView = createImageView(image, vkSwapchainImageFormat_, VK_IMAGE_ASPECT_COLOR_BIT);
+			swapchainImage.image = images[i];
+			swapchainImage.imageView = createImageView(images[i], vkSwapchainImageFormat_, VK_IMAGE_ASPECT_COLOR_BIT);
 
-			swapchainImages_.push_back(swapchainImage);
+			swapchainImages_[i] = swapchainImage;
 		}
 	}
 	VkPresentModeKHR VulkanSwapchain::chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const
@@ -176,10 +184,13 @@ namespace gwa {
 
 	void VulkanSwapchain::recreateSwapchain(int framebufferWidth, int framebufferHeight)
 	{
-		cleanup();
+		vkDeviceWaitIdle(device_->getLogicalDevice());
+		for (auto image : swapchainImages_)
+		{
+			vkDestroyImageView(device_->getLogicalDevice(), image.imageView, nullptr);
+		}
 		swapchainImages_.clear();
-		
-		createSwapchain(framebufferWidth, framebufferHeight);
+		createSwapchain(framebufferWidth, framebufferHeight, true);
 	}
 
 

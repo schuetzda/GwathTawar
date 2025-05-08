@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv)
 {
-	gwa::AppInfo info{ "MySimpleProject",1920, 1080 };
+	gwa::AppInfo info{ "MySimpleProject",2020, 1080 };
 	MyProject project;
 	gwa::startApplication(info, &project);
 }

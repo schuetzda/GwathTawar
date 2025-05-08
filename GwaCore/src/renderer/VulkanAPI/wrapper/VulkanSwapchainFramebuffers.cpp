@@ -11,9 +11,6 @@ namespace gwa
 	}
 	void VulkanSwapchainFramebuffers::recreateSwapchain(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
 	{
-		cleanup();
-		swapchainFramebuffers_.clear();
-
 		createFramebuffers(swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
 	}
 	void VulkanSwapchainFramebuffers::createFramebuffers(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,

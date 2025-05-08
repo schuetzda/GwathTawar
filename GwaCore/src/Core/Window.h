@@ -21,9 +21,9 @@ namespace gwa
 	{
 		public:
 
-		Window(const std::string& title = "GwaApp", uint32_t width = 1920, uint32_t height = 1080) :appTitle_(title), width_(width), height_(height)
+		Window(const std::string& title = "GwaApp", uint32_t width = 1920, uint32_t height = 1080) :appTitle_(title)
 		{
-			init();
+			init(width, height);
 		}
 
 		/**
@@ -97,11 +97,8 @@ namespace gwa
 		/**
 		* @brief Initializes the window and sets up necessary resources.
 		*/
-		void init() const;
+		void init(uint32_t width, uint32_t height) const;
 
 		const std::string& appTitle_;
-
-		uint32_t width_;
-		uint32_t height_;
 	};
 }

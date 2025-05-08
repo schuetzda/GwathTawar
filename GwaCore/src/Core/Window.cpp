@@ -34,7 +34,8 @@ namespace gwa
 		int framebufferWidth = 0;
 		int framebufferHeight = 0;
 		glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-		return WindowSize{ width_, height_ };
+
+		return WindowSize{ static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight)};
 	}
 
 	void* Window::getWindowHandle() const
@@ -42,7 +43,7 @@ namespace gwa
 		return window;
 	}
 
-	void Window::init() const
+	void Window::init(uint32_t width, uint32_t height) const
 	{
 		int success = glfwInit();
 		assert(success);
@@ -50,7 +51,7 @@ namespace gwa
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-		window = glfwCreateWindow(width_, height_, appTitle_.c_str(), nullptr, nullptr);
+		window = glfwCreateWindow(width, height, appTitle_.c_str(), nullptr, nullptr);
 	}
 	bool Window::isMousePressed(int32_t button) const
 	{
