@@ -5,6 +5,7 @@
 #include "ecs/Registry.h"
 #include <array>
 #include <ecs/components/RenderObjects.h>
+#include "imgui/imgui.h"
 
 
 void MyProject::init(gwa::ntity::Registry& registry)
@@ -12,6 +13,12 @@ void MyProject::init(gwa::ntity::Registry& registry)
 	std::filesystem::path assetPath("./assets/Sponza");
 	std::string gltfFileName("Sponza.gltf");
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
+}
+
+void MyProject::renderUI()
+{
+	bool showDemo = true;
+	ImGui::ShowDemoWindow(&showDemo);
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)

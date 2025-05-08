@@ -125,6 +125,10 @@ namespace gwa {
 	void VulkanRenderAPI::draw(const Window *  window, gwa::ntity::Registry& registry)
 	{
 		WindowSize framebufferSize = window->getFramebufferSize();
+		if (framebufferSize.width <= 0 || framebufferSize.height == 0)
+		{
+			return;
+		}
 		const std::vector<VkSemaphore>& imageAvailabe = m_imageAvailable.getSemaphores();
 		const std::vector<VkSemaphore>& renderFinished = m_renderFinished.getSemaphores();
 
@@ -152,8 +156,9 @@ namespace gwa {
 
 		recordCommands(imageIndex, registry);
 
+	
 		// Update and Render additional Platform Windows
-		if (ImGuiConfigFlags_ViewportsEnable)
+		if (const ImGuiIO& io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
@@ -263,6 +268,7 @@ namespace gwa {
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
+		//Render Imgui UI
 		ImGui::Render();
 		auto drawData = ImGui::GetDrawData();
 		ImGui_ImplVulkan_RenderDrawData(drawData, *m_graphicsCommandBuffers[currentFrame].getCommandBuffer());

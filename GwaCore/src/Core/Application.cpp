@@ -34,7 +34,9 @@ namespace gwa
 			camera.onUpdate(m_window);
 			m_game->run(timestep, registry);
 
-			uiOverlay.update();
+			uiOverlay.beforeUIRender();
+			m_game->renderUI();
+			uiOverlay.afterUIRender();
 			renderAPI->uboViewProj.view = camera.getViewMatrix();
 			renderAPI->draw(&m_window, registry);
 		}

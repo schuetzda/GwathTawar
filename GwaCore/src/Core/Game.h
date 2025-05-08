@@ -15,6 +15,11 @@ namespace gwa
 		virtual void init(gwa::ntity::Registry& registry) = 0;
 
 		/**
+		 * @brief Render all UI related things using the Dear ImGui library.
+		 */
+		virtual void renderUI() = 0;
+
+		/**
 		 * @brief The run method gets called every cycle of the game loop.
 		 * @param ts passed time in ms between this and the last call to run
 		 * @param registry ECS system registry to store and get components and entities

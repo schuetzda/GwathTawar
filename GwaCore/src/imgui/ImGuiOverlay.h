@@ -7,7 +7,8 @@ namespace gwa
 	{
 	public:
 		void init(Window& window) const;
-		void update() const;
+		void beforeUIRender() const;
+		void afterUIRender() const;
 		void shutdown();
 	};
 }

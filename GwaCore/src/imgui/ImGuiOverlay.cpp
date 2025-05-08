@@ -15,7 +15,7 @@ namespace gwa
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
-
+		
 		ImGui::StyleColorsDark();
 
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -24,17 +24,18 @@ namespace gwa
 			style.WindowRounding = 0.0f;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
+
 		GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.getWindowHandle());
 		ImGui_ImplGlfw_InitForVulkan(glfwWindow, true);
 	}
-	void ImGuiOverlay::update() const
+	void ImGuiOverlay::beforeUIRender() const
 	{
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		bool showDemo = true;
-		ImGui::ShowDemoWindow(&showDemo);
+	}
+	void ImGuiOverlay::afterUIRender() const
+	{
 	}
 	void ImGuiOverlay::shutdown()
 	{

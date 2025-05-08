@@ -1,7 +1,7 @@
 project "SimpleProject"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "C++20"
+	cppdialect "C++23"
 	staticruntime "off"
 	
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -16,6 +16,7 @@ project "SimpleProject"
 	includedirs
 	{
 		"%{wks.location}/GwaCore/src",
+		"%{wks.location}/GwaCore/externals",
 		"%{IncludeDir.glm}"
 
 	}
