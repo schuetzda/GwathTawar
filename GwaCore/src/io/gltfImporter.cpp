@@ -48,14 +48,18 @@ namespace gwa
 			}
 		}
 
-		std::unordered_map<std::string, std::shared_ptr<Texture>, StringViewHash, std::equal_to<>> textureMemoryMap;
+		std::unordered_map<std::string, uint32_t, StringViewHash, std::equal_to<>> textureEntityMap;
+		const uint32_t texturesCount = gltfDataPtr->textures_count;
+		registry.initNewComponent<Texture>(texturesCount);
 		for (uint32_t i = 0; i < gltfDataPtr->textures_count; i++)
 		{
 			std::string_view key = gltfDataPtr->textures[i].image->uri;
 			const std::filesystem::path texturePath = assetDirectory / gltfDataPtr->textures[i].image->uri;
-			if (!textureMemoryMap.contains(key))
+			if (!textureEntityMap.contains(key))
 			{
-				textureMemoryMap.emplace(key, std::make_shared<Texture>(loadTexture(texturePath.string().c_str())));
+				uint32_t entity = registry.registerEntity();
+				registry.emplace<Texture>(entity, std::move(loadTexture(texturePath.string().c_str())));
+				textureEntityMap.emplace(key, i);
 			}
 		}
 		
@@ -155,9 +159,9 @@ namespace gwa
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
 						{
 							std::filesystem::path colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
-							if (textureMemoryMap.contains(colorTexturePath.string()))
+							if (textureEntityMap.contains(colorTexturePath.string()))
 							{
-								meshBufferData.materialTextures[0] = textureMemoryMap[colorTexturePath.string()];
+								meshBufferData.materialTextureEntities[0] = textureEntityMap[colorTexturePath.string()];
 							}
 							else {
 								std::cerr << "Texture " << colorTexturePath << " was not preloaded \n";
@@ -166,9 +170,9 @@ namespace gwa
 						if (curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 						{
 							std::filesystem::path metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
-							if (textureMemoryMap.contains(metallicRoughnessTexturePath.string()))
+							if (textureEntityMap.contains(metallicRoughnessTexturePath.string()))
 							{
-								meshBufferData.materialTextures[1] = textureMemoryMap[metallicRoughnessTexturePath.string()];
+								meshBufferData.materialTextureEntities[1] = textureEntityMap[metallicRoughnessTexturePath.string()];
 							}
 							else {
 								std::cerr << "Texture " << metallicRoughnessTexturePath << " was not preloaded \n";

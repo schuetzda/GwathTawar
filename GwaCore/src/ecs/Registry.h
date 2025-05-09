@@ -57,12 +57,12 @@ namespace gwa::ntity
 		 * @param expectedNumberOfComponents Expected number that will be reserved in the datastructure
 		 */
 		template<typename Component>
-		void initNewComponent(uint32_t expectedNumberOfComponents, uint32_t expectedNumberOfEntites = 0)
+		void initNewComponent(uint32_t expectedNumberOfComponents)
 		{
 			assert(TypeIDGenerator::type<Component>(true) == sparseSets.size());
 
 			sparseSets.emplace_back();
-			sparseSets.back().init<Component>(expectedNumberOfComponents, expectedNumberOfEntites, ntityIDCounter);		
+			sparseSets.back().init<Component>(expectedNumberOfComponents, ntityIDCounter+expectedNumberOfComponents, ntityIDCounter);		
 		}
 
 		/**

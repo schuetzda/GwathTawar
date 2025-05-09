@@ -60,22 +60,42 @@ namespace gwa {
 
 		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
 
-		for (int i=0; i < registry.getComponentCount<TexturedMeshBufferMemory>(); i++)
 		{
-			TexturedMeshBufferMemory const * meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(i);
-			TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *meshBufferMemory->materialTextures.at(0).get(), m_graphicsCommandPool.getCommandPool());
-			m_textures.push_back(textureImage);
-			m_textureViews.push_back(VulkanImageView(m_device.getLogicalDevice(), m_textures.back().getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT));
+			std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
 
-			const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals,meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
-			uint32_t entityID = registry.registerEntity();
-			TexturedMeshRenderObject renderObject;
-			renderObject.bufferID = id;
-			registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+			uint32_t index = 0;
+			const uint32_t numberOfTextures = registry.getComponentCount<Texture>();
+			m_textures.resize(numberOfTextures);
+			m_textureViews.resize(numberOfTextures);
+			for (uint32_t textureEntity : registry.getEntities<Texture>())
+			{
+				entityToIndexMap[textureEntity] = index;
+				Texture const* texture = registry.getComponent<Texture>(textureEntity);
+				TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
+				m_textures[index] = textureImage;
+				m_textureViews[index] = VulkanImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+				index++;
+			}
+
+			for (uint32_t meshBufferEntity: registry.getEntities<TexturedMeshBufferMemory>())
+			{
+				TexturedMeshBufferMemory const* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(meshBufferEntity);
+				const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals, meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+				uint32_t entityID = registry.registerEntity();
+				TexturedMeshRenderObject renderObject;
+				
+				assert(meshBufferMemory->materialTextureEntities.size() == renderObject.materialTextureIDs.size()); //TexturedMeshBufferMemory and TexturedMeshRenderObject are required to have the same amount of textures.
+				for (size_t i = 0; i < meshBufferMemory->materialTextureEntities.size(); i++) {
+					renderObject.materialTextureIDs[i] = entityToIndexMap.at(meshBufferMemory->materialTextureEntities[i]);
+				}
+				renderObject.bufferID = id;
+				registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+			}
 		}
 		
 		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 		registry.flushComponents<TexturedMeshBufferMemory>();
+		registry.flushComponents<Texture>();
 		
 		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
@@ -225,7 +245,7 @@ namespace gwa {
 		
 		const size_t componentCount = registry.getComponentCount<TexturedMeshRenderObject>();
 		const std::span<const uint32_t> entities = registry.getEntities<TexturedMeshRenderObject>();
-		for (uint32_t i=0; i < componentCount; i++)
+		for (uint32_t i = 0; i < componentCount; i++)
 		{
 			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entities[i]);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
@@ -233,11 +253,11 @@ namespace gwa {
 			constexpr uint32_t vertexBufferSize = 3;
 			std::array<VkDeviceSize, vertexBufferSize> offsets = { 0, 0, 0 };
 			const VkBuffer vertexBuffers[vertexBufferSize] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
-			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers,static_cast<uint32_t>(offsets.size()), offsets.data());
+			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers, static_cast<uint32_t>(offsets.size()), offsets.data());
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
 			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, &renderObject->modelMatrix);
-			m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(m_descriptorSets[i].getDescriptorSets()[currentFrame], m_graphicsPipeline.getPipelineLayout());
+			m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(m_descriptorSets[renderObject->materialTextureIDs[0]].getDescriptorSets()[currentFrame], m_graphicsPipeline.getPipelineLayout());
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}

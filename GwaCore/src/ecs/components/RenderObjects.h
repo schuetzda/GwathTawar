@@ -28,6 +28,19 @@ namespace gwa
             }
         }
 
+        Texture(Texture&& other) noexcept
+            : width(other.width), height(other.height), pixels(std::move(other.pixels)) {
+        }
+
+        Texture& operator=(Texture&& other) noexcept {
+            if (this != &other) {
+                width = other.width;
+                height = other.height;
+                pixels = std::move(other.pixels);
+            }
+            return *this;
+        }
+
         Texture& operator=(const Texture& a)
         {
             if (this != &a)             
@@ -54,7 +67,7 @@ namespace gwa
         std::vector<uint32_t> indices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
-        std::array<std::shared_ptr<Texture>,2> materialTextures;
+        std::array<uint32_t,2> materialTextureEntities;
         TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
             : vertices(std::vector<glm::vec3>(verticesCount)),
             indices(std::vector<uint32_t>(indicesCount)),
@@ -66,5 +79,6 @@ namespace gwa
 	{
 		glm::mat4 modelMatrix;
         uint32_t bufferID;
+        std::array<uint32_t, 2> materialTextureIDs;
 	};
 }
