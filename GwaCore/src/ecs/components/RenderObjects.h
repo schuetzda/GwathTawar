@@ -62,21 +62,7 @@ namespace gwa
             texcoords(std::vector<glm::vec2>(verticesCount))
         {}
     };
-    
-    struct Material
-    {
-        std::array<Texture,2> materialTextures;
-        std::unique_ptr<TexturedMeshBufferMemory> uploadObjects;
-        uint32_t numberOfRenderObjects;
-    };
-
-    struct Shader
-    {
-        std::unique_ptr<Material> materials;
-        uint32_t numberOfMaterials;
-    };
-
-	struct TexturedMeshRenderObject
+    struct TexturedMeshRenderObject
 	{
 		glm::mat4 modelMatrix;
         uint32_t bufferID;

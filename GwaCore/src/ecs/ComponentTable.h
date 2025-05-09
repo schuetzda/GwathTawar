@@ -8,7 +8,8 @@ namespace gwa::ntity
 {
 	/**
 	 * @brief A Table that contains Objects of one arbitrary type.
-	 * The type has not to be known at compile but only at compile time similar to std::any.
+	 * The type has not to be known at compile but isn't a class template, similar to std::any.
+	 * That way the user of the ECS system can use it's own classes without having to modify the internal ecs systems components.
 	 */
 	class ComponentTable
 	{
@@ -18,14 +19,13 @@ namespace gwa::ntity
 		/**
 		 * @brief Initializes an empty component table without a specific type.
 		 */
-		ComponentTable() : _memoryManager(nullptr), componentData_(nullptr)
-		{
+		ComponentTable() : _memoryManager(nullptr)	{
 
 		}
 
 		/**
 		*@brief Initializes the table for a specific component type.
-		* @tparam Component The type of the components stored in this table.
+		* @tparam Component The type of the components stored in this table. The component has to be copy constructible.
 		* @tparam Mgr The memory manager responsible for handling component lifecycle.
 		* @param reservedComponentsCount The expected number of component that can be hold without a memory reallocation
 		*/
@@ -151,18 +151,6 @@ namespace gwa::ntity
 			reservedComponentsCount_ = 0;
 		}
 
-		void* begin()
-		{
-			return componentData_;
-		}
-
-		void* end()
-		{
-			_Arguments arg;
-			_memoryManager(ending, this, &arg);
-			return arg._obj;
-		}
-
 	private:
 		template<typename Component>
 		void grow()
@@ -183,8 +171,7 @@ namespace gwa::ntity
 		{
 			destroy,
 			transfer,
-			clone,
-			ending
+			clone	
 		};
 		union _Arguments
 		{
@@ -203,7 +190,7 @@ namespace gwa::ntity
 		std::type_index typeID_{ std::type_index(typeid(void)) };
 		uint32_t currentComponentsCount_ = 0;
 		uint32_t reservedComponentsCount_ = 0;
-		void* componentData_;
+		void* componentData_{};
 	};
 
 	template <typename Component>
@@ -230,9 +217,7 @@ namespace gwa::ntity
 			const_cast<ComponentTable*>(componentTable)->_memoryManager = nullptr;
 			break;
 		case clone:
-			break;
-		case ending:
-			args->_obj = const_cast<Component*>(ptr + componentTable->size());
+			// not implemented yet
 			break;
 		}
 	}

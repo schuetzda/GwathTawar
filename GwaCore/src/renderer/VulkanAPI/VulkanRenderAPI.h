@@ -23,6 +23,7 @@
 #include "wrapper/VulkanUniformBuffers.h"
 #include "TextureImage.h"
 #include "wrapper/VulkanImageSampler.h"
+#include "wrapper/VulkanImguiIntegration.h"
 
 namespace gwa {
 	class VulkanRenderAPI: public RenderAPI 
@@ -60,10 +61,8 @@ namespace gwa {
 		VulkanMeshBuffers m_meshBuffers;
 		std::vector<TextureImage> m_textures;
 		std::vector<VulkanImageView> m_textureViews;
-
-		VkDescriptorPool imguiPool;
-
 		VulkanImageSampler m_textureSampler;
+		VulkanImguiIntegration m_imgui;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 		
