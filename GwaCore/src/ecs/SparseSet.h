@@ -110,6 +110,29 @@ namespace gwa::ntity
 			componentTable.clear();
 		}
 
+		void deleteEntity(uint32_t entityID)
+		{
+			if (sparseList[entityID] != INVALID_ENTITY_ID)
+			{
+				const size_t denseListEnd = denseList.size() - 1;
+				const size_t entityDenseIndex = sparseList[entityID];
+				componentTable.swapAndDelete(static_cast<uint32_t>(entityDenseIndex));
+
+				sparseList[denseList[denseListEnd]] = entityDenseIndex;
+				sparseList[entityID] = INVALID_ENTITY_ID;
+
+				denseList[entityDenseIndex] = denseList[denseListEnd];
+				denseList.pop_back();
+			}
+		}
+
+		void swap(uint32_t denseListIndex1, uint32_t denseListIndex2)
+		{
+			uint32_t denseListValue1 = denseList[denseListIndex1];
+			denseList[denseListIndex1] = denseList[denseListIndex2];
+			denseList[denseListIndex2] = denseListValue1;
+		}
+
 		/**
 		 * @brief 
 		 * @tparam Component 

@@ -127,10 +127,13 @@ namespace gwa::ntity
 		 * @brief Delete an entity and add the ID to the pool of reusable entities
 		 * @param enitityID 
 		 */
-		void deleteEntity(uint32_t enitityID)
+		void deleteEntity(uint32_t entityID)
 		{
-			//TODO manage life cycle of pending entity Components
-			deletedEntities_.push_back(enitityID);
+			deletedEntities_.push_back(entityID);
+			for (size_t sparseSetIndex = 0; sparseSetIndex < sparseSets.size(); sparseSetIndex++)
+			{
+				sparseSets[sparseSetIndex].deleteEntity(entityID);
+			}
 		}
 
 		/**

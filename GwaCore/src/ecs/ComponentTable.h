@@ -129,6 +129,22 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
+		void swapAndDelete(uint32_t index)
+		{
+			assert(index < size() && _memoryManager != nullptr);
+			_Arguments arg;
+			arg.index = index;
+			if (index == currentComponentsCount_ -1)
+			{
+				_memoryManager(pop, this, &arg);
+			}
+			else
+			{
+				_memoryManager(delElement, this, &arg);
+			}
+			currentComponentsCount_--;
+		}
+
 		uint32_t size() const
 		{
 			return currentComponentsCount_;
@@ -171,11 +187,14 @@ namespace gwa::ntity
 		{
 			destroy,
 			transfer,
-			clone	
+			clone,
+			delElement,
+			pop
 		};
 		union _Arguments
 		{
 			void* _obj;
+			uint32_t index;
 			ComponentTable* otherTable;
 		};
 
@@ -201,7 +220,8 @@ namespace gwa::ntity
 		switch (operation)
 		{
 		case destroy:
-			if (componentTable->componentData_&& componentTable->currentComponentsCount_ > 0)
+		{
+			if (componentTable->componentData_ && componentTable->currentComponentsCount_ > 0)
 			{
 				for (uint32_t i = 0; i < componentTable->currentComponentsCount_; i++)
 				{
@@ -210,11 +230,32 @@ namespace gwa::ntity
 				}
 				free(componentTable->componentData_);
 			}
+		}
 			break;
 		case transfer:
+		{
 			args->otherTable->componentData_ = componentTable->componentData_;
 			args->otherTable->_memoryManager = componentTable->_memoryManager;
 			const_cast<ComponentTable*>(componentTable)->_memoryManager = nullptr;
+		}
+			break;
+		case delElement:
+		{
+			//NOTE reducing CurrentComponentsCount_ has to be done manually after calling pop
+			assert(args->index != componentTable->currentComponentsCount_);
+			Component* removeCandidate = static_cast<Component*>(componentTable->componentData_) + args->index;
+			Component* lastElement = static_cast<Component*>(componentTable->componentData_) + (componentTable->currentComponentsCount_ - 1);
+
+			removeCandidate->~Component();
+			new (removeCandidate) Component(std::move(*lastElement));
+			lastElement->~Component();
+		}
+			break;
+		case pop:
+		{
+			const Component* popElement = ptr + args->index;
+			popElement->~Component();
+		}
 			break;
 		case clone:
 			// not implemented yet

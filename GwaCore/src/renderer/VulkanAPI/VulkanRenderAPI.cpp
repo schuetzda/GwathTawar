@@ -75,6 +75,7 @@ namespace gwa {
 				m_textures[index] = textureImage;
 				m_textureViews[index] = VulkanImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 				index++;
+				registry.deleteEntity(textureEntity);
 			}
 
 			for (uint32_t meshBufferEntity: registry.getEntities<TexturedMeshBufferMemory>())
@@ -90,6 +91,7 @@ namespace gwa {
 				}
 				renderObject.bufferID = id;
 				registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+				registry.deleteEntity(meshBufferEntity);
 			}
 		}
 		
@@ -121,13 +123,13 @@ namespace gwa {
 			m_imgui.updatePlatform();
 			return;
 		}
-		const std::vector<VkSemaphore>& imageAvailabe = m_imageAvailable.getSemaphores();
+		const std::vector<VkSemaphore>& imageAvailable = m_imageAvailable.getSemaphores();
 		const std::vector<VkSemaphore>& renderFinished = m_renderFinished.getSemaphores();
 
 		vkWaitForFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(m_device.getLogicalDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailabe[currentFrame], VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(m_device.getLogicalDevice(), m_swapchain.getSwapchain(), std::numeric_limits<uint64_t>::max(), imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 		{
 			recreateSwapchain(framebufferSize);
@@ -156,7 +158,7 @@ namespace gwa {
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 		submitInfo.waitSemaphoreCount = 1;						// Nummer of semaphores to wait on
-		submitInfo.pWaitSemaphores = &imageAvailabe[currentFrame];			// List of Semphores to wait on
+		submitInfo.pWaitSemaphores = &imageAvailable[currentFrame];			// List of Semphores to wait on
 		std::array<VkPipelineStageFlags,1> waitStages = {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 		};
