@@ -17,7 +17,7 @@ namespace gwa
 		/**
 		 * @brief Render all UI related things using the Dear ImGui library.
 		 */
-		virtual void renderUI() = 0;
+		virtual void renderUI(float ts) = 0;
 
 		/**
 		 * @brief The run method gets called every cycle of the game loop.

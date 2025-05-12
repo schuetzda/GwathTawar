@@ -35,7 +35,7 @@ namespace gwa
 			m_game->run(timestep, registry);
 
 			uiOverlay.beforeUIRender();
-			m_game->renderUI();
+			m_game->renderUI(timestep);
 			uiOverlay.afterUIRender();
 			renderAPI->uboViewProj.view = camera.getViewMatrix();
 			renderAPI->draw(&m_window, registry);

@@ -6,6 +6,7 @@
 #include <array>
 #include <ecs/components/RenderObjects.h>
 #include "imgui/imgui.h"
+#include <numeric>
 
 
 void MyProject::init(gwa::ntity::Registry& registry)
@@ -15,10 +16,24 @@ void MyProject::init(gwa::ntity::Registry& registry)
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
 }
 
-void MyProject::renderUI()
+void MyProject::renderUI(float ts)
 {
-	bool showDemo = true;
-	ImGui::ShowDemoWindow(&showDemo);
+	ftime100 += ts;
+	frameCount++;
+
+	if (ftime100 > 0.5f)
+	{
+		avgFtime100 = ftime100 / frameCount;
+		ftime100 = 0.f;
+		frameCount = 0;
+	}
+	const float fps = 1.0f / avgFtime100;
+	
+	bool windowCanClose = true;
+	ImGui::Begin("Debug", &windowCanClose, ImGuiWindowFlags_MenuBar);
+	ImGui::Text("Frametime: %f", ts);
+	ImGui::Text("Average FPS: %f", fps);
+	ImGui::End();
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)

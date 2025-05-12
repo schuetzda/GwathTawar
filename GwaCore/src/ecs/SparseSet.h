@@ -110,6 +110,11 @@ namespace gwa::ntity
 			componentTable.clear();
 		}
 
+		/**
+		 * @brief Deletes an entity including its component from the sparse set.
+		 * The to deleted entity is swapped with the last element from the dense list. Then the last index is removed.
+		 * @param entityID entity to be deleted
+		 */
 		void deleteEntity(uint32_t entityID)
 		{
 			if (sparseList[entityID] == INVALID_ENTITY_ID)
@@ -118,20 +123,14 @@ namespace gwa::ntity
 			const uint32_t toDeleteEntity = sparseList[entityID];
 			const uint32_t lastElementIndex = denseList[denseList.size() - 1];
 
-			componentTable.swapAndDelete(static_cast<uint32_t>(toDeleteEntity));
+			componentTable.swapAndDelete(toDeleteEntity);
 
+			//Swap sparse list indices so that the delete points to invalid entity and the last points to the swapped spot
 			sparseList[lastElementIndex] = toDeleteEntity;
 			sparseList[entityID] = INVALID_ENTITY_ID;
 
 			denseList[toDeleteEntity] = lastElementIndex;
 			denseList.pop_back();
-		}
-
-		void swap(uint32_t denseListIndex1, uint32_t denseListIndex2)
-		{
-			uint32_t denseListValue1 = denseList[denseListIndex1];
-			denseList[denseListIndex1] = denseList[denseListIndex2];
-			denseList[denseListIndex2] = denseListValue1;
 		}
 
 		/**
