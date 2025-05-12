@@ -2,6 +2,7 @@
 #include <cassert>
 #include <renderer/RenderAPI.h>
 #include <iostream>
+#include <imgui_impl_vulkan.h>
 namespace gwa
 {
 	std::unique_ptr<RenderAPI> Application::renderAPI = RenderAPI::Create();
@@ -36,6 +37,7 @@ namespace gwa
 
 			uiOverlay.beforeUIRender();
 			m_game->renderUI(timestep);
+			ImGui::InputFloat("Cam Speed", &camera.cspeed_, 0.001f);
 			uiOverlay.afterUIRender();
 			renderAPI->uboViewProj.view = camera.getViewMatrix();
 			renderAPI->draw(&m_window, registry);

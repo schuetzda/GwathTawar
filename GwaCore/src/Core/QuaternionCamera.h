@@ -26,13 +26,13 @@ namespace gwa
 		 * @return A 4x4 matrix representing the camera's view transformation.
 		 */
 		glm::mat4 getViewMatrix() const;
+		float cspeed_ = 0.001f;
 	private:
 		void updateOrientationQuat();
 
 		glm::vec3 position_;
 		glm::quat orientation_;
 		glm::vec2 previousMousePos_;
-		float cspeed_ = 0.001f;
 		float pitch;
 		float yaw;
 		float roll;

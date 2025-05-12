@@ -134,7 +134,7 @@ namespace gwa
 					}
 
 					// Normals
-					if (curPrimitive.attributes[normalAttributeIndex].data->type == cgltf_type_vec3)
+					if (normalAttributeIndex >= 0 && curPrimitive.attributes[normalAttributeIndex].data->type == cgltf_type_vec3)
 					{
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[normalAttributeIndex].data->buffer_view->buffer->uri],
 							meshBufferData.normals, curPrimitive.attributes[normalAttributeIndex].data->count,
@@ -143,7 +143,7 @@ namespace gwa
 					}
 
 					// Texcoords
-					if (curPrimitive.attributes[texcoordAttributeIndex].data->type == cgltf_type_vec2)
+					if (texcoordAttributeIndex >= 0 && curPrimitive.attributes[texcoordAttributeIndex].data->type == cgltf_type_vec2)
 					{
 						convertToVector<glm::vec2, glm::vec2>(bufferMemoryMap[curPrimitive.attributes[texcoordAttributeIndex].data->buffer_view->buffer->uri],
 							meshBufferData.texcoords, curPrimitive.attributes[texcoordAttributeIndex].data->count,
@@ -154,7 +154,7 @@ namespace gwa
 					//Textures
 					//NOTE Right now all textures get loaded before creating the descriptor sets. To reduce maximum memory use you can load one texture at a directly before creating the descriptor set
 					// and realase it directly after
-					if (curPrimitive.material->has_pbr_metallic_roughness)
+					if (curPrimitive.material && curPrimitive.material->has_pbr_metallic_roughness)
 					{
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
 						{

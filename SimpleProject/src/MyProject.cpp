@@ -28,12 +28,16 @@ void MyProject::renderUI(float ts)
 		frameCount = 0;
 	}
 	const float fps = 1.0f / avgFtime100;
-	
+
 	bool windowCanClose = true;
 	ImGui::Begin("Debug", &windowCanClose, ImGuiWindowFlags_MenuBar);
 	ImGui::Text("Frametime: %f", ts);
 	ImGui::Text("Average FPS: %f", fps);
-	ImGui::End();
+
+	ImGui::Text("Key bindings:");
+	ImGui::Text("w,a,s,d- Move camera");
+	ImGui::Text("f,g- In-\\Decrease camera speed");
+	ImGui::Text("q,a- Camera roll");
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)
