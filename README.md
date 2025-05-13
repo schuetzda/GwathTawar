@@ -7,7 +7,7 @@ In [ecs](https://github.com/schuetzda/GwathTawar/tree/main/GwaCore/src/ecs) is a
 
 Additional used libraries are:
 - [GLFW](https://github.com/glfw/glfw) for creating windows, contexts and surfaces, receiving input and events.
-- [premake](https://premake.github.io/) to generate build configurations for Visual Studio
+- [premake](https://premake.github.io/) to generate build configurations for Visual Studio 2022
 - [gltf](https://github.com/jkuhlmann/cgltf) to load three-dimensional scenes and models using the [gltf data format](https://www.khronos.org/gltf/)
 - [stb_image](https://github.com/nothings/stb) for reading and writing images
 - [glm](https://github.com/g-truc/glm) is used as the math library
