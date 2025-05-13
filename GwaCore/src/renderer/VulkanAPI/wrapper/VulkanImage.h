@@ -17,6 +17,7 @@ namespace gwa
 			return image_;
 		}
 	private:
+		void createImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
 		VkImage image_{};
 		VkDeviceMemory imageMemory_{};
 

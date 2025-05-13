@@ -94,11 +94,11 @@ namespace gwa {
 				registry.deleteEntity(meshBufferEntity);
 			}
 		}
-		
-		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 		registry.flushComponents<TexturedMeshBufferMemory>();
 		registry.flushComponents<Texture>();
-		
+
+		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+				
 		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
 		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
@@ -243,13 +243,11 @@ namespace gwa {
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = extent;
-		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);
+		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);	
 		
-		const size_t componentCount = registry.getComponentCount<TexturedMeshRenderObject>();
-		const std::span<const uint32_t> entities = registry.getEntities<TexturedMeshRenderObject>();
-		for (uint32_t i = 0; i < componentCount; i++)
+		for (uint32_t entity: registry.getEntities<TexturedMeshRenderObject>())
 		{
-			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entities[i]);
+			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entity);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
 			//TODO correct return types
 			constexpr uint32_t vertexBufferSize = 3;
@@ -263,6 +261,7 @@ namespace gwa {
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
+
 		//Render Imgui UI
 		m_imgui.renderData(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
 

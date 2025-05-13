@@ -117,7 +117,7 @@ namespace gwa {
 			newExtent.width = static_cast<uint32_t>(framebufferWidth);
 			newExtent.height = static_cast<uint32_t>(framebufferHeight);
 
-			//Surace also defines max and minn, so make sure within boundaries by clamping value
+			//Surace also defines max and min, so make sure within boundaries by clamping value
 			newExtent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, newExtent.width));
 			newExtent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, newExtent.height));
 			return newExtent;
@@ -150,14 +150,14 @@ namespace gwa {
 		viewCreateInfo.image = image;
 		viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		viewCreateInfo.format = format;
-		// Allows remappung of rgba compononents to other rgba values
+		// Allows remapping of rgba compononents to other rgba values
 		viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 		viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 		viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
 		//Subresources allow the view to view only a part of an image
-		viewCreateInfo.subresourceRange.aspectMask = aspectFlags;		//Wich aspect of image to view (e.g. COLOR_BIT for view color)
+		viewCreateInfo.subresourceRange.aspectMask = aspectFlags;		//Which aspect of image to view (e.g. COLOR_BIT for view color)
 		viewCreateInfo.subresourceRange.baseMipLevel = 0;				// Start mipmap level to view from
 		viewCreateInfo.subresourceRange.levelCount = 1;					// Number of mipmap levels to view
 		viewCreateInfo.subresourceRange.baseArrayLayer = 0;				// Start array level to view from

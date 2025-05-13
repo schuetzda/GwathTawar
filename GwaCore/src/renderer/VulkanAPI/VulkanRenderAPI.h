@@ -65,9 +65,6 @@ namespace gwa {
 		VulkanImguiIntegration m_imgui;
 
 		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-		
-		//TODO temp fix, move Mesehs and camera to correct spot
-		
 	};
 }
 

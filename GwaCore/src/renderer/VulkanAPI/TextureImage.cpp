@@ -6,6 +6,11 @@ namespace gwa
 {
     TextureImage::TextureImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, const Texture& texture, VkCommandPool commandPool) 
     {
+        createImage(logicalDevice, physicalDevice, graphicsQueue, texture, commandPool);
+    }
+
+    void TextureImage::createImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, const Texture& texture, VkCommandPool commandPool)
+    {
         VkDeviceSize imageSize = texture.width * texture.height * 4;
         VulkanBuffer stagingBuffer = VulkanBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         void* data;
@@ -17,8 +22,8 @@ namespace gwa
             VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         transitionImageLayout(logicalDevice, graphicsQueue, commandPool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(),graphicsQueue, commandPool, texture.width, texture.height);
-        transitionImageLayout(logicalDevice,graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        copyBufferToImage(logicalDevice, stagingBuffer.getBuffer(), textureImage_.getImage(), graphicsQueue, commandPool, texture.width, texture.height);
+        transitionImageLayout(logicalDevice, graphicsQueue, commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         stagingBuffer.cleanup();
     }

@@ -31,13 +31,13 @@ void MyProject::renderUI(float ts)
 
 	bool windowCanClose = true;
 	ImGui::Begin("Debug", &windowCanClose, ImGuiWindowFlags_MenuBar);
-	ImGui::Text("Frametime: %f", ts);
+	ImGui::Text("Frame Time: %f", ts);
 	ImGui::Text("Average FPS: %f", fps);
 
 	ImGui::Text("Key bindings:");
 	ImGui::Text("w,a,s,d- Move camera");
 	ImGui::Text("f,g- In-\\Decrease camera speed");
-	ImGui::Text("q,a- Camera roll");
+	ImGui::Text("q,e- Camera roll");
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)

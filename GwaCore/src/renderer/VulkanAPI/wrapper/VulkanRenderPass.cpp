@@ -27,7 +27,7 @@ namespace gwa
 		assert(false);
 		return formats[0];
 	}
-	
+
 	VulkanRenderPass::VulkanRenderPass(const VulkanDevice* const device, VkFormat swapchainImageFormat):logicalDevice_(device->getLogicalDevice())
 	{
 		// Color Attachments of render pass. All subpasses have access to this.
