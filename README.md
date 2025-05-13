@@ -1,6 +1,6 @@
 # GwathTawar
 A small, work-in-progress renderer using Vulkan. Right now, only Windows is supported.
-The main motivation for this project is to learn new skills and techniques using C++ while creating something I’m passionate about.
+The main motivation for this project is to learn new skills and techniques using C++ while creating something I’m passionate about. </br>
 Take a look at [Core](https://github.com/schuetzda/GwathTawar/tree/main/GwaCore/src/Core) for the foundational components of the applications (Window, Camera, etc.). </br>
 In [ecs](https://github.com/schuetzda/GwathTawar/tree/main/GwaCore/src/ecs) is a small entity-component-system using a Sparse Set at its core. </br>
 [Renderer](https://github.com/schuetzda/GwathTawar/tree/main/GwaCore/src/renderer) includes all components responsible for rendering the 3D image to the screen. </br>
