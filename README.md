@@ -13,7 +13,7 @@ Additional used libraries are:
 - [glm](https://github.com/g-truc/glm) is used as the math library
 - [imgui](https://github.com/ocornut/imgui) for the graphical user interface
 
-Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). **Important** Make sure to select 'Shader Toolchain Debug Symbols' in the installation dialog, and ensure that your graphics card driver is up to date.
+Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). **Important:** Make sure to select 'Shader Toolchain Debug Symbols' in the installation dialog, and ensure that your graphics card driver is up to date.
 
 Then clone recursively: git clone --recurse-submodule https://github.com/schuetzda/GwathTawar
 and run BuildScript.bat to build the project.
