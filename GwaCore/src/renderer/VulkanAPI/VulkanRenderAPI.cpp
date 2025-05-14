@@ -109,7 +109,7 @@ namespace gwa {
 				maxFramesInFlight_, sizeof(UboViewProj), imageView.getImageView(), m_textureSampler.getImageSampler());
 		}
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
-		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
+		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
 
 		m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), m_renderPass.getRenderPass(), m_device.getGraphicsQueue());
@@ -153,20 +153,22 @@ namespace gwa {
 		{
 			m_imgui.updatePlatform();
 		}
+		VkSemaphore waitSemaphores[] = { imageAvailable[currentFrame] };
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
 		submitInfo.waitSemaphoreCount = 1;						// Nummer of semaphores to wait on
-		submitInfo.pWaitSemaphores = &imageAvailable[currentFrame];			// List of Semphores to wait on
+		submitInfo.pWaitSemaphores = waitSemaphores;			// List of Semphores to wait on
 		std::array<VkPipelineStageFlags,1> waitStages = {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 		};
+
+		VkSemaphore signalSemaphores[] = { renderFinished[currentFrame] };
 		submitInfo.pWaitDstStageMask = waitStages.data();				//Stages to check semaphores
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = m_graphicsCommandBuffers[currentFrame].getCommandBuffer();
 		submitInfo.signalSemaphoreCount = 1;					// Number of semaphores to signal
-		submitInfo.pSignalSemaphores = &renderFinished[currentFrame];			// Semaphores to signal when command buffer finishes
+		submitInfo.pSignalSemaphores = signalSemaphores;			// Semaphores to signal when command buffer finishes
 
 		result = vkQueueSubmit(m_device.getGraphicsQueue(), 1, &submitInfo, m_drawFences.getFences()[currentFrame]);
 		assert(result == VK_SUCCESS);
@@ -175,7 +177,7 @@ namespace gwa {
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = &renderFinished[currentFrame];
+		presentInfo.pWaitSemaphores = signalSemaphores;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = m_swapchain.getSwapchainPtr();
 		presentInfo.pImageIndices = &imageIndex;
@@ -249,7 +251,6 @@ namespace gwa {
 		{
 			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entity);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
-			//TODO correct return types
 			constexpr uint32_t vertexBufferSize = 3;
 			std::array<VkDeviceSize, vertexBufferSize> offsets = { 0, 0, 0 };
 			const VkBuffer vertexBuffers[vertexBufferSize] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
