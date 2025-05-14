@@ -27,8 +27,8 @@ namespace gwa::ntity
 		}
 
 		/**
-		 * @brief Iterator that iterates through the smallest denseList of all components. Entities with no component of the specified type will be skipped. 
-		 * @tparam ...Components 
+		 * @brief Iterator for a Component View. It traverses through the smallest denseList of all components. Entities with no component of the specified type will be skipped. 
+		 * @tparam numberOfComponents 
 		 */
 		template<uint32_t numberOfComponents>
 		struct ComponentIterator
@@ -37,6 +37,10 @@ namespace gwa::ntity
 			{
 			}
 
+			/**
+			 * @brief Advances the iterator to the next valid entity.
+			 * @return The current position of the Iterator
+			 */
 			ComponentIterator<numberOfComponents>& operator++()
 			{
 				do
@@ -84,6 +88,12 @@ namespace gwa::ntity
 			return ComponentIterator<sizeof...(Components)>(&sparseSets, smallestSet, it);
 		}
 
+		/**
+		 * @brief Retrieves a pointer to the component of a given entity.
+		 * @tparam Component The type of the component
+		 * @param entityID The ID of the entity whose component is to be retrieved.
+		 * @return  pointer to the component of the specified entity, or nullptr if not found.
+		 */
 		template<typename Component>
 		Component* get(uint32_t entityID) const
 		{
@@ -92,6 +102,10 @@ namespace gwa::ntity
 			return sparseSets[typeIndex].get<Component>(entityID);
 		}
 
+		/**
+		 * @brief Returns an iterator pointing past the last valid entity.
+		 * @return 
+		 */
 		ComponentIterator<sizeof...(Components)> end()
 		{
 			return ComponentIterator<sizeof...(Components)>(&sparseSets, smallestSet, sparseSets[smallestSet]->getDenseList().end());

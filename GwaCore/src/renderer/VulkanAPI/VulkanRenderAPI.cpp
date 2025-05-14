@@ -64,7 +64,7 @@ namespace gwa {
 			std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
 
 			uint32_t index = 0;
-			const uint32_t numberOfTextures = registry.getComponentCount<Texture>();
+			const size_t numberOfTextures = registry.getComponentCount<Texture>();
 			m_textures.resize(numberOfTextures);
 			m_textureViews.resize(numberOfTextures);
 			for (uint32_t textureEntity : registry.getEntities<Texture>())
@@ -108,8 +108,8 @@ namespace gwa {
 			m_descriptorSets.emplace_back(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
 				maxFramesInFlight_, sizeof(UboViewProj), imageView.getImageView(), m_textureSampler.getImageSampler());
 		}
-		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
-		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
+		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
+		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
 
 		m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), m_renderPass.getRenderPass(), m_device.getGraphicsQueue());

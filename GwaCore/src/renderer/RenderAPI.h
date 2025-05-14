@@ -28,7 +28,6 @@ namespace gwa {
 		} uboViewProj;
 
 		std::vector<uint32_t> m_meshes; //TODO move to protected
-	protected:
 	private:
 		static API s_API;
 		

@@ -38,7 +38,7 @@ namespace gwa
 		std::vector<VkDeviceMemory> indexBufferMemoryList_;
 		std::vector<VkDeviceMemory> texcoordBufferMemoryList_;
 
-		VkDevice logicalDevice_;
-		VkPhysicalDevice physicalDevice_;
+		VkDevice logicalDevice_{};
+		VkPhysicalDevice physicalDevice_{};
 	};
 }

@@ -49,7 +49,7 @@ namespace gwa
 		}
 
 		std::unordered_map<std::string, uint32_t, StringViewHash, std::equal_to<>> textureEntityMap;
-		const uint32_t texturesCount = gltfDataPtr->textures_count;
+		const uint32_t texturesCount = static_cast<uint32_t>(gltfDataPtr->textures_count);
 		registry.initNewComponent<Texture>(texturesCount);
 		for (uint32_t i = 0; i < gltfDataPtr->textures_count; i++)
 		{

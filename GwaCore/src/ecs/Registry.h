@@ -94,7 +94,7 @@ namespace gwa::ntity
 			return sparseSets[typeID].emplace<Component>(entityID, component);
 		}
 
-		/**
+		/**whose
 		 * @brief  Assign a component to an entity. Only assigns the component if a component of the same type is not already assigned to it.
 		 * @tparam Component  Type of the component. Adding new component types without previous initialization results in an assertion error.
 		 * @tparam ...Args 
