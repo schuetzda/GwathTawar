@@ -85,7 +85,6 @@ namespace gwa::ntity
 		 * @tparam Component Type of the component. Adding new component types without previous initialization results in an assertion error. The type has to be trivially copyable.
 		 * @param entityID Entity Index
 		 * @param component Component value to be assigned
-		 * @return Return true on successful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
 		 */
 		template<typename Component> requires std::is_copy_assignable_v<Component>
 		void emplace(uint32_t entityID, Component& component)
@@ -101,10 +100,9 @@ namespace gwa::ntity
 		 * @tparam ...Args 
 		 * @param entityID Entity Index 
 		 * @param ...args Constructor parameters of the given component type
-		 * @return Return true on successful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false 
 		 */
 		template<typename Component, typename ...Args> requires std::is_constructible_v<Component, Args...>
-		bool emplace(uint32_t entityID, Args&&... args)
+		void emplace(uint32_t entityID, Args&&... args)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>(false);
 			assert(typeID < sparseSets.size());

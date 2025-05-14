@@ -27,7 +27,7 @@ namespace gwa::ntity
 		*@brief Initializes the table for a specific component type.
 		* @tparam Component The type of the components stored in this table. The component has to be copy constructible.
 		* @tparam Mgr The memory manager responsible for handling component lifecycle.
-		* @param reservedComponentsCount The expected number of component that can be hold without a memory reallocation
+		* @param reservedComponentsCount The expected number of component that can be hold without a memory reallocation.
 		*/
 		template<typename Component, typename Mgr = Manager<Component>>
 			requires std::is_copy_constructible_v<std::decay_t<Component>>
@@ -61,7 +61,7 @@ namespace gwa::ntity
 		/**
 		 * @brief Retrieves a pointer to a component at the specified index.
 		 * @param index The index of the component in the table.
-		 * @return Pointer to the component
+		 * @return Pointer to the component.
 		 */
 		template <typename Component>
 		Component* getComponent(uint32_t index) const
@@ -69,20 +69,6 @@ namespace gwa::ntity
 			assert(typeID_ == std::type_index(typeid(Component)));
 			assert(index < reservedComponentsCount_);
 			return static_cast<Component*>(componentData_) + index;
-		}
-
-				
-		template<typename Component, typename... Args>
-		bool try_emplace(uint32_t entity, Args&&... args)
-		{
-			if (typeID_ == std::type_index(typeid(Component)) && entity < size())
-			{
-				return false;
-			}
-
-			Component const* currentPointer = static_cast<Component*>(componentData_) + entity;
-			new(currentPointer) Component(std::forward<Component, Args>(args)...);
-			return currentPointer != nullptr;
 		}
 		
 		/**
@@ -102,6 +88,10 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
+		/**
+		 * @brief Adds a new component to the end of the table, reallocating memory if necessary.
+		* @param component The component to be added.
+		*/
 		template<typename Component> requires std::is_move_constructible_v<Component>
 		void emplace_back(Component&& component)
 		{
@@ -115,7 +105,12 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
-		
+		/**
+		 * @brief Constructs and adds a new component to the storage
+		 * @tparam Component Type of the component
+		 * @tparam ...Args 
+		 * @param ...args Arguments to be perfectly forwarded to the Component constructor
+		 */
 		template<typename Component, typename... Args> requires std::is_constructible_v<Component, Args...>
 		void emplace_back(Args&&... args)
 		{
@@ -129,6 +124,10 @@ namespace gwa::ntity
 			currentComponentsCount_++;
 		}
 
+		/**
+		 * @brief Removes a component at the given index by swapping it with the last component.
+		 * @param index The index of the component to remove.
+		 */
 		void swapAndDelete(uint32_t index)
 		{
 			assert(index < size() && _memoryManager != nullptr);
@@ -145,6 +144,10 @@ namespace gwa::ntity
 			currentComponentsCount_--;
 		}
 
+		/**
+		 * @brief Returns the number of currently stored components.
+		 * @return The current number of active components in the container.
+		 */
 		uint32_t size() const
 		{
 			return currentComponentsCount_;
@@ -156,6 +159,9 @@ namespace gwa::ntity
 			clear();
 		}
 
+		/**
+		 * @brief Clears the storage of the component table and resets the member variables.
+		 */
 		void clear()
 		{
 			if (_memoryManager != nullptr)
@@ -168,6 +174,10 @@ namespace gwa::ntity
 		}
 
 	private:
+		/**
+		 * @brief Increases the capacity of the component storage and reallocates memory.
+		 * @tparam Component The type of the component being stored
+		 */
 		template<typename Component>
 		void grow()
 		{
@@ -212,6 +222,14 @@ namespace gwa::ntity
 		void* componentData_{};
 	};
 
+	/**
+	 * @brief @brief Performs a memory management operation on a component table. It serves as a type-erased manager for component memory operations.
+	 * @tparam Component The type of component being managed.
+	 * @param operation The operation to perform (e.g., destroy, transfer, delElement, pop).
+	 * @param componentTable Pointer to the component table on which the operation will be performed.
+	 * @param args Optional arguments required for some operations (e.g., index for deletion).
+	 * 
+	**/
 	template <typename Component>
 	void ComponentTable::Manager<Component>::manage(_Operation operation, const ComponentTable* componentTable, _Arguments* args)
 	{
@@ -241,7 +259,7 @@ namespace gwa::ntity
 			break;
 		case delElement:
 		{
-			//NOTE reducing CurrentComponentsCount_ has to be done manually after calling pop
+			//NOTE reducing CurrentComponentsCount_ has to be done manually after calling deleteElement
 			assert(args->index != componentTable->currentComponentsCount_);
 			Component* removeCandidate = static_cast<Component*>(componentTable->componentData_) + args->index;
 			Component* lastElement = static_cast<Component*>(componentTable->componentData_) + (componentTable->currentComponentsCount_ - 1);
@@ -253,7 +271,7 @@ namespace gwa::ntity
 			break;
 		case pop:
 		{
-			const Component* popElement = ptr + args->index;
+			const Component* popElement = ptr + (componentTable->currentComponentsCount_-1);
 			popElement->~Component();
 		}
 			break;

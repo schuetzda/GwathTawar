@@ -35,28 +35,25 @@ namespace gwa::ntity
 		 * @brief Assign a component to the given entity. The entity can not have a previously assigned Component of the same type.
 		 * @tparam ...Args Type of the constructor arguments
 		 * @tparam Component
-		 * @param enitity Index of the entity
+		 * @param entity Id of the entity
 		 * @param ...args Constructor arguments of the given Component Type
-		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
 		 */
 		
 		template<typename Component, typename... Args> requires std::is_constructible_v<Component, Args...>
-		bool emplace(uint32_t entity, Args&&... args)
+		void emplace(uint32_t entity, Args&&... args)
 		{
 			assert(sparseList[entity] == INVALID_ENTITY_ID);
 			assert(entity < sparseList.size());
 			denseList.emplace_back(entity);
 			sparseList[entity] = static_cast<uint32_t>(denseList.size() - 1);
 			componentTable.emplace_back<Component, Args...>(entity, std::forward<Args>(args)...);
-			return true;
 		}
 
 		/**
 		 * @brief Assign a component to the given entity. The entity can not have a previously assigned Component of the same type.
 		 * @tparam Component Type of the component
-		 * @param entity Index of the entity
+		 * @param entity Id of the entity
 		 * @param component Component to be assigned
-		 * @return Return true on succesful emplacement, if the component could not be emplace f.e. because there is already an assigned Component return false
 		 */
 		template<typename Component> requires std::is_move_constructible_v<Component>
 		void emplace(uint32_t entity, Component&& component)
@@ -68,6 +65,12 @@ namespace gwa::ntity
 			componentTable.emplace_back<Component>(std::forward<Component>(component));
 		}
 
+		/**
+		 * @brief Assign a component to the given entity.
+		 * @tparam Component Type of the component
+		 * @param entity Id of the entity
+		 * @param component Component to be assigned. This component will be copied and has to be copy assignable.
+		 */
 		template<typename Component> requires std::is_copy_assignable_v<Component>
 		void emplace(uint32_t entity, Component& component)
 		{
@@ -134,7 +137,7 @@ namespace gwa::ntity
 		}
 
 		/**
-		 * @brief 
+		 * @brief Retrieves a pointer to the Component of the given type and entity in memory.
 		 * @tparam Component 
 		 * @param entity 
 		 * @return The pointer of the component assigned to the entity or nullptr if no component is assigned
@@ -146,6 +149,12 @@ namespace gwa::ntity
 			return denseListIndex < denseList.size() ? componentTable.getComponent<Component>(sparseList[entity]): nullptr;
 		}
 
+		/**
+		@brief Applies a function to each component of the specified type.
+		 * @tparam Component The type of the component to operate on.
+		 * @tparam Func A callable type that takes a Component* as its argument.
+		 * @param func A callable that will be invoked for each component.
+		 */
 		template <typename Component, typename Func>
 		void each(Func&& func)
 		{
