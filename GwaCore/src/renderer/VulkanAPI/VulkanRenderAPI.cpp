@@ -73,7 +73,7 @@ namespace gwa {
 				Texture const* texture = registry.getComponent<Texture>(textureEntity);
 				TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
 				m_textures[index] = textureImage;
-				m_textureViews[index] = VulkanImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+				m_textureViews[index] = VulkanImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 				index++;
 				registry.deleteEntity(textureEntity);
 			}
