@@ -12,7 +12,6 @@ namespace gwa {
 			None = 0, Vulkan = 1
 		};
 
-	public:
 		virtual ~RenderAPI() = default;
 
 		virtual void init(const Window* window, gwa::ntity::Registry& registry) = 0;

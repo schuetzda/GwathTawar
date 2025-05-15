@@ -7,6 +7,7 @@
 #include <ecs/components/RenderObjects.h>
 #include "imgui/imgui.h"
 #include <numeric>
+#include <renderer/rendergraph/RenderGraph.h>
 
 
 void MyProject::init(gwa::ntity::Registry& registry)
@@ -38,6 +39,21 @@ void MyProject::renderUI(float ts)
 	ImGui::Text("w,a,s,d- Move camera");
 	ImGui::Text("f,g- In-\\Decrease camera speed");
 	ImGui::Text("q,e- Camera roll");
+
+	enum class test
+	{
+		Hallo,
+		das, 
+		ist
+	};
+	enum class test2
+	{
+		was,
+		machst,
+		du
+	};
+	
+	gwa::RenderGraph<test, test2> graph{};
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)
