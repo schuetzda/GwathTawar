@@ -139,12 +139,10 @@ namespace gwa {
 		{
 			assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
 		}
-		
+		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
 
 		m_mvpUniformBuffers.updateUniformBuffers(imageIndex, sizeof(UboViewProj), &uboViewProj);
-		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
 		vkResetCommandBuffer(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 0);
-
 		recordCommands(imageIndex, registry);
 
 	
@@ -163,7 +161,7 @@ namespace gwa {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 		};
 
-		VkSemaphore signalSemaphores[] = { renderFinished[currentFrame] };
+		VkSemaphore signalSemaphores[] = { renderFinished[imageIndex] };
 		submitInfo.pWaitDstStageMask = waitStages.data();				//Stages to check semaphores
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = m_graphicsCommandBuffers[currentFrame].getCommandBuffer();
