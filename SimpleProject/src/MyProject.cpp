@@ -8,13 +8,37 @@
 #include "imgui/imgui.h"
 #include <numeric>
 #include <renderer/rendergraph/RenderGraph.h>
-
+#include <renderer/rendergraph/RenderValues.h>
 
 void MyProject::init(gwa::ntity::Registry& registry)
 {
 	std::filesystem::path assetPath("./assets/Sponza");
 	std::string gltfFileName("Sponza.gltf");
 	gwa::gltfImporter::loadResource(registry, assetPath, gltfFileName);
+
+
+	enum class test
+	{
+		attachment1,
+		attachment2,
+		attachment3,
+		attachment4,
+		pass1,
+		pass2,
+		pass3
+	};
+
+	gwa::renderer::RenderGraph<test> graph{};
+	graph.addAttachment(test::attachment1, gwa::renderer::Format::FORMAT_A1R5G5B5_UNORM_PACK16,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_MAX_ENUM,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT)
+		.addAttachment(test::attachment2, gwa::renderer::Format::FORMAT_A1R5G5B5_UNORM_PACK16,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_MAX_ENUM,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT)
+		.addRenderPass<2>(test::pass1, {test::attachment1, test::attachment2})
+		.getRenderGraphDescription();
 }
 
 void MyProject::renderUI(float ts)
@@ -40,27 +64,13 @@ void MyProject::renderUI(float ts)
 	ImGui::Text("f,g- In-\\Decrease camera speed");
 	ImGui::Text("q,e- Camera roll");
 
-	enum class test
-	{
-		Hallo,
-		das, 
-		ist
-	};
-	enum class test2
-	{
-		was,
-		machst,
-		du
-	};
-	
-	gwa::RenderGraph<test, test2> graph{};
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry)
 {
 	glm::mat4 firstModel(1.0f);
 	firstModel = glm::translate(firstModel, glm::vec3(0.0f, 0.0f, -2.5f));
-	for (uint32_t entity: registry.getEntities<gwa::TexturedMeshRenderObject>())
+	for (uint32_t entity : registry.getEntities<gwa::TexturedMeshRenderObject>())
 	{
 		gwa::TexturedMeshRenderObject* renderObject = registry.getComponent<gwa::TexturedMeshRenderObject>(entity);
 		renderObject->modelMatrix = firstModel;

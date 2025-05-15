@@ -2,6 +2,7 @@
 #include "vulkan/vulkan_core.h"
 #include <vector>
 #include "VulkanDevice.h"
+#include <renderer/rendergraph/RenderGraph.h>
 namespace gwa
 {
 	class VulkanRenderPass

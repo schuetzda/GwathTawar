@@ -1,7 +1,8 @@
 #pragma once
 #include <GwathTawar.h>
 #include <deque>
-class MyProject: public gwa::Game
+	
+class MyProject : public gwa::Game
 {
 public:
 	void init(gwa::ntity::Registry& registry) override;

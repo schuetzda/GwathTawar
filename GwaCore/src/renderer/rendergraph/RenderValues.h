@@ -18,6 +18,7 @@ namespace gwa::renderer
         ATTACHMENT_STORE_OP_NONE = 1000301000,
         ATTACHMENT_STORE_OP_MAX_ENUM = 0x7FFFFFFF
 	};
+
     enum class Format
 	{
         FORMAT_UNDEFINED = 0,

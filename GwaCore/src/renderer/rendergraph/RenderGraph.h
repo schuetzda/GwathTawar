@@ -2,39 +2,72 @@
 #include <concepts>
 #include <map>
 #include "RenderValues.h"
+#include <iostream>
 namespace gwa::renderer
 {
 	template <typename T>
 	concept EnumType = std::is_enum_v<T> && !std::is_convertible_v<T, int>;
 
-	template<EnumType RenderPassId, EnumType AttachmentId>
+
+	struct Attachment
+	{
+		Format format;
+		AttachmentLoadOp loadOp;
+		AttachmentStoreOp storeOp;
+		SampleCountFlagBits sample;
+	};
+	
+	struct Pass
+	{
+		size_t* attachments;	
+		size_t attachmentsCount;
+	};
+
+	struct RenderGraphDescription
+	{
+		std::map<size_t, Attachment> attachments;
+		std::map<size_t, Pass> passes;
+	};
+
+	template<EnumType RenderPassRessourceIDs>
 	class RenderGraph
 	{
 	public:
-		struct RenderAttachment
+		
+		RenderGraph& addAttachment(RenderPassRessourceIDs attachmentId, Format format, AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, SampleCountFlagBits sample)
 		{
-			Format format;
-			AttachmentLoadOp loadOp;
-			AttachmentStoreOp storeOp;
-			uint32_t samples;
-		};
-		struct RenderPass
-		{
-			RenderPassId renderPassId;
-		};
-
-		void addAttachment(AttachmentId id, RenderAttachment&& attachment)
-		{
-			attachments.emplace(id, std::move<RenderAttachment>(attachment));
+			graphDescription.attachments.try_emplace(hash(attachmentId),
+				format, loadOp, storeOp, sample);
+			return *this;
 		}
 
-		void addRenderPass(RenderPassId id, RenderPass&& renderPass)
+		template<size_t attachmentsCount>
+		RenderGraph& addRenderPass(RenderPassRessourceIDs renderPassId, const std::array<RenderPassRessourceIDs, attachmentsCount>& attachmentsIds)
 		{
-			passes.emplace(id, std::move<RenderPass>(renderPass));
+			std::array<size_t, attachmentsCount> attachmentsHashed;
+			for (size_t i=0; i < attachmentsCount; i++)
+			{
+				attachmentsHashed[i] = hash(attachmentsIds[i]);
+				const bool attachmentExists = graphDescription.attachments.contains(attachmentsHashed[i]);
+				assert(attachmentExists); //Make sure to add Attachments before you include them in a RenderPass
+			}
+			graphDescription.passes.try_emplace(hash(renderPassId),attachmentsHashed.data(), attachmentsHashed.size());
+			return *this;
 		}
+
+		const RenderGraphDescription& getRenderGraphDescription() const
+		{
+			return graphDescription;
+		}
+
+
 
 	private:
-		std::map<AttachmentId, RenderAttachment> attachments;
-		std::map<RenderPassId, RenderPass> passes;
+		constexpr size_t hash(RenderPassRessourceIDs id) const
+		{
+			return static_cast<size_t>(id);
+		}
+
+		RenderGraphDescription graphDescription;
 	};
 }
