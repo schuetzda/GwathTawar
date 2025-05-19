@@ -8,19 +8,23 @@ namespace gwa::renderer
 	template <typename T>
 	concept EnumType = std::is_enum_v<T> && !std::is_convertible_v<T, int>;
 
-
+	constexpr inline size_t INVALID_ATTACHMENT_ID = std::numeric_limits<size_t>::max();
+	
 	struct Attachment
 	{
 		Format format;
 		AttachmentLoadOp loadOp;
 		AttachmentStoreOp storeOp;
 		SampleCountFlagBits sample;
+		ImageLayout initialLayout;
+		ImageLayout finalLayout;
 	};
 	
 	struct Pass
 	{
-		size_t* attachments;	
-		size_t attachmentsCount;
+		size_t* colorAttachemnts;	
+		size_t colorAttachmentsCount;
+		size_t depthStencilAttachment;
 	};
 
 	struct RenderGraphDescription
@@ -34,10 +38,20 @@ namespace gwa::renderer
 	{
 	public:
 		
-		RenderGraph& addAttachment(RenderPassRessourceIDs attachmentId, Format format, AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, SampleCountFlagBits sample)
+		RenderGraph& addAttachment(RenderPassRessourceIDs attachmentId, Format format, AttachmentLoadOp loadOp, AttachmentStoreOp storeOp, SampleCountFlagBits sample, ImageLayout initialLayout, ImageLayout finalLayout)
 		{
 			graphDescription.attachments.try_emplace(hash(attachmentId),
-				format, loadOp, storeOp, sample);
+				format, loadOp, storeOp, sample, initialLayout, finalLayout);
+			return *this;
+		}
+
+		template<size_t attachmentsCount>
+		RenderGraph& addRenderPass(RenderPassRessourceIDs renderPassId, const std::array<RenderPassRessourceIDs, attachmentsCount>& attachmentsIds, RenderPassRessourceIDs depthAttachmentId)
+		{
+			std::array<size_t, attachmentsCount> attachmentsHashed;
+			addAttachmentToRenderpass<attachmentsCount>(attachmentsHashed, attachmentsIds);
+
+			graphDescription.passes.try_emplace(hash(renderPassId), attachmentsHashed.data(), attachmentsHashed.size(), hash(depthAttachmentId));
 			return *this;
 		}
 
@@ -45,13 +59,9 @@ namespace gwa::renderer
 		RenderGraph& addRenderPass(RenderPassRessourceIDs renderPassId, const std::array<RenderPassRessourceIDs, attachmentsCount>& attachmentsIds)
 		{
 			std::array<size_t, attachmentsCount> attachmentsHashed;
-			for (size_t i=0; i < attachmentsCount; i++)
-			{
-				attachmentsHashed[i] = hash(attachmentsIds[i]);
-				const bool attachmentExists = graphDescription.attachments.contains(attachmentsHashed[i]);
-				assert(attachmentExists); //Make sure to add Attachments before you include them in a RenderPass
-			}
-			graphDescription.passes.try_emplace(hash(renderPassId),attachmentsHashed.data(), attachmentsHashed.size());
+			addAttachmentToRenderpass<attachmentsCount>(attachmentsHashed, attachmentsIds);
+			
+			graphDescription.passes.try_emplace(hash(renderPassId), attachmentsHashed.data(), attachmentsHashed.size(), INVALID_ATTACHMENT_ID);
 			return *this;
 		}
 
@@ -63,6 +73,18 @@ namespace gwa::renderer
 
 
 	private:
+		template<size_t attachmentsCount>
+		void addAttachmentToRenderpass(std::array<size_t, attachmentsCount>& attachmentsHashed, const std::array<RenderPassRessourceIDs, attachmentsCount>& attachmentsIds)
+		{
+			for (size_t i = 0; i < attachmentsCount; i++)
+			{
+				attachmentsHashed[i] = hash(attachmentsIds[i]);
+				const bool attachmentExists = graphDescription.attachments.contains(attachmentsHashed[i]);
+				assert(attachmentExists); //Make sure to add Attachments before including them in a RenderPass
+			}
+		}
+		
+
 		constexpr size_t hash(RenderPassRessourceIDs id) const
 		{
 			return static_cast<size_t>(id);

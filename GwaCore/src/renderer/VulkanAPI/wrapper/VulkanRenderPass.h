@@ -9,10 +9,11 @@ namespace gwa
 	{
 	public:
 		VulkanRenderPass() = default;
-		VulkanRenderPass(const VulkanDevice* const device, VkFormat swapchainImageFormat);
+		VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat, const gwa::renderer::RenderGraphDescription& description);
+		VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat);
 		~VulkanRenderPass() = default;
 
-		void cleanup();
+		void cleanup(VkDevice logicalDevice);
 
 		VkRenderPass getRenderPass() const
 		{
@@ -27,9 +28,8 @@ namespace gwa
 	private:
 		VkFormat chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
 
+
 		VkRenderPass vkRenderPass_{};
 		VkFormat depthFormat_{};
-
-		VkDevice logicalDevice_{};
 	};
 }

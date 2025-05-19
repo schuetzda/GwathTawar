@@ -115,7 +115,7 @@ namespace gwa::ntity
 
 		/**
 		 * @brief Deletes an entity including its component from the sparse set.
-		 * The to deleted entity is swapped with the last element from the dense list. Then the last index is removed.
+		 * The to be deleted entity is swapped with the last element from the dense list. Then the last index is removed.
 		 * @param entityID entity to be deleted
 		 */
 		void deleteEntity(uint32_t entityID)

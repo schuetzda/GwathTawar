@@ -109,7 +109,7 @@ namespace gwa::ntity
 		 * @brief Constructs and adds a new component to the storage
 		 * @tparam Component Type of the component
 		 * @tparam ...Args 
-		 * @param ...args Arguments to be perfectly forwarded to the Component constructor
+		 * @param ...args Arguments to be forwarded to the Component constructor
 		 */
 		template<typename Component, typename... Args> requires std::is_constructible_v<Component, Args...>
 		void emplace_back(Args&&... args)

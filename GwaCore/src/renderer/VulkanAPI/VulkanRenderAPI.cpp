@@ -36,7 +36,32 @@ namespace gwa {
 		WindowSize framebufferSize = window->getFramebufferSize();
 		m_swapchain = VulkanSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
 
-		m_renderPass = VulkanRenderPass(&m_device, m_swapchain.getImageFormat());
+		enum class test
+		{
+			color,
+			depth,
+			framebufferRenderpass
+		};
+
+		gwa::renderer::RenderGraph<test> graph{};
+		gwa::renderer::RenderGraphDescription description = graph.addAttachment(test::color, 
+			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		.addAttachment(test::depth, 
+			gwa::renderer::Format::FORMAT_DEPTH_FORMAT,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		.addRenderPass<1>(test::framebufferRenderpass, { test::color}, test::depth)
+		.getRenderGraphDescription();
+
+		m_renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), description);
 
 		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice());
 
@@ -217,7 +242,7 @@ namespace gwa {
 		m_depthBufferImage.cleanup();
 		m_graphicsPipeline.cleanup();
 		m_descriptorSetLayout.cleanup();
-		m_renderPass.cleanup();
+		m_renderPass.cleanup(m_device.getLogicalDevice());
 		m_swapchain.cleanup();
 		m_device.cleanup();
 		m_instance.cleanup();

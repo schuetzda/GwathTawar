@@ -32,11 +32,15 @@ void MyProject::init(gwa::ntity::Registry& registry)
 	graph.addAttachment(test::attachment1, gwa::renderer::Format::FORMAT_A1R5G5B5_UNORM_PACK16,
 			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE,
 			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_MAX_ENUM,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT)
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		.addAttachment(test::attachment2, gwa::renderer::Format::FORMAT_A1R5G5B5_UNORM_PACK16,
 			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE,
 			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_MAX_ENUM,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT)
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_2_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
 		.addRenderPass<2>(test::pass1, {test::attachment1, test::attachment2})
 		.getRenderGraphDescription();
 }
