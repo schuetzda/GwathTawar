@@ -13,6 +13,7 @@
 #include <imgui_impl_vulkan.h>
 #include <imgui_impl_glfw.h>
 #include "renderer/rendergraph/RenderGraph.h"
+#include <renderer/rendergraph/PipelineBuilder.h>
 
 
 namespace gwa {
@@ -67,8 +68,20 @@ namespace gwa {
 
 		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
-		std::array<uint32_t,2> offset = { 0, 0 }; //TODO move
-		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), sizeof(glm::vec3), offset, m_renderPass.getRenderPass(), m_swapchain.getSwapchainExtent(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
+		renderer::PipelineBuilder pipelineBuilder{};
+		renderer::PipelineConfig pipelineConfig =  
+			pipelineBuilder.addShaderModule("src/shaders/vert.spv", renderer::ShaderStage::SHADER_STAGE_VERTEX_BIT)
+			.addShaderModule("src/shaders/frag.spv", renderer::ShaderStage::SHADER_STAGE_FRAGMENT_BIT)
+			.addVertexInput(0, sizeof(glm::vec3), 0, 0, renderer::Format::FORMAT_R32G32B32_SFLOAT)
+			.addVertexInput(1, sizeof(glm::vec3), 1, 0, renderer::Format::FORMAT_R32G32B32_SFLOAT)
+			.addVertexInput(2, sizeof(glm::vec2), 2, 0, renderer::Format::FORMAT_R32G32_SFLOAT)
+			.setPipelineInputAssembly(renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
+			.setViewport(0, 0, static_cast<float>(framebufferSize.width), static_cast<float>(framebufferSize.height))
+			.setMSAA(false)
+			.setDepthBuffering(true)
+			.build();
+
+		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), pipelineConfig, m_renderPass.getRenderPass(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayout());
 
 		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
 			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -240,7 +253,7 @@ namespace gwa {
 		m_swapchainFramebuffers.cleanup();
 		m_depthBufferImageView.cleanup();
 		m_depthBufferImage.cleanup();
-		m_graphicsPipeline.cleanup();
+		m_graphicsPipeline.cleanup(m_device.getLogicalDevice());
 		m_descriptorSetLayout.cleanup();
 		m_renderPass.cleanup(m_device.getLogicalDevice());
 		m_swapchain.cleanup();

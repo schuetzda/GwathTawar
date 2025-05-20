@@ -153,6 +153,7 @@ namespace gwa
 			renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
 			VkResult result = vkCreateRenderPass(logicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass_);
+			assert(result == VK_SUCCESS);
 		}
 	}
 
