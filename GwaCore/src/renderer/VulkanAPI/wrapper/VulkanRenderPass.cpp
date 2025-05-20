@@ -39,7 +39,7 @@ namespace gwa
 
 			for (uint32_t i= 0; i < pass.colorAttachmentsCount; i++)
 			{
-				const size_t* attachmentIndex = pass.colorAttachemnts + i;
+				const size_t* attachmentIndex = pass.colorAttachments + i;
 				const renderer::Attachment& curAttachment = description.attachments.at(*attachmentIndex);
 
 				attDescriptions[i].format = curAttachment.format == renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT ? swapchainImageFormat : static_cast<VkFormat>(curAttachment.format);
@@ -149,7 +149,7 @@ namespace gwa
 
 			renderPassCreateInfo.subpassCount = 1;
 			renderPassCreateInfo.pSubpasses = &subpass;
-			renderPassCreateInfo.dependencyCount = subpassDependencies.size();
+			renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
 			renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
 			VkResult result = vkCreateRenderPass(logicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass_);

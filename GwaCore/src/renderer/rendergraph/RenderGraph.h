@@ -22,7 +22,7 @@ namespace gwa::renderer
 	
 	struct Pass
 	{
-		size_t* colorAttachemnts;	
+		size_t* colorAttachments;	
 		size_t colorAttachmentsCount;
 		size_t depthStencilAttachment;
 	};
