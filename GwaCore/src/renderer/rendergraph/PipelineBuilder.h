@@ -9,6 +9,8 @@ namespace gwa::renderer
 		std::vector<VertexInput> vertexInputs;
 		InputAssembly inputAssembly;
 		ViewportState viewport;
+		bool enableMSAA = false;
+		bool enableDepthTesting = true;
 	};
 	struct VertexInput
 	{
@@ -34,7 +36,10 @@ namespace gwa::renderer
 	{
 		bool depthClampEnabled = false;
 		bool rasterizerDiscard = false;
-
+		PolygonMode polygonMode = PolygonMode::POLYGON_MODE_FILL;
+		float lineWidth = 1.f;
+		CullModeFlagBits cullMode = CullModeFlagBits::CULL_MODE_NONE;
+		bool depthBiasEnable = false;
 	};
 
 	struct ViewportState
@@ -69,7 +74,20 @@ namespace gwa::renderer
 
 		PipelineBuilder& setViewport(float x, float y, float width, float height)
 		{
-			pipelineConfig.viewport = ViewportState(x, y, width, height);
+			pipelineConfig.viewport = ViewportState{ x, y, width, height };
+			return *this;
+		}
+
+		PipelineBuilder& setMSAA(bool enable)
+		{
+			pipelineConfig.enableMSAA = enable;
+			return *this;
+		}
+
+		PipelineBuilder& setDepthBuffering(bool enable)
+		{
+			pipelineConfig.enableDepthTesting = enable;
+			return *this;
 		}
 
 		PipelineConfig build()

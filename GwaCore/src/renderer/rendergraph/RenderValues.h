@@ -235,11 +235,19 @@ namespace gwa::renderer
         PRIMITIVE_TOPOLOGY_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum class VkPolygonMode {
+    enum class PolygonMode {
         POLYGON_MODE_FILL = 0,
         POLYGON_MODE_LINE = 1,
         POLYGON_MODE_POINT = 2,
         POLYGON_MODE_FILL_RECTANGLE_NV = 1000153000,
         POLYGON_MODE_MAX_ENUM = 0x7FFFFFFF
+    };
+
+    enum class CullModeFlagBits{
+        CULL_MODE_NONE = 0,
+        CULL_MODE_FRONT_BIT = 0x00000001,
+        CULL_MODE_BACK_BIT = 0x00000002,
+        CULL_MODE_FRONT_AND_BACK = 0x00000003,
+        CULL_MODE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
 }
