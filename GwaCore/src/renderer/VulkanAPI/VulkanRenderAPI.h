@@ -48,6 +48,7 @@ namespace gwa {
 		VulkanDescriptorSetLayout m_descriptorSetLayout;
 		VulkanPushConstant m_pushConstant;
 		VulkanPipeline m_graphicsPipeline;
+		VulkanPipeline m_graphicsPipelineTransparent;
 		VulkanImage m_depthBufferImage;
 		VulkanImageView m_depthBufferImageView;
 		VulkanSwapchainFramebuffers m_swapchainFramebuffers; 
@@ -64,7 +65,10 @@ namespace gwa {
 		VulkanImageSampler m_textureSampler;
 		VulkanImguiIntegration m_imgui;
 
-		const std::vector<const char*> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+		const std::vector<const char*> deviceExtensions{
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		};
+
 	};
 }
 

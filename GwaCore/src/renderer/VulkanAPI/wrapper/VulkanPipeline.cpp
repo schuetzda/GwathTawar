@@ -298,7 +298,7 @@ namespace gwa {
 		// MULTISAMPLING (using MSAA)
 		VkPipelineMultisampleStateCreateInfo multiSamplingCreateInfo = {};
 		multiSamplingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multiSamplingCreateInfo.sampleShadingEnable = VK_FALSE;					// Enable multisample shading
+		multiSamplingCreateInfo.sampleShadingEnable = VK_TRUE;					// Enable multisample shading
 		multiSamplingCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;	// Number of samples to use per fragment
 
 		// BLENDING How to blend a new colour being written to a fragment, with a previous value

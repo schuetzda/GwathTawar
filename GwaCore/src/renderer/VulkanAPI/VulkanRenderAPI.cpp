@@ -77,7 +77,7 @@ namespace gwa {
 			.addVertexInput(2, sizeof(glm::vec2), 2, 0, renderer::Format::FORMAT_R32G32_SFLOAT)
 			.setPipelineInputAssembly(renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
 			.setViewport(0, 0, static_cast<float>(framebufferSize.width), static_cast<float>(framebufferSize.height))
-			.setMSAA(false)
+			.setMSAA(true)
 			.setDepthBuffering(true)
 			.build();
 
@@ -189,22 +189,20 @@ namespace gwa {
 		{
 			m_imgui.updatePlatform();
 		}
-		VkSemaphore waitSemaphores[] = { imageAvailable[currentFrame] };
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.waitSemaphoreCount = 1;						// Nummer of semaphores to wait on
-		submitInfo.pWaitSemaphores = waitSemaphores;			// List of Semphores to wait on
+		submitInfo.pWaitSemaphores = &imageAvailable[currentFrame];			// List of Semphores to wait on
 		std::array<VkPipelineStageFlags,1> waitStages = {
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 		};
 
-		VkSemaphore signalSemaphores[] = { renderFinished[imageIndex] };
 		submitInfo.pWaitDstStageMask = waitStages.data();				//Stages to check semaphores
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = m_graphicsCommandBuffers[currentFrame].getCommandBuffer();
 		submitInfo.signalSemaphoreCount = 1;					// Number of semaphores to signal
-		submitInfo.pSignalSemaphores = signalSemaphores;			// Semaphores to signal when command buffer finishes
+		submitInfo.pSignalSemaphores = &renderFinished[imageIndex];			// Semaphores to signal when command buffer finishes
 
 		result = vkQueueSubmit(m_device.getGraphicsQueue(), 1, &submitInfo, m_drawFences.getFences()[currentFrame]);
 		assert(result == VK_SUCCESS);
@@ -213,7 +211,7 @@ namespace gwa {
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
+		presentInfo.pWaitSemaphores = &renderFinished[imageIndex];
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = m_swapchain.getSwapchainPtr();
 		presentInfo.pImageIndices = &imageIndex;

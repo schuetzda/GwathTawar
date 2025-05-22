@@ -88,7 +88,7 @@ namespace gwa
 						normalAttributeIndex = attributeIndex;
 						break;
 					case cgltf_attribute_type_texcoord:
-						assert(texcoordAttributeIndex == -1);
+						//assert(texcoordAttributeIndex == -1);
 						texcoordAttributeIndex = attributeIndex;
 						break;
 					default:

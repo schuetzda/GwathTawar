@@ -68,13 +68,25 @@ namespace gwa
 		bool swapChainValid = false;
 
 		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
+
+		VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+		indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+		VkPhysicalDeviceFeatures2 deviceFeatures{};
+		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures.pNext = &indexingFeatures;
+		
 		vkGetPhysicalDeviceProperties(currentPhysicalDevice, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(currentPhysicalDevice, &deviceFeatures);
+		vkGetPhysicalDeviceFeatures2(currentPhysicalDevice, &deviceFeatures);
+
+		bool bindlessSupported = indexingFeatures.runtimeDescriptorArray &&
+			indexingFeatures.descriptorBindingVariableDescriptorCount &&
+			indexingFeatures.descriptorBindingPartiallyBound &&
+			indexingFeatures.shaderSampledImageArrayNonUniformIndexing;
 
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(currentPhysicalDevice, vkSurface_);
 		swapChainValid = !swapchainDetails.presentationModes.empty() && !swapchainDetails.formats.empty();
-		score = static_cast<int>(indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.geometryShader && deviceFeatures.samplerAnisotropy);
+		score = static_cast<int>(indices.isValid() && extensionsSupported && swapChainValid && deviceFeatures.features.geometryShader && deviceFeatures.features.samplerAnisotropy && bindlessSupported);
 
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 			score *= 1000;
@@ -132,19 +144,25 @@ namespace gwa
 
 			queueCreateInfos.push_back(queueCreateInfo);
 		}
-
+		
+		
 		VkDeviceCreateInfo deviceCreateInfo = {};
 		deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 		deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t> (queueCreateInfos.size());
 		deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());					// Number and list of enabled logical device extensions
 		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+		deviceCreateInfo.pEnabledFeatures = nullptr;
 
-		VkPhysicalDeviceFeatures phDeviceFeatures = {};
-		phDeviceFeatures.samplerAnisotropy = VK_TRUE;
+		//Enable Features Anisotropic and Bindless
+		VkPhysicalDeviceFeatures2 physicalFeatures2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+		vkGetPhysicalDeviceFeatures2(vkPhysicalDevice_, &physicalFeatures2);
+		physicalFeatures2.features.samplerAnisotropy = VK_TRUE;
 
-		deviceCreateInfo.pEnabledFeatures = &phDeviceFeatures;		//Set tessShader, etc here
-
+		VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+		physicalFeatures2.pNext = &indexingFeatures;
+		deviceCreateInfo.pNext = &physicalFeatures2;
+		
 		VkResult result = vkCreateDevice(vkPhysicalDevice_, &deviceCreateInfo, nullptr, &vkLogicalDevice_);
 		assert(result == VK_SUCCESS);
 

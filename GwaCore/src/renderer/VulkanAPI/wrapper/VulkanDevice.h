@@ -55,6 +55,5 @@ namespace gwa
 		VkQueue vkGraphicsQueue_{};
 		VkQueue vkPresentationQueue_{};
 		VkInstance instance_;
-
 	};
 }

@@ -11,12 +11,8 @@ class TypeIDGenerator
 
 public:
     template<typename>
-    static uint32_t type(bool registerNewValue) noexcept {
-        static uint32_t value = std::numeric_limits<uint32_t>::max();
-        if (registerNewValue && value== std::numeric_limits<uint32_t>::max())
-        {
-            value = identifier();
-        }        
+    static uint32_t type() noexcept {
+        static const uint32_t value = identifier();
         return value;
     }
 
