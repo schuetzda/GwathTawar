@@ -1,51 +1,40 @@
 #include "VulkanDescriptorSetLayout.h"
-#include <array>
-#include <stdexcept>
 #include <cassert>
-namespace gwa
+namespace gwa::renderer
 {
-	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice logicalDevice):logicalDevice_(logicalDevice)
+	VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VkDevice logicalDevice, const std::vector<DescriptorSetConfig>& descriptorSetsConfig)
 	{
-		// MVPMat Binding Info
-		VkDescriptorSetLayoutBinding vpLayoutBinding = {};
-		vpLayoutBinding.binding = 0;						// Where is the data being bound to?
-		vpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		vpLayoutBinding.descriptorCount = 1;
-		vpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		vpLayoutBinding.pImmutableSamplers = nullptr;		// For Texture: Can make sampler unchangeable by specifying layout
+		const size_t numberDescriptorSets = descriptorSetsConfig.size();
+		descriptorSetLayouts.resize(numberDescriptorSets);
+		for (uint32_t descriptorSetIndex = 0; descriptorSetIndex < numberDescriptorSets; descriptorSetIndex++)
+		{
+			const uint32_t numberOfBindings = static_cast<uint32_t>(descriptorSetsConfig[descriptorSetIndex].bindings.size());
+			std::vector<VkDescriptorSetLayoutBinding> descriptorLayoutBindings;
+			descriptorLayoutBindings.resize(numberOfBindings);
 
-		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			const DescriptorSetConfig curDescriptorConfig = descriptorSetsConfig[descriptorSetIndex];
 
-		std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings = { vpLayoutBinding, samplerLayoutBinding};
+			for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
+			{
+				descriptorLayoutBindings[bindingIndex].descriptorType = static_cast<VkDescriptorType>(curDescriptorConfig.bindings[bindingIndex].type);
+				descriptorLayoutBindings[bindingIndex].descriptorCount = curDescriptorConfig.descriptorCount;
+				descriptorLayoutBindings[bindingIndex].binding = curDescriptorConfig.bindings[bindingIndex].bindingSlot;
+				descriptorLayoutBindings[bindingIndex].stageFlags = static_cast<VkShaderStageFlagBits>(curDescriptorConfig.bindings[bindingIndex].shaderStage);
+				descriptorLayoutBindings[bindingIndex].pImmutableSamplers = nullptr;
+			}
 
-		/* NOT IN USE, for reference of Dynamic UBO
-		// Model Binding Info
-		VkDescriptorSetLayoutBinding modelLayoutBinding = {};
-		modelLayoutBinding.binding = 1;
-		modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-		modelLayoutBinding.descriptorCount = 1;
-		modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		modelLayoutBinding.pImmutableSamplers = nullptr;
-		layoutBindings.push_back(modelLayoutBinding);
-		*/
-
-		// Create Descriptor Set Layout with given bindings
-		VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
-		layoutCreateInfo.pBindings = layoutBindings.data();				// array of binding infos
-
-		VkResult result = vkCreateDescriptorSetLayout(logicalDevice_, &layoutCreateInfo, nullptr, &descriptorSetLayout_);
-		assert(result == VK_SUCCESS);
-
+			VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+			layoutInfo.bindingCount = numberOfBindings;
+			layoutInfo.pBindings = descriptorLayoutBindings.data();
+			layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+		}
 	}
-	void VulkanDescriptorSetLayout::cleanup()
+
+	void VulkanDescriptorSetLayout::cleanup(VkDevice logicalDevice)
 	{
-		vkDestroyDescriptorSetLayout(logicalDevice_, descriptorSetLayout_,nullptr);
+		for (VkDescriptorSetLayout descriptorSetLayout : descriptorSetLayouts)
+		{
+			vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
+		}
 	}
 }

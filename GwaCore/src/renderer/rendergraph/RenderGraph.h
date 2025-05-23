@@ -33,7 +33,7 @@ namespace gwa::renderer
 		std::map<size_t, Pass> passes;
 	};
 
-	template<EnumType RenderPassRessourceIDs>
+	template<EnumType RenderPassRessourceIDs, bool renderGraphCreated = false>
 	class RenderGraph
 	{
 	public:
@@ -65,8 +65,9 @@ namespace gwa::renderer
 			return *this;
 		}
 
-		const RenderGraphDescription& getRenderGraphDescription() const
+		RenderGraphDescription createRenderGraph() const requires !renderGraphCreated
 		{
+			renderGraphCreated = true;
 			return graphDescription;
 		}
 

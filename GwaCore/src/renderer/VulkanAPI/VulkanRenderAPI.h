@@ -11,6 +11,7 @@
 #include "wrapper/VulkanSwapchain.h"
 #include "wrapper/VulkanRenderPass.h"
 #include "wrapper/VulkanDescriptorSetLayout.h"
+#include "wrapper/VulkanBindlessDescriptor.h"
 #include "wrapper/VulkanPushConstant.h"
 #include "wrapper/VulkanPipeline.h"
 #include "wrapper/VulkanImage.h"
@@ -25,7 +26,7 @@
 #include "wrapper/VulkanImageSampler.h"
 #include "wrapper/VulkanImguiIntegration.h"
 
-namespace gwa {
+namespace gwa::renderer {
 	class VulkanRenderAPI: public RenderAPI 
 	{
 	public:
@@ -46,6 +47,7 @@ namespace gwa {
 		VulkanSwapchain m_swapchain;
 		VulkanRenderPass m_renderPass;
 		VulkanDescriptorSetLayout m_descriptorSetLayout;
+		VulkanBindlessDescriptor m_bindlessDescriptorSet;
 		VulkanPushConstant m_pushConstant;
 		VulkanPipeline m_graphicsPipeline;
 		VulkanPipeline m_graphicsPipelineTransparent;
@@ -55,13 +57,13 @@ namespace gwa {
 		VulkanCommandPool m_graphicsCommandPool;
 		std::vector<VulkanCommandBuffer> m_graphicsCommandBuffers;
 		VulkanUniformBuffers m_mvpUniformBuffers;
-		std::vector<VulkanDescriptorSet> m_descriptorSets;
+		VulkanDescriptorSet m_descriptorSet;
 		VulkanSemaphore m_renderFinished;
 		VulkanSemaphore m_imageAvailable;
 		VulkanFence m_drawFences;
 		VulkanMeshBuffers m_meshBuffers;
 		std::vector<TextureImage> m_textures;
-		std::vector<VulkanImageView> m_textureViews;
+		VulkanImageView m_textureViews;
 		VulkanImageSampler m_textureSampler;
 		VulkanImguiIntegration m_imgui;
 

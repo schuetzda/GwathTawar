@@ -14,9 +14,10 @@
 #include <imgui_impl_glfw.h>
 #include "renderer/rendergraph/RenderGraph.h"
 #include <renderer/rendergraph/PipelineBuilder.h>
+#include "renderer/rendergraph/DescriptorSetConfigurator.h"
 
 
-namespace gwa {
+namespace gwa::renderer {
 	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry) 
 	{
 		
@@ -60,11 +61,19 @@ namespace gwa {
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 		.addRenderPass<1>(test::framebufferRenderpass, { test::color}, test::depth)
-		.getRenderGraphDescription();
+		.createRenderGraph();
 
 		m_renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), description);
 
+		DescriptorSetConfigurator descriptorConfig{};
+		descriptorConfig
+			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStage::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
+			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_SAMPLED_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT)
+			.addBinding(2, DescriptorType::DESCRIPTOR_TYPE_STORAGE_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT).finalizeDescriptorSet(true, 512);
+
 		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice());
+
+		m_bindlessDescriptorSet = VulkanBindlessDescriptor(m_device.getLogicalDevice(),128,1,maxFramesInFlight_);
 
 		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
 
@@ -86,10 +95,10 @@ namespace gwa {
 		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
 			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		m_depthBufferImageView = VulkanImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_depthBufferImageView.addImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT); 
 
 		m_swapchainFramebuffers = VulkanSwapchainFramebuffers(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), 
-			m_renderPass.getRenderPass(), m_depthBufferImageView.getImageView(), m_swapchain.getSwapchainExtent());
+			m_renderPass.getRenderPass(), m_depthBufferImageView.getImageView(0), m_swapchain.getSwapchainExtent());
 
 		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		
@@ -104,14 +113,13 @@ namespace gwa {
 			uint32_t index = 0;
 			const size_t numberOfTextures = registry.getComponentCount<Texture>();
 			m_textures.resize(numberOfTextures);
-			m_textureViews.resize(numberOfTextures);
 			for (uint32_t textureEntity : registry.getEntities<Texture>())
 			{
 				entityToIndexMap[textureEntity] = index;
 				Texture const* texture = registry.getComponent<Texture>(textureEntity);
 				TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
 				m_textures[index] = textureImage;
-				m_textureViews[index] = VulkanImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+				m_textureViews.addImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 				index++;
 				registry.deleteEntity(textureEntity);
 			}
@@ -140,12 +148,11 @@ namespace gwa {
 		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
 		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
+		m_descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
+			maxFramesInFlight_, sizeof(UboViewProj));
 
-		for (VulkanImageView imageView : m_textureViews)
-		{
-			m_descriptorSets.emplace_back(m_device.getLogicalDevice(), m_descriptorSetLayout.getDescriptorSetLayout(), m_mvpUniformBuffers.getUniformBuffers(),
-				maxFramesInFlight_, sizeof(UboViewProj), imageView.getImageView(), m_textureSampler.getImageSampler());
-		}
+		m_bindlessDescriptorSet.addTextures(m_device.getLogicalDevice(), maxFramesInFlight_, m_textureViews.getImageViews(), m_textureSampler.getImageSampler(), 1);
+
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
@@ -231,8 +238,7 @@ namespace gwa {
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
 		m_imgui.cleanup(m_device.getLogicalDevice());
 
-		for (VulkanImageView textureView: m_textureViews)
-			textureView.cleanup();
+		m_textureViews.cleanup(m_device.getLogicalDevice());
 
 		for (TextureImage texture : m_textures)
 			texture.cleanup();
@@ -243,13 +249,12 @@ namespace gwa {
 		m_renderFinished.cleanup();
 		
 		m_imageAvailable.cleanup();
-		for (VulkanDescriptorSet descriptorSet: m_descriptorSets)
-			descriptorSet.cleanup();
+		m_descriptorSet.cleanup();
 
 		m_mvpUniformBuffers.cleanup();
 		m_graphicsCommandPool.cleanup();
 		m_swapchainFramebuffers.cleanup();
-		m_depthBufferImageView.cleanup();
+		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
 		m_depthBufferImage.cleanup();
 		m_graphicsPipeline.cleanup(m_device.getLogicalDevice());
 		m_descriptorSetLayout.cleanup();

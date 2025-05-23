@@ -100,9 +100,16 @@ namespace gwa::renderer
 
 		PipelineConfig build()
 		{
-			return pipelineConfig;
+			PipelineConfig configToReturn = std::move(pipelineConfig);
+			reset();
+			return configToReturn;
 		}
+
 	private:
+		void reset()
+		{
+			pipelineConfig = PipelineConfig();
+		}
 		PipelineConfig pipelineConfig{};
 	};
 }

@@ -1,20 +1,25 @@
 #include <vulkan/vulkan.h>
+#include <vector>
+#include "renderer/rendergraph/DescriptorSetConfigurator.h"
 #pragma once
-namespace gwa
+namespace gwa::renderer
 {
 	class VulkanDescriptorSetLayout
 	{
 	public:
 		VulkanDescriptorSetLayout() = default;
 		explicit VulkanDescriptorSetLayout(VkDevice logicalDevice);
-		void cleanup();
+		VulkanDescriptorSetLayout(VkDevice logicalDevice, const std::vector<DescriptorSetConfig>& descriptorSetsConfig);
+		void cleanup(VkDevice logicalDevice);
 		
-		VkDescriptorSetLayout getDescriptorSetLayout()
+		const std::vector<VkDescriptorSetLayout>& getDescriptorSetLayouts()
 		{
-			return descriptorSetLayout_;
+			return descriptorSetLayouts;
 		}
 	private:
-		VkDescriptorSetLayout descriptorSetLayout_{};
+		VkDescriptorSetLayout createBindlessDescriptorSetLayout(VkDevice logicalDevice, const DescriptorSetConfig& descriptorConfig);
+
+		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 		VkDevice logicalDevice_{};
 	};
 }
