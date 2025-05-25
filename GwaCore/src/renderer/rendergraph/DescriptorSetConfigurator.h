@@ -10,12 +10,12 @@ namespace gwa::renderer
 			DescriptorType type{};
 			uint32_t bindingSlot{};
 			ShaderStageFlagBits shaderStage{};
+			uint32_t descriptorCount{ 1 };
 		};
 
 		struct DescriptorSetConfig
 		{
 			std::vector<DescriptorBindingConfig> bindings{};
-			uint32_t descriptorCount{ 1 };
 			bool bindless{};
 		};
 	class DescriptorSetConfigurator
@@ -23,17 +23,15 @@ namespace gwa::renderer
 	public:
 
 		DescriptorSetConfigurator() = default;
-		DescriptorSetConfigurator& addBinding(uint32_t bindingSlot, DescriptorType type, ShaderStage shaderStage)
+		DescriptorSetConfigurator& addBinding(uint32_t bindingSlot, DescriptorType type, ShaderStage shaderStage, uint32_t descriptorCount = 1)
 		{
-			currentDescriptorSet.bindings.emplace_back(type, bindingSlot, shaderStage);
+			currentDescriptorSet.bindings.emplace_back(type, bindingSlot, shaderStage, descriptorCount);
 			return *this;
 		}
 
-		DescriptorSetConfigurator& finalizeDescriptorSet(bool bindless = false, uint32_t descriptorCount = 1)
+		DescriptorSetConfigurator& finalizeDescriptorSet(bool bindless = false)
 		{
 			assert(!currentDescriptorSet.bindings.empty()); //Make sure to add bindings before you create a descriptor set
-
-			currentDescriptorSet.descriptorCount = descriptorCount;
 			currentDescriptorSet.bindless = bindless;
 
 			descriptorSetsConfig.emplace_back(std::move(currentDescriptorSet));

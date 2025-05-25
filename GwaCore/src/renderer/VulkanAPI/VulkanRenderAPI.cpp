@@ -68,8 +68,8 @@ namespace gwa::renderer {
 		DescriptorSetConfigurator descriptorConfig{};
 		descriptorConfig
 			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStage::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
-			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_SAMPLED_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT)
-			.addBinding(2, DescriptorType::DESCRIPTOR_TYPE_STORAGE_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT).finalizeDescriptorSet(true, 512);
+			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_SAMPLED_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT, 512)
+			.addBinding(2, DescriptorType::DESCRIPTOR_TYPE_STORAGE_IMAGE, ShaderStage::SHADER_STAGE_FRAGMENT_BIT, 512).finalizeDescriptorSet(true);
 
 		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice());
 

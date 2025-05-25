@@ -2,60 +2,76 @@
 #include <stdexcept>
 #include <cassert>
 #include <array>
-namespace gwa
+namespace gwa::renderer
 {
 	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers,
-		const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize, VkImageView textureImageView, VkSampler textureSampler): logicalDevice_(logicalDevice)
+		uint32_t maxFramesInFlight, uint64_t dataSize, const std::vector<DescriptorSetConfig>& descriptorSetsConfig, VkImageView textureImageView, VkSampler textureSampler)
 	{
 		//---DescriptorPool---
+		uint32_t bindingIndex = 0;
+		std::vector<VkDescriptorPoolSize> poolSizes{};
+		uint32_t maxSets = 0;
 
-		// Type of descriptors + how many DESCRIPTORS, not descriptor sets (combined makes the pool size)
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-		// Dynamic Model Pool for Dynamic Uniform Buffer. NOT IN USE, for reference only
-		/*VkDescriptorPoolSize modelPoolSize = {};
-		modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-		modelPoolSize.descriptorCount = static_cast<uint32_t> (modelDynUniformBuffer.size());
-		descriptorPoolSizes.push_back(modelPoolSize)
-		*/
+		for (DescriptorSetConfig descriptorConfig : descriptorSetsConfig)
+		{
+			for (DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
+			{
+				if (descriptorConfig.bindless)
+				{
+					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.descriptorCount);
+					maxSets++;
+				}
+				else
+				{
+					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.descriptorCount * maxFramesInFlight);
+					maxSets += maxFramesInFlight;
+				}
+			}
+		}
 
 		VkDescriptorPoolCreateInfo poolCreateInfo{};
 		poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolCreateInfo.pPoolSizes = poolSizes.data();
-		poolCreateInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolCreateInfo.maxSets = maxSets;
 
 		// Create Descriptor Pool
-		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool_);
+		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
 		assert(result == VK_SUCCESS);
 
-		//---Descriptor Set---
-		descriptorSets_.resize(MAX_FRAMES_IN_FLIGHT);
+		descriptorSets.resize(maxSets);
 
 		//Each sets has the same layout
-		std::vector<VkDescriptorSetLayout> setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+		std::vector<VkDescriptorSetLayout> setLayouts(maxSets, descriptorSetLayout);
 
 		VkDescriptorSetAllocateInfo setAllocInfo = {};
 		setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		setAllocInfo.descriptorPool = descriptorPool_;
-		setAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		setAllocInfo.descriptorPool = descriptorPool;
+		setAllocInfo.descriptorSetCount = maxSets;
 		setAllocInfo.pSetLayouts = setLayouts.data();
 
-		//Allocate descriptorSet 
-		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets_.data());
+		std::vector<VkWriteDescriptorSet> descriptorWrites{};
+		descriptorWrites.resize(maxSets);
+
+		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
 		assert(result == VK_SUCCESS);
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		for (const DescriptorSetConfig& descriptorSetConfig: descriptorSetsConfig)
+		{
+			if (bindless)
+		}
+	}
+
+	VkDescriptorSet createDescriptorSet(const DescriptorSetConfig& descriptorSetConfig, uint32_t maxFramesInFlight)
+	{
+		for (size_t i = 0; i < maxFramesInFlight; ++i)
 		{
 			// buffer info and data offset info
 			VkDescriptorBufferInfo vpBufferInfo = {};
 			vpBufferInfo.buffer = uniformBuffers[i];		// Buffer to get data from
 			vpBufferInfo.offset = 0;						// position of start of data
 			vpBufferInfo.range = dataSize;			// size of daa
+
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -98,9 +114,10 @@ namespace gwa
 			setWrites.push_back(modelSetWrite);*/
 
 			// Update the descriptor sets with new buffer/ binding info
-			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+			//vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
 		}
+
 	}
 
 	void VulkanDescriptorSet::cleanup()
