@@ -3,7 +3,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "ecs/Registry.h"
-namespace gwa {
+namespace gwa::renderer {
 
 	class RenderAPI
 	{

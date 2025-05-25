@@ -9,6 +9,7 @@ namespace gwa::renderer
 		VulkanImageView() = default;
 		void addImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		void cleanup(VkDevice logicalDevice);
+		void recreateImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		 
 		VkImageView getImageView(uint32_t index) const
 		{
@@ -19,6 +20,7 @@ namespace gwa::renderer
 			return imageViews;
 		}
 	private:
+		void createImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 		std::vector<VkImageView> imageViews{};
 
 	};

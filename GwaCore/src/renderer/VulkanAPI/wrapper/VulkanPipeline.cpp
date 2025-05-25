@@ -3,9 +3,10 @@
 #include <stdexcept>
 #include <array>
 #include <cassert>
-namespace gwa {
+#include <span>
+namespace gwa::renderer {
 
-	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, const renderer::PipelineConfig& config, VkRenderPass renderPass, const VkPushConstantRange& pushConstantRange, VkDescriptorSetLayout descriptorSetLayout)
+	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, const renderer::PipelineConfig& config, VkRenderPass renderPass, const VkPushConstantRange& pushConstantRange, std::span<const VkDescriptorSetLayout> descriptorSetLayout)
 	{
 		//Shader Creation
 		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfo{};
@@ -129,8 +130,8 @@ namespace gwa {
 		// PIPELINE LAYOUT
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutCreateInfo.setLayoutCount = 1;
-		pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayout.size());
+		pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayout.data();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 		pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 

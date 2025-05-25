@@ -5,7 +5,7 @@
 #include <imgui_impl_vulkan.h>
 namespace gwa
 {
-	std::unique_ptr<RenderAPI> Application::renderAPI = RenderAPI::Create();
+	std::unique_ptr<renderer::RenderAPI> Application::renderAPI = renderer::RenderAPI::Create();
 	Application::Application(const AppInfo& info, Game* game):m_window(Window(info.appTitle, info.appWidth, info.appHeight)), m_game(game)
 	{
 	}

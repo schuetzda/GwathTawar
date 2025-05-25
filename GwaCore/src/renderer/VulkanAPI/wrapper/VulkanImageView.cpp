@@ -4,6 +4,22 @@
 namespace gwa::renderer
 {
 	void VulkanImageView::addImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+		imageViews.emplace_back();
+		createImageView(imageViews.size() - 1, logicalDevice, image, format, aspectFlags);
+	}
+	void VulkanImageView::cleanup(VkDevice logicalDevice) 
+	{
+		for (VkImageView imageView : imageViews)
+		{
+			vkDestroyImageView(logicalDevice, imageView, nullptr);
+		}
+	}
+	void VulkanImageView::recreateImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
+		createImageView(index, logicalDevice, image, format, aspectFlags);
+	}
+	void VulkanImageView::createImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewCreateInfo.image = image;
@@ -24,15 +40,7 @@ namespace gwa::renderer
 
 		//Create image view and return it
 		imageViews.emplace_back();
-		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageViews.back());
+		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageViews[index]);
 		assert(result == VK_SUCCESS);
-
-	}
-	void VulkanImageView::cleanup(VkDevice logicalDevice)
-	{
-		for (VkImageView imageView : imageViews)
-		{
-			vkDestroyImageView(logicalDevice, imageView, nullptr);
-		}
 	}
 }

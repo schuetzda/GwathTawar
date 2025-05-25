@@ -20,7 +20,7 @@ namespace gwa
 		void bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets) const;
 		void bindIndexBuffer(VkBuffer indexBuffer) const;
 		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model);
-		void bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout);
+		void bindDescriptorSet(uint32_t descriptorSetCount, const VkDescriptorSet* descriptorSets, VkPipelineLayout pipelineLayout);
 		void drawIndexed(uint32_t indexCount);
 		void endRenderPass();
 
@@ -31,6 +31,4 @@ namespace gwa
 	private:
 		VkCommandBuffer commandBuffer_ = {};
 	};
-
-	std::vector <VulkanCommandBuffer> initCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, uint32_t commandBufferCount);
 }

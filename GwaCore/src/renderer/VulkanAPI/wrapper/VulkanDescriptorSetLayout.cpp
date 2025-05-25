@@ -29,8 +29,7 @@ namespace gwa::renderer
 			layoutCreateInfo.pBindings = descriptorLayoutBindings.data();
 			layoutCreateInfo.flags = curDescriptorConfig.bindless? VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT: VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 
-			descriptorSetLayouts.emplace_back();
-			VkResult result = vkCreateDescriptorSetLayout(logicalDevice_, &layoutCreateInfo, nullptr, &descriptorSetLayouts.back());
+			VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayouts[descriptorSetIndex]);
 			assert(result == VK_SUCCESS);
 		}
 	}

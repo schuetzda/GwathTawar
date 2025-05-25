@@ -22,7 +22,7 @@ namespace gwa::renderer
 		struct ShaderModuleConfig
 		{
 			std::filesystem::path shaderPath;
-			ShaderStage stage;
+			ShaderStageFlagBits stage;
 		};
 
 		struct RasterizerConfig
@@ -56,7 +56,7 @@ namespace gwa::renderer
 	class PipelineBuilder
 	{
 	public:
-		PipelineBuilder& addShaderModule(std::filesystem::path shaderPath, ShaderStage stage)
+		PipelineBuilder& addShaderModule(std::filesystem::path shaderPath, ShaderStageFlagBits stage)
 		{
 			pipelineConfig.shaderModules.emplace_back(shaderPath, stage);
 			return *this;

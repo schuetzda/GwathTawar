@@ -3,9 +3,10 @@
 #include <cassert>
 #include <array>
 #include <span>
+#include <iostream>
 namespace gwa::renderer
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, std::span<const VkBuffer> uniformBuffers,
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VkBuffer> uniformBuffers,
 		uint32_t maxFramesInFlight, std::span<const uint64_t> dataSizes, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler)
 	{
 		//---DescriptorPool---
@@ -40,10 +41,23 @@ namespace gwa::renderer
 		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
 		assert(result == VK_SUCCESS);
 
+
+		std::vector<VkDescriptorSet> descriptorSets;
 		descriptorSets.resize(maxSets);
 
-		//Each sets has the same layout
-		std::vector<VkDescriptorSetLayout> setLayouts(maxSets, descriptorSetLayout);
+		//TODO set layout dynamically
+		std::vector<VkDescriptorSetLayout> setLayouts(maxSets);
+		for (size_t i = 0; i < maxSets; i++)
+		{
+			if (descriptorSetsConfig[i].bindless)
+			{
+				setLayouts[i] = descriptorSetLayout[1];
+			}
+			else
+			{
+				setLayouts[i] = descriptorSetLayout[0];
+			}
+		}
 
 		VkDescriptorSetAllocateInfo setAllocInfo = {};
 		setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -82,6 +96,7 @@ namespace gwa::renderer
 					switch (descriptorSetConfig.bindings[bindingIndex].type)
 					{
 					case DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+					{
 						VkDescriptorBufferInfo vpBufferInfo = {};
 						vpBufferInfo.buffer = uniformBuffers[uniformBufferIndex];		// Buffer to get data from
 						vpBufferInfo.offset = 0;						// position of start of data
@@ -90,17 +105,35 @@ namespace gwa::renderer
 						descriptorWrites[bindingIndex].pBufferInfo = &vpBufferInfo;// Information of buffer data to bind
 						uniformBufferIndex++;
 						break;
+					}
 					case DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+					{
 						VkDescriptorImageInfo imageInfo{};
 						imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 						imageInfo.imageView = textureImageView[textureViewIndex];
 						imageInfo.sampler = textureSampler;
-						
+
 						descriptorWrites[bindingIndex].pImageInfo = &imageInfo;
 						textureViewIndex++;
+						break;
+					}
+					default:
+						std::cerr << "Vulkan Descriptor Set support for binding " << descriptorSetConfig.bindings[bindingIndex].bindingSlot;
 					}
 				}
 				vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+				if (descriptorSetConfig.bindless) {
+					// Same set for every frame
+					for (uint32_t frame = 0; frame < maxFramesInFlight; frame++) {
+						descriptorSetsPerFrame[frame].push_back(descriptorSets[currentDescriptorSetIndex]);
+					}
+				}
+				else {
+					// One set per frame
+					descriptorSetsPerFrame[i].push_back(descriptorSets[currentDescriptorSetIndex]);
+				}
+
 				currentDescriptorSetIndex++;
 			}
 		}

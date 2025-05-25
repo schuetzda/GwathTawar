@@ -103,10 +103,10 @@ namespace gwa
 			model);
 	}
 
-	void VulkanCommandBuffer::bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) 
+	void VulkanCommandBuffer::bindDescriptorSet(uint32_t descriptorSetCount, const VkDescriptorSet* descriptorSets, VkPipelineLayout pipelineLayout) 
 	{
 		vkCmdBindDescriptorSets(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-			0, 1, &descriptorSet, 0, nullptr);
+			0, descriptorSetCount, descriptorSets, 0, nullptr);
 	}
 
 	void VulkanCommandBuffer::drawIndexed(uint32_t indexCount)

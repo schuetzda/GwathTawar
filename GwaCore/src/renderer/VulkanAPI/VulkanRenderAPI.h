@@ -47,7 +47,6 @@ namespace gwa::renderer {
 		VulkanSwapchain m_swapchain;
 		VulkanRenderPass m_renderPass;
 		VulkanDescriptorSetLayout m_descriptorSetLayout;
-		VulkanBindlessDescriptor m_bindlessDescriptorSet;
 		VulkanPushConstant m_pushConstant;
 		VulkanPipeline m_graphicsPipeline;
 		VulkanPipeline m_graphicsPipelineTransparent;

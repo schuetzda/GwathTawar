@@ -1,7 +1,7 @@
 #include "RenderAPI.h"
 #include "VulkanAPI/VulkanRenderAPI.h"
 
-namespace gwa {
+namespace gwa::renderer {
 	RenderAPI::API RenderAPI::s_API = RenderAPI::API::Vulkan;
 
 	

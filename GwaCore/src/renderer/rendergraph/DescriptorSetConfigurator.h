@@ -11,6 +11,9 @@ namespace gwa::renderer
 			uint32_t bindingSlot{};
 			ShaderStageFlagBits shaderStage{};
 			uint32_t descriptorCount{ 1 };
+			DescriptorBindingConfig(DescriptorType t, uint32_t slot, ShaderStageFlagBits stage, uint32_t count = 1)
+				: type(t), bindingSlot(slot), shaderStage(stage), descriptorCount(count) {
+			}
 		};
 
 		struct DescriptorSetConfig
@@ -23,7 +26,7 @@ namespace gwa::renderer
 	public:
 
 		DescriptorSetConfigurator() = default;
-		DescriptorSetConfigurator& addBinding(uint32_t bindingSlot, DescriptorType type, ShaderStage shaderStage, uint32_t descriptorCount = 1)
+		DescriptorSetConfigurator& addBinding(uint32_t bindingSlot, DescriptorType type, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1)
 		{
 			currentDescriptorSet.bindings.emplace_back(type, bindingSlot, shaderStage, descriptorCount);
 			return *this;

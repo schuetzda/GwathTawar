@@ -8,7 +8,6 @@ namespace gwa::renderer
 	{
 	public:
 		VulkanDescriptorSetLayout() = default;
-		explicit VulkanDescriptorSetLayout(VkDevice logicalDevice);
 		VulkanDescriptorSetLayout(VkDevice logicalDevice, const std::vector<DescriptorSetConfig>& descriptorSetsConfig);
 		void cleanup(VkDevice logicalDevice);
 		
@@ -17,9 +16,7 @@ namespace gwa::renderer
 			return descriptorSetLayouts;
 		}
 	private:
-		VkDescriptorSetLayout createBindlessDescriptorSetLayout(VkDevice logicalDevice, const DescriptorSetConfig& descriptorConfig);
 
 		std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-		VkDevice logicalDevice_{};
 	};
 }
