@@ -8,13 +8,10 @@ namespace gwa::renderer
 	{
 	public:
 		VulkanDescriptorSet() = default;
-		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, 
-			const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize);
 
-		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize, VkImageView textureImageView, VkSampler textureSampler);
+		VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, std::span<const VkBuffer> uniformBuffers, uint32_t maxFramesInFlight, std::span<const uint64_t> dataSizes, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler);
 
-		void cleanup();
-		VkDescriptorSet createDescriptorSet(DescriptorSetConfig descriptorSetConfig);
+		void cleanup(VkDevice logicalDevice);
 
 		const std::vector<VkDescriptorSet>& getDescriptorSets() const
 		{
@@ -28,7 +25,5 @@ namespace gwa::renderer
 	private:
 		VkDescriptorPool descriptorPool;
 		std::vector<VkDescriptorSet> descriptorSets;
-
-		VkDevice logicalDevice_;
 	};
 }
