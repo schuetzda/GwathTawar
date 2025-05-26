@@ -14,20 +14,33 @@ namespace gwa::renderer
 
 			const DescriptorSetConfig curDescriptorConfig = descriptorSetsConfig[descriptorSetIndex];
 
+			std::vector<VkDescriptorBindingFlags> bindingFlags(numberOfBindings, 0);
 			for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
 			{
 				descriptorLayoutBindings[bindingIndex].descriptorType = static_cast<VkDescriptorType>(curDescriptorConfig.bindings[bindingIndex].type);
 				descriptorLayoutBindings[bindingIndex].descriptorCount = curDescriptorConfig.bindings[bindingIndex].descriptorCount;
 				descriptorLayoutBindings[bindingIndex].binding = curDescriptorConfig.bindings[bindingIndex].bindingSlot;
-				descriptorLayoutBindings[bindingIndex].stageFlags = static_cast<VkShaderStageFlagBits>(curDescriptorConfig.bindings[bindingIndex].shaderStage);
+				descriptorLayoutBindings[bindingIndex].stageFlags = static_cast<VkShaderStageFlags>(curDescriptorConfig.bindings[bindingIndex].shaderStage);
 				descriptorLayoutBindings[bindingIndex].pImmutableSamplers = nullptr;
+
+				if (curDescriptorConfig.bindless)
+				{
+					bindingFlags[bindingIndex] =
+						VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+						VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+				}
 			}
+
+			VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+			bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(bindingFlags.size());
+			bindingFlagsCreateInfo.pBindingFlags = bindingFlags.data();
 
 			VkDescriptorSetLayoutCreateInfo layoutCreateInfo {};
 			layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			layoutCreateInfo.bindingCount = numberOfBindings;
 			layoutCreateInfo.pBindings = descriptorLayoutBindings.data();
-			layoutCreateInfo.flags = curDescriptorConfig.bindless? VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT: VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+			layoutCreateInfo.flags = curDescriptorConfig.bindless? VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT: 0;
+			layoutCreateInfo.pNext = curDescriptorConfig.bindless ? &bindingFlagsCreateInfo : nullptr;
 
 			VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayouts[descriptorSetIndex]);
 			assert(result == VK_SUCCESS);

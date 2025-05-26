@@ -93,14 +93,14 @@ namespace gwa
 		vkCmdBindIndexBuffer(commandBuffer_, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model)
+	void VulkanCommandBuffer::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, uint32_t pushSize, const void* pushValue)
 	{
 		vkCmdPushConstants(
 			commandBuffer_,
 			pipelineLayout, flags,
 			0,
-			sizeof(*model),
-			model);
+			pushSize,
+			pushValue);
 	}
 
 	void VulkanCommandBuffer::bindDescriptorSet(uint32_t descriptorSetCount, const VkDescriptorSet* descriptorSets, VkPipelineLayout pipelineLayout) 

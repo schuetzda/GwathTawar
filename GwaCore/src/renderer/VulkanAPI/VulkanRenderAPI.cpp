@@ -69,12 +69,11 @@ namespace gwa::renderer {
 		DescriptorSetConfigurator descriptorConfig{};
 		const std::vector<DescriptorSetConfig> descriptorConfigs = descriptorConfig
 			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
-			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_SAMPLED_IMAGE, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 512)
-			.addBinding(2, DescriptorType::DESCRIPTOR_TYPE_STORAGE_IMAGE, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 512).finalizeDescriptorSet(true).getDescriptorSets();
+			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 69).finalizeDescriptorSet(true).getDescriptorSets();
 
 		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), descriptorConfigs);
 
-		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4)); //TODO
+		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_ALL, 0, sizeof(pushConstantObject)); //TODO
 
 		renderer::PipelineBuilder pipelineBuilder{};
 		renderer::PipelineConfig pipelineConfig =  
@@ -287,7 +286,7 @@ namespace gwa::renderer {
 		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);	
 		
 		const std::vector<VkDescriptorSet>& currentFrameDescriptors = m_descriptorSet.getDescriptorSets(currentFrame);
-		m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(currentFrameDescriptors.size(), currentFrameDescriptors.data(), m_graphicsPipeline.getPipelineLayout());
+		m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), m_graphicsPipeline.getPipelineLayout());
 		for (uint32_t entity: registry.getEntities<TexturedMeshRenderObject>())
 		{
 			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entity);
@@ -298,7 +297,8 @@ namespace gwa::renderer {
 			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers, static_cast<uint32_t>(offsets.size()), offsets.data());
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
-			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, &renderObject->modelMatrix);
+			pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
+			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_ALL, sizeof(pushConstantObject), &pushConstantObject);
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}

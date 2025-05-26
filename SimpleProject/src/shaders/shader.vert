@@ -19,6 +19,7 @@ layout(binding = 1) uniform UboModel {
 
 layout(push_constant) uniform PushModel {
 	mat4 model;
+	uint textureIndex;
 } pushModel;
 
 void main() {

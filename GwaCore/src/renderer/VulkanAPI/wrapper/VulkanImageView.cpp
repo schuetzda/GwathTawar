@@ -39,7 +39,6 @@ namespace gwa::renderer
 		viewCreateInfo.subresourceRange.layerCount = 1;					// number of array levels to view
 
 		//Create image view and return it
-		imageViews.emplace_back();
 		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageViews[index]);
 		assert(result == VK_SUCCESS);
 	}

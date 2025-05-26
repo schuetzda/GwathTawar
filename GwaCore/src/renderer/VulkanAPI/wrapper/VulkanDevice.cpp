@@ -160,6 +160,13 @@ namespace gwa
 		physicalFeatures2.features.samplerAnisotropy = VK_TRUE;
 
 		VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+		indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+		indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+		indexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE; // optional
+		indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+
 		physicalFeatures2.pNext = &indexingFeatures;
 		deviceCreateInfo.pNext = &physicalFeatures2;
 		

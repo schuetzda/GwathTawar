@@ -66,6 +66,12 @@ namespace gwa::renderer {
 		VulkanImageSampler m_textureSampler;
 		VulkanImguiIntegration m_imgui;
 
+		struct PushConstant
+		{
+			glm::mat4 model;
+			uint32_t textureIndex;
+		} pushConstantObject;
+
 		const std::vector<const char*> deviceExtensions{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		};

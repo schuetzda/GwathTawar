@@ -19,7 +19,7 @@ namespace gwa
 		void endCommandBuffer();
 		void bindVertexBuffer(const VkBuffer* vertexBuffers, uint32_t numBuffers, const VkDeviceSize* offsets) const;
 		void bindIndexBuffer(VkBuffer indexBuffer) const;
-		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model);
+		void pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, uint32_t pushSize, const void* pushValue);
 		void bindDescriptorSet(uint32_t descriptorSetCount, const VkDescriptorSet* descriptorSets, VkPipelineLayout pipelineLayout);
 		void drawIndexed(uint32_t indexCount);
 		void endRenderPass();
