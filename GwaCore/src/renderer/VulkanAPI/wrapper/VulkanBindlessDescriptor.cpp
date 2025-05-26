@@ -12,7 +12,7 @@ namespace gwa::renderer
 
 		VkDescriptorPoolCreateInfo poolCreateInfo{};
 		poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-		poolCreateInfo.maxSets = maxBindlessRessources * poolSizesBindless.size();
+		poolCreateInfo.maxSets = maxBindlessRessources * static_cast<uint32_t>(poolSizesBindless.size());
 		poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizesBindless.size());
 		poolCreateInfo.pPoolSizes = poolSizesBindless.data();
 		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
@@ -34,7 +34,7 @@ namespace gwa::renderer
 		descriptorLayoutBindings[1].pImmutableSamplers = nullptr;
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-		layoutInfo.bindingCount = poolSizesBindless.size();
+		layoutInfo.bindingCount = static_cast<uint32_t>(poolSizesBindless.size());
 		layoutInfo.pBindings = descriptorLayoutBindings.data();
 		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
 
@@ -45,7 +45,7 @@ namespace gwa::renderer
 		bindingFlags[1] = bindlessFlag;
 
 		VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT, nullptr };
-		extendedInfo.bindingCount = poolSizesBindless.size();
+		extendedInfo.bindingCount = static_cast<uint32_t>(poolSizesBindless.size());
 		extendedInfo.pBindingFlags = bindingFlags.data();
 
 		layoutInfo.pNext = &extendedInfo;

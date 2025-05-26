@@ -44,11 +44,11 @@ namespace gwa::renderer
 			//scissor not included yet
 		};
 
-		std::vector<ShaderModuleConfig> shaderModules;
-		std::vector<VertexInput> vertexInputs;
-		InputAssembly inputAssembly;
-		ViewportState viewport;
-		RasterizerConfig rasterizerConfig;
+		std::vector<ShaderModuleConfig> shaderModules{};
+		std::vector<VertexInput> vertexInputs{};
+		InputAssembly inputAssembly{};
+		ViewportState viewport{};
+		RasterizerConfig rasterizerConfig{};
 		bool enableMSAA = false;
 		bool enableDepthTesting = true;
 	};

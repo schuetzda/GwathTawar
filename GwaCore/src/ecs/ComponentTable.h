@@ -44,7 +44,7 @@ namespace gwa::ntity
 		 * @param other The table being moved.
 		*/
 		ComponentTable(ComponentTable&& other) noexcept
-			:typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_), componentData_(nullptr)
+			:_memoryManager(nullptr), typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_), componentData_(nullptr)
 		{
 			if (other._memoryManager == nullptr)
 			{
@@ -208,7 +208,7 @@ namespace gwa::ntity
 			ComponentTable* otherTable;
 		};
 
-		void (*_memoryManager)(_Operation, const ComponentTable*, _Arguments*);
+		void (*_memoryManager)(_Operation, const ComponentTable*, _Arguments*) {};
 
 		template <typename Component>
 		struct Manager

@@ -9,8 +9,6 @@ namespace gwa::renderer
 	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VkBuffer> uniformBuffers,
 		uint32_t maxFramesInFlight, std::span<const uint64_t> dataSizes, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler)
 	{
-		//---DescriptorPool---
-		uint32_t bindingIndex = 0;
 		std::vector<VkDescriptorPoolSize> poolSizes{};
 		uint32_t maxSets = 0;
 		std::vector<VkDescriptorSetLayout> setLayouts{};
@@ -73,7 +71,7 @@ namespace gwa::renderer
 			for (uint32_t i = 0; i < numberOfFrames; i++)
 			{
 				std::vector<VkWriteDescriptorSet> descriptorWrites{};
-				const uint32_t numberOfBindings = descriptorSetConfig.bindings.size();
+				const size_t numberOfBindings = descriptorSetConfig.bindings.size();
 				descriptorWrites.resize(numberOfBindings);
 				uint32_t uniformBufferIndex = 0;
 				uint32_t textureViewIndex = 0;
