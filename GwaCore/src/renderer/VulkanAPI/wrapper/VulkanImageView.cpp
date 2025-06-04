@@ -5,7 +5,7 @@ namespace gwa::renderer
 {
 	void VulkanImageView::addImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
 		imageViews.emplace_back();
-		createImageView(imageViews.size() - 1, logicalDevice, image, format, aspectFlags);
+		createImageView(static_cast<uint32_t>(imageViews.size() - 1), logicalDevice, image, format, aspectFlags);
 	}
 	void VulkanImageView::cleanup(VkDevice logicalDevice) 
 	{

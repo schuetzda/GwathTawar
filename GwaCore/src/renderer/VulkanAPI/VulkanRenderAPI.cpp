@@ -39,41 +39,17 @@ namespace gwa::renderer {
 		WindowSize framebufferSize = window->getFramebufferSize();
 		m_swapchain = VulkanSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
 
-		enum class test
+		m_graphicsCommandPool = VulkanCommandPool(&m_device);
+		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
+
+		enum class deferred
 		{
 			color,
 			depth,
-			framebufferRenderpass
+			normal,
+			position,
+			output
 		};
-
-		gwa::renderer::RenderGraph<test> graph{};
-		gwa::renderer::RenderGraphDescription description = graph.addAttachment(test::color, 
-			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		.addAttachment(test::depth, 
-			gwa::renderer::Format::FORMAT_DEPTH_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-		.addRenderPass<1>(test::framebufferRenderpass, { test::color}, test::depth)
-		.createRenderGraph();
-
-		m_renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), description);
-
-		DescriptorSetConfigurator descriptorConfig{};
-		const std::vector<DescriptorSetConfig> descriptorConfigs = descriptorConfig
-			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
-			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 69).finalizeDescriptorSet(true).getDescriptorSets();
-
-		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), descriptorConfigs);
-
-		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_ALL, 0, sizeof(pushConstantObject)); //TODO
 
 		renderer::PipelineBuilder pipelineBuilder{};
 		renderer::PipelineConfig pipelineConfig =  
@@ -88,17 +64,54 @@ namespace gwa::renderer {
 			.setDepthBuffering(true)
 			.build();
 
-		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), pipelineConfig, m_renderPass.getRenderPass(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayouts());
+		gwa::renderer::RenderGraph<deferred> graph{};
+		gwa::renderer::RenderGraphDescription description = graph.addAttachment(deferred::color,
+			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		.addAttachment(deferred::depth,
+			gwa::renderer::Format::FORMAT_DEPTH_FORMAT,
+			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
+			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
+			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+		.addGraphNode()
+		.addRenderPass<1>({ deferred::color}, deferred::depth)
+		.addDescriptorSet(false)
+		.addBinding<DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(0, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT)
+		.addDescriptorSet(true)
+		.addBinding<DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, static_cast<uint32_t>(registry.getComponentCount<Texture>()), 1024)
+		.addPipeline(pipelineConfig)
+		.createRenderGraph();
 
-		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), description.graphNodes[0].renderPass, description.attachments);
 
-		m_depthBufferImageView.addImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT); 
+		DescriptorSetConfigurator descriptorConfig{};
+		const std::vector<DescriptorSetConfig> descriptorConfigs = descriptorConfig
+			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
+			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, static_cast<uint32_t>(registry.getComponentCount<Texture>()), 1024).finalizeDescriptorSet(true).getDescriptorSets();
 
+		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), description.graphNodes.back().descriptorSetConfigs);
+
+		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstantObject)); //TODO
+
+
+		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), description.graphNodes.back().pipelineConfig, m_renderPass.getRenderPass(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayouts());
+		
+		if (pipelineConfig.enableDepthTesting)
+		{
+			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+			m_depthBufferImageView.addImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+		}
 		m_swapchainFramebuffers = VulkanSwapchainFramebuffers(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), 
 			m_renderPass.getRenderPass(), m_depthBufferImageView.getImageView(0), m_swapchain.getSwapchainExtent());
 
-		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		
 		m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 10000.0f);
@@ -143,7 +156,6 @@ namespace gwa::renderer {
 
 		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 				
-		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
 		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
 
@@ -162,7 +174,7 @@ namespace gwa::renderer {
 	void VulkanRenderAPI::draw(const Window *  window, gwa::ntity::Registry& registry)
 	{
 		WindowSize framebufferSize = window->getFramebufferSize();
-		if (framebufferSize.width <= 0 || framebufferSize.height == 0)
+		if (framebufferSize.width <= 0 || framebufferSize.height <= 0)
 		{
 			m_imgui.updatePlatform();
 			return;
@@ -233,36 +245,7 @@ namespace gwa::renderer {
 		currentFrame = (currentFrame + 1) % maxFramesInFlight_;
 	}
 
-	void VulkanRenderAPI::shutdown() {
-		vkDeviceWaitIdle(m_device.getLogicalDevice());
-		m_imgui.cleanup(m_device.getLogicalDevice());
-
-		m_textureViews.cleanup(m_device.getLogicalDevice());
-
-		for (TextureImage texture : m_textures)
-			texture.cleanup();
-
-		m_textureSampler.cleanup();
-		m_meshBuffers.cleanup();
-		m_drawFences.cleanup();
-		m_renderFinished.cleanup();
-		
-		m_imageAvailable.cleanup();
-		m_descriptorSet.cleanup(m_device.getLogicalDevice());
-
-		m_mvpUniformBuffers.cleanup();
-		m_graphicsCommandPool.cleanup();
-		m_swapchainFramebuffers.cleanup();
-		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
-		m_depthBufferImage.cleanup();
-		m_graphicsPipeline.cleanup(m_device.getLogicalDevice());
-		m_descriptorSetLayout.cleanup(m_device.getLogicalDevice());
-		m_renderPass.cleanup(m_device.getLogicalDevice());
-		m_swapchain.cleanup();
-		m_device.cleanup();
-		m_instance.cleanup();
-	}
-	void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
+		void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
 	{
 		//https://developer.nvidia.com/vulkan-shader-resource-binding
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
@@ -298,7 +281,7 @@ namespace gwa::renderer {
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
 			pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
-			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_ALL, sizeof(pushConstantObject), &pushConstantObject);
+			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
@@ -315,11 +298,42 @@ namespace gwa::renderer {
 		m_swapchainFramebuffers.cleanup();
 		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
 		m_depthBufferImage.cleanup();
-		m_swapchain.recreateSwapchain(framebufferSize.width, framebufferSize.height);
+		m_swapchain.recreateSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
 		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
 			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		m_depthBufferImageView.recreateImageView(0, m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
 		m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
 			m_depthBufferImageView.getImageView(0), m_swapchain.getSwapchainExtent());
 	}
+
+	void VulkanRenderAPI::shutdown() {
+		vkDeviceWaitIdle(m_device.getLogicalDevice());
+		m_imgui.cleanup(m_device.getLogicalDevice());
+
+		m_textureViews.cleanup(m_device.getLogicalDevice());
+
+		for (TextureImage texture : m_textures)
+			texture.cleanup();
+
+		m_textureSampler.cleanup();
+		m_meshBuffers.cleanup();
+		m_drawFences.cleanup();
+		m_renderFinished.cleanup();
+		
+		m_imageAvailable.cleanup();
+		m_descriptorSet.cleanup(m_device.getLogicalDevice());
+
+		m_mvpUniformBuffers.cleanup();
+		m_graphicsCommandPool.cleanup();
+		m_swapchainFramebuffers.cleanup();
+		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
+		m_depthBufferImage.cleanup();
+		m_graphicsPipeline.cleanup(m_device.getLogicalDevice());
+		m_descriptorSetLayout.cleanup(m_device.getLogicalDevice());
+		m_renderPass.cleanup(m_device.getLogicalDevice());
+		m_swapchain.cleanup(m_device.getLogicalDevice());
+		m_device.cleanup();
+		m_instance.cleanup();
+	}
+
 }

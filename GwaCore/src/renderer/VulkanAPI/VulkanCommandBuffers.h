@@ -13,7 +13,7 @@ namespace gwa
 		void beginCommandBuffer(VkCommandBufferUsageFlags flags);
 		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer);
 		void bindPipeline(VkPipeline pipeline);
-		void pipelineBarrier(VkImageMemoryBarrier barrier);
+		void pipelineBarrier(const VkImageMemoryBarrier& barrier);
 		void setViewport(const VkViewport& viewport);
 		void setScissor(const VkRect2D& scissor);
 		void endCommandBuffer();

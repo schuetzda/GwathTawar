@@ -24,7 +24,7 @@ void MyProject::renderUI(float ts)
 
 	if (ftime100 > 0.5f)
 	{
-		avgFtime100 = ftime100 / frameCount;
+		avgFtime100 = ftime100 / static_cast<float>(frameCount);
 		ftime100 = 0.f;
 		frameCount = 0;
 	}

@@ -3,8 +3,9 @@
 #include <vector>
 #include "VulkanSwapchain.h"
 #include <span>
+#include "RendererConfig.h"
 
-namespace gwa
+namespace gwa::renderer
 {
 	class VulkanSwapchainFramebuffers
 	{
@@ -24,7 +25,7 @@ namespace gwa
 		void createFramebuffers(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 			VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
 
-		std::vector<VkFramebuffer> swapchainFramebuffers_;
+		std::vector<VkFramebuffer> swapchainFramebuffers_{};
 		VkDevice logicalDevice_{};
 	};
 }

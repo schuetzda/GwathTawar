@@ -18,7 +18,7 @@ namespace gwa::renderer
 			for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
 			{
 				descriptorLayoutBindings[bindingIndex].descriptorType = static_cast<VkDescriptorType>(curDescriptorConfig.bindings[bindingIndex].type);
-				descriptorLayoutBindings[bindingIndex].descriptorCount = curDescriptorConfig.bindings[bindingIndex].descriptorCount;
+				descriptorLayoutBindings[bindingIndex].descriptorCount = curDescriptorConfig.bindings[bindingIndex].maxDescriptorCount;
 				descriptorLayoutBindings[bindingIndex].binding = curDescriptorConfig.bindings[bindingIndex].bindingSlot;
 				descriptorLayoutBindings[bindingIndex].stageFlags = static_cast<VkShaderStageFlags>(curDescriptorConfig.bindings[bindingIndex].shaderStage);
 				descriptorLayoutBindings[bindingIndex].pImmutableSamplers = nullptr;

@@ -156,10 +156,10 @@ namespace gwa
 					{
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
 						{
-							std::filesystem::path colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
-							if (textureEntityMap.contains(colorTexturePath.string()))
+							std::string colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
+							if (textureEntityMap.contains(colorTexturePath))
 							{
-								meshBufferData.materialTextureEntities[0] = textureEntityMap[colorTexturePath.string()];
+								meshBufferData.materialTextureEntities[0] = textureEntityMap[colorTexturePath];
 							}
 							else {
 								std::cerr << "Texture " << colorTexturePath << " was not preloaded \n";
@@ -167,14 +167,27 @@ namespace gwa
 						}
 						if (curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 						{
-							std::filesystem::path metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
-							if (textureEntityMap.contains(metallicRoughnessTexturePath.string()))
+							std::string metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
+							if (textureEntityMap.contains(metallicRoughnessTexturePath))
 							{
-								meshBufferData.materialTextureEntities[1] = textureEntityMap[metallicRoughnessTexturePath.string()];
+								meshBufferData.materialTextureEntities[1] = textureEntityMap[metallicRoughnessTexturePath];
 							}
 							else {
 								std::cerr << "Texture " << metallicRoughnessTexturePath << " was not preloaded \n";
 							}
+						}
+						if (curPrimitive.material && curPrimitive.material->normal_texture.texture)
+						{
+							std::string normalTexturePath = curPrimitive.material->normal_texture.texture->image->uri;
+							if (textureEntityMap.contains(normalTexturePath))
+							{
+								meshBufferData.materialTextureEntities[2] = textureEntityMap[normalTexturePath];
+							}
+							else
+							{
+								std::cerr << "Texture " << normalTexturePath << " was not preloaded \n";
+							}
+
 						}
 					}
 					

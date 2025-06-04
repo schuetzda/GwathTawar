@@ -13,13 +13,15 @@ namespace gwa::renderer
 		uint32_t maxSets = 0;
 		std::vector<VkDescriptorSetLayout> setLayouts{};
 
+		//Create the descriptor pool and set the layouts per set. Per bindless descriptor one set is needed otherwise a descriptor set per frame in flight.
+
 		for (DescriptorSetConfig descriptorConfig : descriptorSetsConfig)
 		{
 			for (DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
 			{
 				if (descriptorConfig.bindless)
 				{
-					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.descriptorCount);
+					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.maxDescriptorCount);
 					setLayouts.push_back(descriptorSetLayout[1]);
 					maxSets++;
 				}
@@ -46,7 +48,6 @@ namespace gwa::renderer
 		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
 		assert(result == VK_SUCCESS);
 
-
 		std::vector<VkDescriptorSet> descriptorSets;
 		descriptorSets.resize(maxSets);
 
@@ -70,54 +71,9 @@ namespace gwa::renderer
 
 			for (uint32_t i = 0; i < numberOfFrames; i++)
 			{
-				std::vector<VkWriteDescriptorSet> descriptorWrites{};
-				const size_t numberOfBindings = descriptorSetConfig.bindings.size();
-				descriptorWrites.resize(numberOfBindings);
-				uint32_t uniformBufferIndex = 0;
-				uint32_t textureViewIndex = 0;
-				std::vector<VkDescriptorBufferInfo> bufferInfos;
-				std::vector<VkDescriptorImageInfo> imageInfos;
+				updateDescriptorSet(logicalDevice, descriptorSetConfig, descriptorSets[currentDescriptorSetIndex],
+					uniformBuffers, dataSizes, textureImageView, textureSampler);
 
-				for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
-				{
-					descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-					descriptorWrites[bindingIndex].dstSet = descriptorSets[currentDescriptorSetIndex];
-					descriptorWrites[bindingIndex].dstBinding = descriptorSetConfig.bindings[bindingIndex].bindingSlot;				// Binding to update matches with binding on layout/shader)
-					descriptorWrites[bindingIndex].dstArrayElement = 0;		// Index in array to update
-					descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(descriptorSetConfig.bindings[bindingIndex].type);
-					descriptorWrites[bindingIndex].descriptorCount = descriptorSetConfig.bindings[bindingIndex].descriptorCount;		// Amount to update
-					for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
-					{
-						switch (descriptorSetConfig.bindings[bindingIndex].type)
-						{
-						case DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-						{
-							bufferInfos.emplace_back();
-							bufferInfos.back().buffer = uniformBuffers[uniformBufferIndex];		// Buffer to get data from
-							bufferInfos.back().offset = 0;						// position of start of data
-							bufferInfos.back().range = dataSizes[uniformBufferIndex];
-
-							descriptorWrites[bindingIndex].pBufferInfo = &bufferInfos[uniformBufferIndex];// Information of buffer data to bind
-							uniformBufferIndex++;
-							break;
-						}
-						case DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-						{
-							imageInfos.emplace_back();
-							imageInfos.back().imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-							imageInfos.back().imageView = textureImageView[textureViewIndex];
-							imageInfos.back().sampler = textureSampler;
-
-							descriptorWrites[bindingIndex].pImageInfo = imageInfos.data();
-							textureViewIndex++;
-							break;
-						}
-						default:
-							std::cerr << "Vulkan Descriptor Set support for binding " << descriptorSetConfig.bindings[bindingIndex].bindingSlot;
-						}
-					}
-				}
-				vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 				descriptorSetsPerFrame.resize(maxFramesInFlight);
 				if (descriptorSetConfig.bindless) {
 					// Same set for every frame
@@ -133,6 +89,64 @@ namespace gwa::renderer
 				currentDescriptorSetIndex++;
 			}
 		}
+	}
+
+	void VulkanDescriptorSet::updateDescriptorSet(VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig,VkDescriptorSet descriptorSet, std::span<const VkBuffer> uniformBuffers,
+		std::span<const uint64_t> dataSizes, std::span<const VkImageView> textureImageView, VkSampler textureSampler)
+	{
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites{};
+		const size_t numberOfBindings = descriptorSetConfig.bindings.size();
+		descriptorWrites.resize(numberOfBindings);
+		uint32_t uniformBufferIndex = 0;
+		uint32_t textureViewIndex = 0;
+		std::vector<VkDescriptorBufferInfo> bufferInfos;
+		std::vector<VkDescriptorImageInfo> imageInfos;
+
+		for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
+		{
+			descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[bindingIndex].dstSet = descriptorSet;
+			descriptorWrites[bindingIndex].dstBinding = descriptorSetConfig.bindings[bindingIndex].bindingSlot;				// Binding to update matches with binding on layout/shader)
+			descriptorWrites[bindingIndex].dstArrayElement = 0;		// Index in array to update
+			descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(descriptorSetConfig.bindings[bindingIndex].type);
+			descriptorWrites[bindingIndex].descriptorCount = descriptorSetConfig.bindings[bindingIndex].descriptorCount;		// Amount to update
+			switch (descriptorSetConfig.bindings[bindingIndex].type)
+			{
+			case DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+			{
+				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+				{
+					bufferInfos.emplace_back();
+					bufferInfos.back().buffer = uniformBuffers[uniformBufferIndex];		// Buffer to get data from
+					bufferInfos.back().offset = 0;						// position of start of data
+					bufferInfos.back().range = dataSizes[uniformBufferIndex];
+
+					descriptorWrites[bindingIndex].pBufferInfo = &bufferInfos[uniformBufferIndex];// Information of buffer data to bind
+					uniformBufferIndex++;
+				}
+				break;
+			}
+			case DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+			{
+				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+				{
+					imageInfos.emplace_back();
+					imageInfos.back().imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos.back().imageView = textureImageView[textureViewIndex];
+					imageInfos.back().sampler = textureSampler;
+
+					descriptorWrites[bindingIndex].pImageInfo = imageInfos.data();
+					textureViewIndex++;
+				}
+				break;
+			}
+			default:
+				std::cerr << "Vulkan Descriptor Set support for binding " << descriptorSetConfig.bindings[bindingIndex].bindingSlot << " not implemented yet.";
+			}
+		}
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 
 	void VulkanDescriptorSet::cleanup(VkDevice logicalDevice)

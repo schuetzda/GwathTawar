@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <array>
 #include <cassert>
-namespace gwa
+namespace gwa::renderer
 {
 	VulkanSwapchainFramebuffers::VulkanSwapchainFramebuffers(VkDevice logicalDevice,const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 		VkImageView depthBufferImageView, VkExtent2D swapchainExtent):logicalDevice_(logicalDevice)
@@ -17,8 +17,7 @@ namespace gwa
 		VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
 	{
 		swapchainFramebuffers_.resize(swapchainImages.size());
-
-		for (size_t i = 0; i < swapchainFramebuffers_.size(); ++i)
+		for (size_t i = 0; i < swapchainFramebuffers_.size(); i++)
 		{
 			const uint32_t attachmentsSize = 2;
 			std::array<VkImageView,attachmentsSize> attachments{

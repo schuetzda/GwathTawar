@@ -20,8 +20,8 @@ namespace gwa {
 		VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
 		~VulkanSwapchain() = default;
 
-		void cleanup();
-		void recreateSwapchain(int framebufferWidth, int framebufferHeight);
+		void cleanup(VkDevice logicalDevice);
+		void recreateSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
 
 		VkSwapchainKHR getSwapchain() const
 		{
@@ -49,17 +49,16 @@ namespace gwa {
 		}
 
 	private:
-		void createSwapchain(int framebufferWidth, int framebufferHeight, bool recreate);
+		void createSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight, bool recreate);
 		VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const;
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, int framebufferWidth, int framebufferHeight) const;
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
-		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
 	
 		VkSwapchainKHR vkSwapchain_{};
 		VkFormat vkSwapchainImageFormat_{};
 		VkExtent2D vkSwapchainExtent_{};
-		std::vector<VulkanSwapchainImage> swapchainImages_ = std::vector<VulkanSwapchainImage>(0);
-
-		const VulkanDevice* device_{nullptr};
+		std::vector<VulkanSwapchainImage> swapchainImages_{};
 	};
 }
