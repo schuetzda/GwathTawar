@@ -14,18 +14,15 @@ namespace gwa::renderer
 		VulkanSwapchainFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 			VkImageView depthBufferImageView, VkExtent2D swpachainExtent);
 
-		void recreateSwapchain(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
-			VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
-		void cleanup();
+		void recreateSwapchain(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
+		void cleanup(VkDevice logicalDevice);
 		std::span<VkFramebuffer> getFramebuffers() 
 		{
 			return std::span<VkFramebuffer>(swapchainFramebuffers_);
 		}
 	private:
-		void createFramebuffers(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
-			VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
+		void createFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent);
 
 		std::vector<VkFramebuffer> swapchainFramebuffers_{};
-		VkDevice logicalDevice_{};
 	};
 }

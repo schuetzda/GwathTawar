@@ -14,7 +14,7 @@ namespace gwa::renderer
 		VkImageView getImageView(uint32_t index) const
 		{
 			if (index >= imageViews.size())
-				return 0;
+				return nullptr;
 			return imageViews[index];
 		}
 		const std::vector<VkImageView>& getImageViews() const

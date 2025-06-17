@@ -5,15 +5,15 @@
 namespace gwa::renderer
 {
 	VulkanSwapchainFramebuffers::VulkanSwapchainFramebuffers(VkDevice logicalDevice,const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
-		VkImageView depthBufferImageView, VkExtent2D swapchainExtent):logicalDevice_(logicalDevice)
+		VkImageView depthBufferImageView, VkExtent2D swapchainExtent)	
 	{
-		createFramebuffers(swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
+		createFramebuffers(logicalDevice, swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
 	}
-	void VulkanSwapchainFramebuffers::recreateSwapchain(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
+	void VulkanSwapchainFramebuffers::recreateSwapchain(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass, VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
 	{
-		createFramebuffers(swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
+		createFramebuffers(logicalDevice, swapchainImages, renderPass, depthBufferImageView, swapchainExtent);
 	}
-	void VulkanSwapchainFramebuffers::createFramebuffers(const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
+	void VulkanSwapchainFramebuffers::createFramebuffers(VkDevice logicalDevice, const std::vector<VulkanSwapchainImage>& swapchainImages, VkRenderPass renderPass,
 		VkImageView depthBufferImageView, VkExtent2D swapchainExtent)
 	{
 		swapchainFramebuffers_.resize(swapchainImages.size());
@@ -34,15 +34,15 @@ namespace gwa::renderer
 			framebufferCreateInfo.height = swapchainExtent.height;
 			framebufferCreateInfo.layers = 1;
 
-			VkResult result = vkCreateFramebuffer(logicalDevice_, &framebufferCreateInfo, nullptr, &swapchainFramebuffers_[i]);
+			VkResult result = vkCreateFramebuffer(logicalDevice, &framebufferCreateInfo, nullptr, &swapchainFramebuffers_[i]);
 			assert(result == VK_SUCCESS);
 		}
 	}
-	void VulkanSwapchainFramebuffers::cleanup() 
+	void VulkanSwapchainFramebuffers::cleanup(VkDevice logicalDevice) 
 	{
 		for (auto framebuffer : swapchainFramebuffers_)
 		{
-			vkDestroyFramebuffer(logicalDevice_, framebuffer, nullptr);
+			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 		}
 	}
 }

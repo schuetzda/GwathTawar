@@ -21,6 +21,7 @@
 #include "wrapper/VulkanDescriptorSet.h"
 #include "wrapper/VulkanSemaphore.h"
 #include "wrapper/VulkanFence.h"
+#include <vector>
 #include "wrapper/VulkanUniformBuffers.h"
 #include "TextureImage.h"
 #include "wrapper/VulkanImageSampler.h"
@@ -32,7 +33,7 @@ namespace gwa::renderer {
 	public:
 		VulkanRenderAPI() = default;
 
-		void init(const Window *  window, gwa::ntity::Registry& registry) override;
+		void init(const Window *  window, gwa::ntity::Registry& registry, const RenderGraphDescription& description) override;
 		void draw(const Window* window, gwa::ntity::Registry& registry) override;
 		void shutdown() override;
 
@@ -41,36 +42,58 @@ namespace gwa::renderer {
 		void recreateSwapchain(WindowSize framebufferSize);
 		const uint32_t maxFramesInFlight_ = 2;
 		uint32_t currentFrame = 0;
+
+		struct RenderNode
+		{
+			VulkanRenderPass renderPass{};
+			VulkanDescriptorSetLayout descriptorSetLayout{};
+			VulkanPushConstant pushConstant{};
+			VulkanPipeline pipeline{};
+			VulkanDescriptorSet descriptorSet{};
+		};
+		VulkanMeshBuffers m_meshBuffers{};
+
+		struct DataNode
+		{
+		};
+
+		std::vector<RenderNode> renderNodes{};
+		std::vector<DataNode> dataNodes{};
 		
-		VulkanInstance m_instance;
-		VulkanDevice m_device;
-		VulkanSwapchain m_swapchain;
-		VulkanRenderPass m_renderPass;
-		VulkanDescriptorSetLayout m_descriptorSetLayout;
-		VulkanPushConstant m_pushConstant;
-		VulkanPipeline m_graphicsPipeline;
-		VulkanPipeline m_graphicsPipelineTransparent;
-		VulkanImage m_depthBufferImage;
-		VulkanImageView m_depthBufferImageView;
-		VulkanSwapchainFramebuffers m_swapchainFramebuffers; 
-		VulkanCommandPool m_graphicsCommandPool;
-		std::vector<VulkanCommandBuffer> m_graphicsCommandBuffers;
-		VulkanUniformBuffers m_mvpUniformBuffers;
-		VulkanDescriptorSet m_descriptorSet;
-		VulkanSemaphore m_renderFinished;
-		VulkanSemaphore m_imageAvailable;
-		VulkanFence m_drawFences;
-		VulkanMeshBuffers m_meshBuffers;
-		std::vector<TextureImage> m_textures;
-		VulkanImageView m_textureViews;
-		VulkanImageSampler m_textureSampler;
-		VulkanImguiIntegration m_imgui;
+		VulkanInstance m_instance{};
+		VulkanDevice m_device{};
+		VulkanSwapchain m_swapchain{};
+					
+		VulkanSwapchainFramebuffers m_swapchainFramebuffers{};
+		VulkanImageView m_swapchainDepthBufferView{};
+		VulkanImage m_swapchainDepthBufferImage{};
+
+		VulkanCommandPool m_graphicsCommandPool{};
+		std::vector<VulkanCommandBuffer> m_graphicsCommandBuffers{};
+		VulkanUniformBuffers m_mvpUniformBuffers{};
+		VulkanSemaphore m_renderFinished{};
+		VulkanSemaphore m_imageAvailable{};
+		VulkanFence m_drawFences{};
+		std::vector<TextureImage> m_textures{};
+		VulkanImageView m_textureViews{};
+		VulkanImageSampler m_textureSampler{};
+		VulkanImguiIntegration m_imgui{};
+
+		VkFormat depthFormat = VkFormat::VK_FORMAT_UNDEFINED;
 
 		struct PushConstant
 		{
 			glm::mat4 model;
 			uint32_t textureIndex;
 		} pushConstantObject;
+
+		struct RenderObjects
+		{
+			VulkanRenderPass renderpass;
+			VkPipeline pipeline;
+		};
+
+		ResourceAttachment uboAttachment{};//TODO cleanup
 
 		const std::vector<const char*> deviceExtensions{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,

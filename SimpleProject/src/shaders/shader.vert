@@ -8,8 +8,7 @@ layout(location = 0) out vec3 fragColour;
 layout(location = 1) out vec2 fragTexCoord;
 
 layout(binding = 0) uniform UboViewProj {
-	mat4 projection;
-	mat4 view;
+	mat4 viewProj;
 } uboViewProjection;
 
 /* Not in use, left for reference
@@ -23,7 +22,7 @@ layout(push_constant) uniform PushModel {
 } pushModel;
 
 void main() {
-	gl_Position = uboViewProjection.projection * uboViewProjection.view * pushModel.model * vec4(pos, 1.0);
+	gl_Position = uboViewProjection.viewProj * pushModel.model * vec4(pos, 1.0);
 	fragTexCoord = texcoords;
 	fragColour = vec3(texcoords.x, texcoords.y, 0.f);
 }

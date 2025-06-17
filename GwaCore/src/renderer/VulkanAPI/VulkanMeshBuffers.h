@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <span>
+#include <array>
 #include "vkTypes.h"
 #include <glm/glm.hpp>
 
@@ -11,9 +12,7 @@ namespace gwa
 		public:
 		struct MeshBufferData {
 			VkBuffer indexBuffer;
-			VkBuffer vertexBuffer;
-			VkBuffer normalBuffer;
-			VkBuffer texcoordBuffer;
+			std::array<VkBuffer, 3> vertexBuffers; // 0: Vertex, 1: Normal, 2: Texcoord
 			uint32_t indexCount;
 		};
 

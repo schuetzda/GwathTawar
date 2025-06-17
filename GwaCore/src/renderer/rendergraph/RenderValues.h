@@ -2,25 +2,25 @@
 // For now we take the same enums as in Vulkan. For later support of different APIs this may have to change.
 namespace gwa::renderer
 {
-	enum class AttachmentLoadOp
-	{
+    enum class AttachmentLoadOp
+    {
         ATTACHMENT_LOAD_OP_LOAD = 0,
         ATTACHMENT_LOAD_OP_CLEAR = 1,
         ATTACHMENT_LOAD_OP_DONT_CARE = 2,
         ATTACHMENT_LOAD_OP_NONE_EXT = 1000400000,
         ATTACHMENT_LOAD_OP_MAX_ENUM = 0x7FFFFFFF
-	};
+    };
 
-	enum class AttachmentStoreOp
-	{
+    enum class AttachmentStoreOp
+    {
         ATTACHMENT_STORE_OP_STORE = 0,
         ATTACHMENT_STORE_OP_DONT_CARE = 1,
         ATTACHMENT_STORE_OP_NONE = 1000301000,
         ATTACHMENT_STORE_OP_MAX_ENUM = 0x7FFFFFFF
-	};
+    };
 
     enum class Format
-	{
+    {
         FORMAT_UNDEFINED = 0,
         FORMAT_R4G4_UNORM_PACK8 = 1,
         FORMAT_R4G4B4A4_UNORM_PACK16 = 2,
@@ -154,8 +154,8 @@ namespace gwa::renderer
         FORMAT_D32_SFLOAT_S8_UINT = 130,
         FORMAT_SWAPCHAIN_IMAGE_FORMAT = 131,
         FORMAT_DEPTH_FORMAT = 132
-        
-	 };
+
+    };
 
     enum class SampleCountFlagBits
     {
@@ -221,7 +221,7 @@ namespace gwa::renderer
         POLYGON_MODE_MAX_ENUM = 0x7FFFFFFF
     };
 
-    enum class CullModeFlagBits{
+    enum class CullModeFlagBits {
         CULL_MODE_NONE = 0,
         CULL_MODE_FRONT_BIT = 0x00000001,
         CULL_MODE_BACK_BIT = 0x00000002,
@@ -265,4 +265,28 @@ namespace gwa::renderer
         SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI = 0x00080000,
         SHADER_STAGE_FLAG_BITS_MAX_ENUM = 0x7FFFFFFF
     };
+
+    enum class ResourceAttachmentType
+    {
+        ATTACHMENT_TYPE_BUFFER,
+        ATTACHMENT_TYPE_TEXTURE
+    };
+
+    //https://www.justsoftwaresolutions.co.uk/cplusplus/using-enum-classes-as-bitfields.html
+    //Enable bitwise operation for enum classes
+    template<typename E>
+    struct enable_bitmask_operators {
+        static constexpr bool enable = false;
+    };
+
+    template<typename E> requires enable_bitmask_operators<E>::value
+    constexpr typename E
+        operator|(E lhs, E rhs) {
+        using underlying = typename std::underlying_type<E>::type;
+        return static_cast<E>(
+            static_cast<underlying>(lhs) | static_cast<underlying>(rhs));
+    }
+
+    template<> struct enable_bitmask_operators<ShaderStageFlagBits> { static constexpr bool value = true; };
+
 }

@@ -19,7 +19,7 @@
 
 
 namespace gwa::renderer {
-	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry) 
+	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry, const RenderGraphDescription& description) 
 	{
 		
 #ifdef GWA_DEBUG
@@ -42,133 +42,95 @@ namespace gwa::renderer {
 		m_graphicsCommandPool = VulkanCommandPool(&m_device);
 		m_graphicsCommandBuffers = vulkanutil::initCommandBuffers(m_device.getLogicalDevice(), m_graphicsCommandPool.getCommandPool(), maxFramesInFlight_);
 
-		enum class deferred
+		const size_t nodeCount = description.graphNodes.size();
+		renderNodes.resize(nodeCount);
+		dataNodes.resize(nodeCount);
+
+		for (size_t nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
 		{
-			color,
-			depth,
-			normal,
-			position,
-			output
-		};
+			const RenderGraphNode curRenderGraphNode = description.graphNodes[nodeIndex];
+			RenderNode& curRenderNode = renderNodes[nodeIndex];
+			DataNode& curDataNode = dataNodes[nodeIndex];
 
-		renderer::PipelineBuilder pipelineBuilder{};
-		renderer::PipelineConfig pipelineConfig =  
-			pipelineBuilder.addShaderModule("src/shaders/vert.spv", renderer::ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT)
-			.addShaderModule("src/shaders/frag.spv", renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT)
-			.addVertexInput(0, sizeof(glm::vec3), 0, 0, renderer::Format::FORMAT_R32G32B32_SFLOAT)
-			.addVertexInput(1, sizeof(glm::vec3), 1, 0, renderer::Format::FORMAT_R32G32B32_SFLOAT)
-			.addVertexInput(2, sizeof(glm::vec2), 2, 0, renderer::Format::FORMAT_R32G32_SFLOAT)
-			.setPipelineInputAssembly(renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
-			.setViewport(0, 0, static_cast<float>(framebufferSize.width), static_cast<float>(framebufferSize.height))
-			.setMSAA(true)
-			.setDepthBuffering(true)
-			.build();
-
-		gwa::renderer::RenderGraph<deferred> graph{};
-		gwa::renderer::RenderGraphDescription description = graph.addAttachment(deferred::color,
-			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		.addAttachment(deferred::depth,
-			gwa::renderer::Format::FORMAT_DEPTH_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-		.addGraphNode()
-		.addRenderPass<1>({ deferred::color}, deferred::depth)
-		.addDescriptorSet(false)
-		.addBinding<DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(0, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT)
-		.addDescriptorSet(true)
-		.addBinding<DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, static_cast<uint32_t>(registry.getComponentCount<Texture>()), 1024)
-		.addPipeline(pipelineConfig)
-		.createRenderGraph();
-
-		m_renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), description.graphNodes[0].renderPass, description.attachments);
-
-		DescriptorSetConfigurator descriptorConfig{};
-		const std::vector<DescriptorSetConfig> descriptorConfigs = descriptorConfig
-			.addBinding(0, DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER, ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT).finalizeDescriptorSet(false)
-			.addBinding(1, DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, static_cast<uint32_t>(registry.getComponentCount<Texture>()), 1024).finalizeDescriptorSet(true).getDescriptorSets();
-
-		m_descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), description.graphNodes.back().descriptorSetConfigs);
-
-		m_pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstantObject)); //TODO
-
-
-		m_graphicsPipeline = VulkanPipeline(m_device.getLogicalDevice(), description.graphNodes.back().pipelineConfig, m_renderPass.getRenderPass(), m_pushConstant.getRange(), m_descriptorSetLayout.getDescriptorSetLayouts());
-		
-		if (pipelineConfig.enableDepthTesting)
-		{
-			m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-				m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-			m_depthBufferImageView.addImageView(m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
-		}
-		m_swapchainFramebuffers = VulkanSwapchainFramebuffers(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), 
-			m_renderPass.getRenderPass(), m_depthBufferImageView.getImageView(0), m_swapchain.getSwapchainExtent());
-
-		
-		m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
-		uboViewProj.projection = glm::perspective(glm::radians(45.0f), (float)m_swapchain.getSwapchainExtent().width / (float)m_swapchain.getSwapchainExtent().height, 0.1f, 10000.0f);
-
-		uboViewProj.projection[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
-
-		{
-			std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
-
-			uint32_t index = 0;
-			const size_t numberOfTextures = registry.getComponentCount<Texture>();
-			m_textures.resize(numberOfTextures);
-			for (uint32_t textureEntity : registry.getEntities<Texture>())
+			if (curRenderGraphNode.pipelineConfig.enableDepthTesting)
 			{
-				entityToIndexMap[textureEntity] = index;
-				Texture const* texture = registry.getComponent<Texture>(textureEntity);
-				TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
-				m_textures[index] = textureImage;
-				m_textureViews.addImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-				index++;
-				registry.deleteEntity(textureEntity);
+				depthFormat = vulkanutil::chooseSupportedFormat(m_device.getPhysicalDevice(),
+					{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
+					VK_IMAGE_TILING_OPTIMAL,
+					VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 			}
 
-			for (uint32_t meshBufferEntity: registry.getEntities<TexturedMeshBufferMemory>())
+			curRenderNode.renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), curRenderGraphNode.renderPass, description.renderAttachments, depthFormat);
+			curRenderNode.descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), curRenderGraphNode.descriptorSetConfigs);
+			curRenderNode.pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstantObject)); //TODO
+			curRenderNode.pipeline = VulkanPipeline(m_device.getLogicalDevice(), description.graphNodes.back().pipelineConfig, curRenderNode.renderPass.getRenderPass(), curRenderNode.pushConstant.getRange(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts());
+
+			if (curRenderGraphNode.pipelineConfig.enableDepthTesting && nodeIndex == nodeCount-1)
 			{
-				TexturedMeshBufferMemory const* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(meshBufferEntity);
-				const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals, meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
-				uint32_t entityID = registry.registerEntity();
-				TexturedMeshRenderObject renderObject;
-				
-				assert(meshBufferMemory->materialTextureEntities.size() == renderObject.materialTextureIDs.size()); //TexturedMeshBufferMemory and TexturedMeshRenderObject are required to have the same amount of textures.
-				for (size_t i = 0; i < meshBufferMemory->materialTextureEntities.size(); i++) {
-					renderObject.materialTextureIDs[i] = entityToIndexMap.at(meshBufferMemory->materialTextureEntities[i]);
+				m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+					depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+				m_swapchainDepthBufferView.addImageView(m_device.getLogicalDevice(), m_swapchainDepthBufferImage.getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+				m_swapchainFramebuffers = VulkanSwapchainFramebuffers(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(),
+				curRenderNode.renderPass.getRenderPass(), m_swapchainDepthBufferView.getImageView(0), m_swapchain.getSwapchainExtent());
+			}
+			
+			m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+			
+			{
+				std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
+
+				uint32_t index = 0;
+				const size_t numberOfTextures = registry.getComponentCount<Texture>();
+				m_textures.resize(numberOfTextures);
+				for (uint32_t textureEntity : registry.getEntities<Texture>())
+				{
+					entityToIndexMap[textureEntity] = index;
+					Texture const* texture = registry.getComponent<Texture>(textureEntity);
+					TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
+					m_textures[index] = textureImage;
+					m_textureViews.addImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+					index++;
+					registry.deleteEntity(textureEntity);
 				}
-				renderObject.bufferID = id;
-				registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
-				registry.deleteEntity(meshBufferEntity);
+
+				for (uint32_t meshBufferEntity : registry.getEntities<TexturedMeshBufferMemory>())
+				{
+					TexturedMeshBufferMemory const* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(meshBufferEntity);
+					const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals, meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+					uint32_t entityID = registry.registerEntity();
+					TexturedMeshRenderObject renderObject;
+
+					assert(meshBufferMemory->materialTextureEntities.size() == renderObject.materialTextureIDs.size()); //TexturedMeshBufferMemory and TexturedMeshRenderObject are required to have the same amount of textures.
+					for (size_t i = 0; i < meshBufferMemory->materialTextureEntities.size(); i++) {
+						renderObject.materialTextureIDs[i] = entityToIndexMap.at(meshBufferMemory->materialTextureEntities[i]);
+					}
+					renderObject.bufferID = id;
+					renderObject.modelMatrix = meshBufferMemory->modelMatrix;
+					registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+					registry.deleteEntity(meshBufferEntity);
+				}
 			}
+			registry.flushComponents<TexturedMeshBufferMemory>();
+			registry.flushComponents<Texture>();
+
+			m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+
+			size_t uboHandle = curRenderGraphNode.descriptorSetConfigs[0].bindings[0].inputAttachmentHandle;
+			uboAttachment = description.resourceAttachments.at(uboHandle);
+			m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), uboAttachment.dataInfo.size, m_swapchain.getSwapchainImagesSize());
+
+			std::array<uint64_t, 2> bufferSizes = { description.resourceAttachments.at(uboHandle).dataInfo.size, description.resourceAttachments.at(uboHandle).dataInfo.size };
+			curRenderNode.descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), std::span<const VkDescriptorSetLayout>(curRenderNode.descriptorSetLayout.getDescriptorSetLayouts()), std::span<const VkBuffer>(m_mvpUniformBuffers.getUniformBuffers()),
+				maxFramesInFlight_, std::span<const uint64_t>(bufferSizes), std::span<const DescriptorSetConfig>(description.graphNodes.back().descriptorSetConfigs), std::span<const VkImageView>(m_textureViews.getImageViews()), m_textureSampler.getImageSampler());
+
+			m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), curRenderNode.renderPass.getRenderPass(), m_device.getGraphicsQueue());
 		}
-		registry.flushComponents<TexturedMeshBufferMemory>();
-		registry.flushComponents<Texture>();
-
-		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
-				
-
-		m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), sizeof(UboViewProj), m_swapchain.getSwapchainImagesSize());
-
-		std::array<uint64_t, 2> bufferSizes = { sizeof(UboViewProj), sizeof(UboViewProj) };
-		m_descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), std::span<const VkDescriptorSetLayout>(m_descriptorSetLayout.getDescriptorSetLayouts()), std::span<const VkBuffer>(m_mvpUniformBuffers.getUniformBuffers()), 
-			maxFramesInFlight_, std::span<const uint64_t>(bufferSizes), std::span<const DescriptorSetConfig>(descriptorConfigs), std::span<const VkImageView>(m_textureViews.getImageViews()), m_textureSampler.getImageSampler());
-
 
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
 
-		m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), m_renderPass.getRenderPass(), m_device.getGraphicsQueue());
 	}
 
 	void VulkanRenderAPI::draw(const Window *  window, gwa::ntity::Registry& registry)
@@ -197,7 +159,6 @@ namespace gwa::renderer {
 		}
 		vkResetFences(m_device.getLogicalDevice(), 1, &m_drawFences.getFences()[currentFrame]);
 
-		m_mvpUniformBuffers.updateUniformBuffers(imageIndex, sizeof(UboViewProj), &uboViewProj);
 		vkResetCommandBuffer(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 0);
 		recordCommands(imageIndex, registry);
 
@@ -250,38 +211,29 @@ namespace gwa::renderer {
 		//https://developer.nvidia.com/vulkan-shader-resource-binding
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
 		m_graphicsCommandBuffers[currentFrame].beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-		m_graphicsCommandBuffers[currentFrame].beginRenderPass(m_renderPass.getRenderPass(), extent,
+		m_graphicsCommandBuffers[currentFrame].beginRenderPass(renderNodes[0].renderPass.getRenderPass(), extent,
 			m_swapchainFramebuffers.getFramebuffers()[imageIndex]);
-		m_graphicsCommandBuffers[currentFrame].bindPipeline(m_graphicsPipeline.getPipeline());
+		m_graphicsCommandBuffers[currentFrame].bindPipeline(renderNodes[0].pipeline.getPipeline());
 
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)extent.width;
-		viewport.height = (float)extent.height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		m_graphicsCommandBuffers[currentFrame].setViewport(viewport);
+		const void* uboData = registry.getRawComponentData(uboAttachment.resourceHandle);
+		const glm::mat4 uboMat= *static_cast<const glm::mat4*>(uboData);
+		m_mvpUniformBuffers.updateUniformBuffers(imageIndex,uboAttachment.dataInfo.size, uboData);
 
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = extent;
-		m_graphicsCommandBuffers[currentFrame].setScissor(scissor);	
+		m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f,(float)extent.width, (float)extent.height, 0.f, 1.f });
+		m_graphicsCommandBuffers[currentFrame].setScissor({ {0,0},extent });
 		
-		const std::vector<VkDescriptorSet>& currentFrameDescriptors = m_descriptorSet.getDescriptorSets(currentFrame);
-		m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), m_graphicsPipeline.getPipelineLayout());
+		const std::vector<VkDescriptorSet>& currentFrameDescriptors = renderNodes[0].descriptorSet.getDescriptorSets(currentFrame);
+		m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), renderNodes[0].pipeline.getPipelineLayout());
 		for (uint32_t entity: registry.getEntities<TexturedMeshRenderObject>())
 		{
 			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entity);
 			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
-			constexpr uint32_t vertexBufferSize = 3;
-			std::array<VkDeviceSize, vertexBufferSize> offsets = { 0, 0, 0 };
-			const VkBuffer vertexBuffers[vertexBufferSize] = { meshData.vertexBuffer, meshData.normalBuffer, meshData.texcoordBuffer };
-			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(vertexBuffers, static_cast<uint32_t>(offsets.size()), offsets.data());
+			std::array<VkDeviceSize, meshData.vertexBuffers.size()> offsets{ 0 };
+			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(meshData.vertexBuffers.data(), static_cast<uint32_t>(meshData.vertexBuffers.size()), offsets.data());
 			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
 
 			pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
-			m_graphicsCommandBuffers[currentFrame].pushConstants(m_graphicsPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
+			m_graphicsCommandBuffers[currentFrame].pushConstants(renderNodes[0].pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
 
 			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
 		}
@@ -295,15 +247,15 @@ namespace gwa::renderer {
 	void VulkanRenderAPI::recreateSwapchain(WindowSize framebufferSize)
 	{
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
-		m_swapchainFramebuffers.cleanup();
-		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
-		m_depthBufferImage.cleanup();
+		m_swapchainFramebuffers.cleanup(m_device.getLogicalDevice());
+		m_swapchainDepthBufferView.cleanup(m_device.getLogicalDevice());
+		m_swapchainDepthBufferImage.cleanup();
 		m_swapchain.recreateSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
-		m_depthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-			m_renderPass.getDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		m_depthBufferImageView.recreateImageView(0, m_device.getLogicalDevice(), m_depthBufferImage.getImage(), m_renderPass.getDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
-		m_swapchainFramebuffers.recreateSwapchain(m_swapchain.getSwapchainImages(), m_renderPass.getRenderPass(),
-			m_depthBufferImageView.getImageView(0), m_swapchain.getSwapchainExtent());
+		m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+			depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		m_swapchainDepthBufferView.recreateImageView(0, m_device.getLogicalDevice(), m_swapchainDepthBufferImage.getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		m_swapchainFramebuffers.recreateSwapchain(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), renderNodes[0].renderPass.getRenderPass(),
+			m_swapchainDepthBufferView.getImageView(0), m_swapchain.getSwapchainExtent());
 	}
 
 	void VulkanRenderAPI::shutdown() {
@@ -321,16 +273,19 @@ namespace gwa::renderer {
 		m_renderFinished.cleanup();
 		
 		m_imageAvailable.cleanup();
-		m_descriptorSet.cleanup(m_device.getLogicalDevice());
 
 		m_mvpUniformBuffers.cleanup();
 		m_graphicsCommandPool.cleanup();
-		m_swapchainFramebuffers.cleanup();
-		m_depthBufferImageView.cleanup(m_device.getLogicalDevice());
-		m_depthBufferImage.cleanup();
-		m_graphicsPipeline.cleanup(m_device.getLogicalDevice());
-		m_descriptorSetLayout.cleanup(m_device.getLogicalDevice());
-		m_renderPass.cleanup(m_device.getLogicalDevice());
+		m_swapchainFramebuffers.cleanup(m_device.getLogicalDevice());
+		m_swapchainDepthBufferView.cleanup(m_device.getLogicalDevice());
+		m_swapchainDepthBufferImage.cleanup();
+		for (RenderNode node : renderNodes)
+		{
+			node.descriptorSet.cleanup(m_device.getLogicalDevice());
+			node.pipeline.cleanup(m_device.getLogicalDevice());
+			node.descriptorSetLayout.cleanup(m_device.getLogicalDevice());
+			node.renderPass.cleanup(m_device.getLogicalDevice());
+		}
 		m_swapchain.cleanup(m_device.getLogicalDevice());
 		m_device.cleanup();
 		m_instance.cleanup();

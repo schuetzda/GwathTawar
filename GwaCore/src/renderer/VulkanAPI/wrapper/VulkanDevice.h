@@ -54,6 +54,6 @@ namespace gwa
 		VkDevice vkLogicalDevice_{};
 		VkQueue vkGraphicsQueue_{};
 		VkQueue vkPresentationQueue_{};
-		VkInstance instance_;
+		VkInstance instance_{};
 	};
 }

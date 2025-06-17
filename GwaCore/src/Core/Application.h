@@ -27,7 +27,7 @@ namespace gwa
 		~Application();
 		
 		/**
-		*	@brief: Initializes all resources of the application that can be that are loaded into memory before the application is running.
+		*	@brief: Initializes all resources of the application that are loaded into memory before the application is running.
 		*/
 		void init();
 

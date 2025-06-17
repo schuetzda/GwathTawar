@@ -67,6 +67,7 @@ namespace gwa
         std::vector<uint32_t> indices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
+        glm::mat4 modelMatrix;
         std::array<uint32_t, 3> materialTextureEntities{std::numeric_limits<uint32_t>::max()};
         TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
             : vertices(std::vector<glm::vec3>(verticesCount)),

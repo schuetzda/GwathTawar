@@ -6,7 +6,7 @@ namespace gwa
 	class ImGuiOverlay
 	{
 	public:
-		void init(Window& window) const;
+		void init(const Window& window) const;
 		void beforeUIRender() const;
 		void afterUIRender() const;
 		void shutdown() const;

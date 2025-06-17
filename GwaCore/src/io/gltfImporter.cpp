@@ -66,6 +66,7 @@ namespace gwa
 		for (int meshIndex = 0; meshIndex < gltfDataPtr->meshes_count; ++meshIndex)
 		{
 			cgltf_mesh curMesh = gltfDataPtr->meshes[meshIndex];
+			
 			//Currently Mesh to Primitive dependency is not stored in our data structure
 			for (int primitiveIndex = 0; primitiveIndex < curMesh.primitives_count; ++primitiveIndex)
 			{
@@ -190,7 +191,7 @@ namespace gwa
 
 						}
 					}
-					
+					meshBufferData.modelMatrix = glm::mat4(1.f);
 					uint32_t meshEntity = registry.registerEntity();
 					registry.emplace<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
 				}

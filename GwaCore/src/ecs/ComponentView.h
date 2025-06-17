@@ -3,6 +3,7 @@
 #include <array>
 #include<span>
 #include<vector>
+#include "components/ECSObjects.h"
 
 namespace gwa::ntity
 {

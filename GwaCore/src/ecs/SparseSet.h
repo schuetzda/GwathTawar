@@ -1,10 +1,13 @@
 #pragma once
 #include <vector>
 #include "ComponentTable.h"
+#include "TypeIDGenerator.h"
+#include "components/ECSObjects.h"
 
 namespace gwa::ntity
 {
 	constexpr inline uint32_t INVALID_ENTITY_ID = std::numeric_limits<uint32_t>::max();
+	constexpr inline uint32_t INVALID_VERSION = std::numeric_limits<uint32_t>::max();
 
 	class SparseSet
 	{
@@ -17,6 +20,7 @@ namespace gwa::ntity
 			componentTable.init<Component>(expectedNumberOfComponents);
 			sparseList.reserve(expectedNumberOfEntities);
 			denseList.reserve(expectedNumberOfComponents);
+			versions.reserve(expectedNumberOfComponents);
 			sparseList.assign(numberOfEntities, INVALID_ENTITY_ID);
 
 		}
@@ -45,6 +49,7 @@ namespace gwa::ntity
 			assert(sparseList[entity] == INVALID_ENTITY_ID);
 			assert(entity < sparseList.size());
 			denseList.emplace_back(entity);
+			versions.emplace_back(0);
 			sparseList[entity] = static_cast<uint32_t>(denseList.size() - 1);
 			componentTable.emplace_back<Component, Args...>(entity, std::forward<Args>(args)...);
 		}
@@ -61,6 +66,7 @@ namespace gwa::ntity
 			assert(sparseList[entity] == INVALID_ENTITY_ID);
 			assert(entity < sparseList.size());
 			denseList.emplace_back(entity);
+			versions.emplace_back(0);
 			sparseList[entity] = static_cast<uint32_t>(denseList.size() - 1);
 			componentTable.emplace_back<Component>(std::forward<Component>(component));
 		}
@@ -77,6 +83,7 @@ namespace gwa::ntity
 			assert(sparseList[entity] == INVALID_ENTITY_ID);
 			assert(entity < sparseList.size());
 			denseList.emplace_back(entity);
+			versions.emplace_back(0);
 			sparseList[entity] = static_cast<uint32_t>(denseList.size() - 1);
 			componentTable.emplace_back<Component>(component);
 		}
@@ -110,6 +117,7 @@ namespace gwa::ntity
 				sparseList[entity] = INVALID_ENTITY_ID;
 			}
 			denseList.clear();
+			versions.clear();
 			componentTable.clear();
 		}
 
@@ -125,15 +133,18 @@ namespace gwa::ntity
 
 			const uint32_t toDeleteEntity = sparseList[entityID];
 			const uint32_t lastElementIndex = denseList[denseList.size() - 1];
+			const uint32_t lastElementVersions = versions[versions.size() - 1];
 
 			componentTable.swapAndDelete(toDeleteEntity);
 
-			//Swap sparse list indices so that the delete points to invalid entity and the last points to the swapped spot
+			//Swap sparse list indices so that the delete points to an invalid entity and the last points to the swapped spot
 			sparseList[lastElementIndex] = toDeleteEntity;
 			sparseList[entityID] = INVALID_ENTITY_ID;
 
 			denseList[toDeleteEntity] = lastElementIndex;
 			denseList.pop_back();
+			versions[toDeleteEntity] = lastElementVersions;
+			versions.pop_back();
 		}
 
 		/**
@@ -147,6 +158,50 @@ namespace gwa::ntity
 		{
 			const uint32_t denseListIndex = sparseList[entity];
 			return denseListIndex < denseList.size() ? componentTable.getComponent<Component>(sparseList[entity]): nullptr;
+		}
+
+		/**
+		 * @brief Return a Component Handle for storage of components. Use getFromComponentHandle to retrieve the associated component of a handle.
+		 * @tparam Component Component type
+		 * @param entity 
+		 * @return A component handle containing the type, entity and current version of a component
+		 */
+		template<typename Component>
+		ComponentHandle getComponentHandle(uint32_t entity) const
+		{
+			const uint32_t denseListIndex = sparseList[entity];
+			const uint32_t version = denseListIndex < denseList.size() ? versions[denseListIndex]: INVALID_VERSION;
+			return ComponentHandle(TypeIDGenerator::type<Component>(), entity, sizeof(Component), version);
+		}
+
+		/**
+		 * @brief Get the associated Component from a ComponentHandle. Asserts that the Component parameter matches the ComponentHandle type.
+		 * @tparam Component 
+		 * @param handle 
+		 * @return Return the associated Component or nullptr if version does not match or entity is invalid
+		 */
+		template<typename Component>
+		Component* getFromComponentHandle(const ComponentHandle& handle)
+		{
+			assert(TypeIDGenerator::type<Component>() == handle.typeID);
+			const uint32_t denseListIndex = sparseList[handle.entity];
+			const bool validHandle = denseListIndex < denseList.size() || handle.version != versions[denseListIndex];
+			return validHandle ? componentTable.getComponent<Component>(sparseList[handle.entity]) : nullptr;
+		}
+
+		/**
+		* @brief Returns a pointer to the component data at the specified byte offset.
+		* @param offset The offset in bytes from the start of the component data.
+		* @return A const void pointer to the data at the given offset.
+		*
+		* @note The caller is responsible for knowing the type and bounds of the data.
+		*/
+		const void* getRawComponentData(const ComponentHandle& handle)
+		{
+			const uint32_t denseListIndex = sparseList[handle.entity];
+			const bool validHandle = denseListIndex < denseList.size() || handle.version != versions[denseListIndex];
+			const size_t offset = static_cast<size_t>(denseListIndex) * handle.componentByteSize;
+			return validHandle ? componentTable.getVoidPtr(offset) : nullptr;
 		}
 
 		/**
@@ -178,5 +233,6 @@ namespace gwa::ntity
 		std::vector<uint32_t> sparseList;
 		std::vector<uint32_t> denseList;
 		ComponentTable componentTable;
+		std::vector<uint32_t> versions;
 	};
 }

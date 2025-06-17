@@ -10,36 +10,19 @@ It can contain multiple subpasses. The image layout of an image changes inside a
 
 namespace gwa::renderer
 {
-	VkFormat VulkanRenderPass::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const
+	
+	VulkanRenderPass::VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat, const RenderPassConfig& renderPassConfig, const std::map<size_t,RenderAttachment>& attachments, VkFormat depthFormat= VkFormat::VK_FORMAT_UNDEFINED)
 	{
-		for (VkFormat format : formats)
-		{
-			// Get properties for given format o nthis device
-			VkFormatProperties properties;
-			vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
-			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
-			{
-				return format;
-			}
-			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
-				return format;
-			}
-		}
-		assert(false);
-		return formats[0];
-	}
-
-	VulkanRenderPass::VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat, const RenderPassConfig& renderPassConfig, const std::map<size_t,Attachment>& attachments)
-	{
+		const uint32_t outputAttachmentsCount = static_cast<uint32_t>(renderPassConfig.outputAttachmentHandles.size());
 		std::vector<VkAttachmentDescription> attDescriptions;
-		attDescriptions.resize(renderPassConfig.outputAttachmentsCount);
+		attDescriptions.resize(outputAttachmentsCount);
 		std::vector<VkAttachmentReference> attReferences;
-		attReferences.resize(renderPassConfig.outputAttachmentsCount);
+		attReferences.resize(outputAttachmentsCount);
 
-		for (uint32_t i = 0; i < renderPassConfig.outputAttachmentsCount; i++)
+		for (uint32_t i = 0; i < outputAttachmentsCount; i++)
 		{
-			const size_t* attachmentIndex = renderPassConfig.outputAttachmentHandles + i;
-			const renderer::Attachment& curAttachment = attachments.at(*attachmentIndex);
+			const size_t attachmentIndex = renderPassConfig.outputAttachmentHandles[i];
+			const renderer::RenderAttachment& curAttachment = attachments.at(attachmentIndex);
 
 			attDescriptions[i].format = curAttachment.format == renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT ? swapchainImageFormat : static_cast<VkFormat>(curAttachment.format);
 			attDescriptions[i].samples = static_cast<VkSampleCountFlagBits>(curAttachment.sample);
@@ -60,23 +43,10 @@ namespace gwa::renderer
 
 		if (depthBufferingEnabled)
 		{
-			const renderer::Attachment& depthAttachment = attachments.at(renderPassConfig.depthStencilAttachmentHandle);
-
-			if (depthAttachment.format == renderer::Format::FORMAT_DEPTH_FORMAT)
-			{
-				depthFormat_ = chooseSupportedFormat(
-					physicalDevice,
-					{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
-					VK_IMAGE_TILING_OPTIMAL,
-					VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-			}
-			else
-			{
-				depthFormat_ = static_cast<VkFormat>(depthAttachment.format);
-			}
-
+			const renderer::RenderAttachment& depthAttachment = attachments.at(renderPassConfig.depthStencilAttachmentHandle);
+			
 			VkAttachmentDescription depthAttachmentDescription{};
-			depthAttachmentDescription.format = depthFormat_;
+			depthAttachmentDescription.format = depthFormat;
 			depthAttachmentDescription.samples = static_cast<VkSampleCountFlagBits>(depthAttachment.sample);
 			depthAttachmentDescription.loadOp = static_cast<VkAttachmentLoadOp>(depthAttachment.loadOp);
 			depthAttachmentDescription.storeOp = static_cast<VkAttachmentStoreOp>(depthAttachment.storeOp);
@@ -149,101 +119,6 @@ namespace gwa::renderer
 		renderPassCreateInfo.subpassCount = 1;
 		renderPassCreateInfo.pSubpasses = &subpass;
 		renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
-		renderPassCreateInfo.pDependencies = subpassDependencies.data();
-
-		VkResult result = vkCreateRenderPass(logicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass_);
-		assert(result == VK_SUCCESS);
-	}
-
-	VulkanRenderPass::VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat)	
-	{
-		// Color Attachments of render pass. All subpasses have access to this.
-		VkAttachmentDescription colorAttachment = {};
-		colorAttachment.format = swapchainImageFormat;						// Format of attachment
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;					// for multisampling
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;				// Describes what to do with attachment before rendering
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;				// Describes what to do with attachment after rendering
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;	// Not using it right now so we don't care
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-		// Framebuffer data will be stored as an image, but images can be given different data layouts
-		// to give optimal use for certain operations
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;			// Image data layout before render pass starts
-		// There is an subpass format inbetween (see colorAttachment layout)
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;		// Image data layout after render pass (to change to)
-		// Depth attachment of render pass
-		VkAttachmentDescription depthAttachment = {};
-		depthFormat_ = chooseSupportedFormat(
-			physicalDevice,
-			{ VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-		depthAttachment.format = depthFormat_;
-		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; 	
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		//REFERENCES
-		// Attachment reference uses an attachment index that refers to index in the attachment list passed to renderPassCreateInfo
-		VkAttachmentReference colorAttachementReference = {};
-		colorAttachementReference.attachment = 0;
-		colorAttachementReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		// Depth Attachment reference
-		VkAttachmentReference depthAttachmentReference = {};
-		depthAttachmentReference.attachment = 1;
-		depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		// Information about a particular subpass the Render Pass is using
-		VkSubpassDescription subpass = {};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;		// Pipeline type subpass is to be bound to (change for raytracing)
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachementReference;
-		subpass.pDepthStencilAttachment = &depthAttachmentReference;
-
-		// Need to determine when layout transitions occur using subpass dependencies
-		const uint32_t subpassDepSize = 2;
-		std::array<VkSubpassDependency, subpassDepSize> subpassDependencies;
-		//Conversion from VK_IMAGE_LAYOUT_UNDEFINED to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
-
-		// Transition must happen after ...
-		subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;			// Meaning outside of renderpass
-		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;	// pipeline stage
-		subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;	// memory access
-		// Transition must happen before ...
-		subpassDependencies[0].dstSubpass = 0;
-		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-
-		//Conversion from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL to VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-		// Transition must happen after ...
-		subpassDependencies[1].srcSubpass = 0;
-		subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;	// pipeline stage
-		subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;	// memory access
-
-		// Transition must happen before ...
-		subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-		subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-		subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		subpassDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-		std::array<VkAttachmentDescription, 2> renderPassAttachments = { colorAttachment, depthAttachment };
-
-		// Create Info for renderpass
-		VkRenderPassCreateInfo renderPassCreateInfo = {};
-		renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(renderPassAttachments.size());
-		renderPassCreateInfo.pAttachments = renderPassAttachments.data();
-		renderPassCreateInfo.subpassCount = 1;
-		renderPassCreateInfo.pSubpasses = &subpass;
-		renderPassCreateInfo.dependencyCount = subpassDepSize;
 		renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
 		VkResult result = vkCreateRenderPass(logicalDevice, &renderPassCreateInfo, nullptr, &vkRenderPass_);

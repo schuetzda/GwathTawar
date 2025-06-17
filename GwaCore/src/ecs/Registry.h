@@ -12,6 +12,7 @@
 #include <ranges>
 #include "SparseSet.h"
 #include "ComponentView.h"
+#include "components/ECSObjects.h"
 
 namespace gwa::ntity
 {
@@ -173,6 +174,47 @@ namespace gwa::ntity
 			const uint32_t typeID = TypeIDGenerator::type<Component>();
 			assert(typeID < sparseSets.size());
 			return sparseSets[typeID].get<Component>(entity);
+		}
+
+		/**
+		 * @brief Retrieves a handle to a component of the specified type for a given entity.
+		 * @tparam Component The type of the component to retrieve.
+		 * @param entity The ID of the entity that owns the component.
+		 * @return A ComponentHandle representing the component's location and version.
+		 */
+		template<typename Component>
+		ComponentHandle getComponentHandle(uint32_t entity)
+		{
+			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			assert(typeID < sparseSets.size());
+			return sparseSets[typeID].getComponentHandle<Component>(entity);
+		}
+
+		/**
+		 * @brief Get the associated Component from a ComponentHandle. Asserts that the Component parameter matches the ComponentHandle type.
+		 * @tparam Component
+		 * @param handle
+		 * @return Return the associated Component or nullptr if version does not match or entity is invalid
+		 */
+		template<typename Component>
+		ComponentHandle getFromComponentHandle(const ComponentHandle& handle)
+		{
+			const uint32_t typeID = TypeIDGenerator::type<Component>();
+			assert(typeID < sparseSets.size() && typeID == handle.typeID);
+			return sparseSets[typeID].getFromComponentHandle<Component>(handle);
+		}
+		
+		/**
+		* @brief Returns a pointer to the component data at the specified byte offset.
+		* @param offset The offset in bytes from the start of the component data.
+		* @return A const void pointer to the data at the given offset.
+		*
+		* @note The caller is responsible for knowing the type and bounds of the data.
+		*/
+		const void* getRawComponentData(const ComponentHandle& handle)
+		{
+			const uint32_t typeID = handle.typeID;
+			return sparseSets[typeID].getRawComponentData(handle);
 		}
 
 		template <typename Component, typename Func>

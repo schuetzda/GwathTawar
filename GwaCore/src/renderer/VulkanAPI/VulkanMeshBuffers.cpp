@@ -7,22 +7,22 @@ namespace gwa
 
 	uint32_t VulkanMeshBuffers::addBuffer(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texcoords, const std::vector<uint32_t>& indices, VkQueue transferQueue, VkCommandPool transferCommandPool)
 	{
-		MeshBufferData meshBufferData;
+		MeshBufferData meshBufferData{};
 		//Vertex Buffer
 		vertexBufferMemoryList_.emplace_back();
 		const VkDeviceSize vertexBufferSize = sizeof(vertices[0]) * vertices.size();
 		
-		createMeshBuffer(meshBufferData.vertexBuffer, vertexBufferMemoryList_.back(), transferQueue, transferCommandPool, vertexBufferSize,
+		createMeshBuffer(meshBufferData.vertexBuffers[0], vertexBufferMemoryList_.back(), transferQueue, transferCommandPool, vertexBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertices.data());
 
 		normalBufferMemoryList_.emplace_back();
 		const VkDeviceSize normalBufferSize = sizeof(normals[0]) * normals.size();
-		createMeshBuffer(meshBufferData.normalBuffer, normalBufferMemoryList_.back(), transferQueue, transferCommandPool, normalBufferSize,
+		createMeshBuffer(meshBufferData.vertexBuffers[1], normalBufferMemoryList_.back(), transferQueue, transferCommandPool, normalBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normals.data());
 
 		texcoordBufferMemoryList_.emplace_back();
 		const VkDeviceSize texcoordBufferSize = sizeof(texcoords[0]) * texcoords.size();
-		createMeshBuffer(meshBufferData.texcoordBuffer, texcoordBufferMemoryList_.back(), transferQueue, transferCommandPool, texcoordBufferSize,
+		createMeshBuffer(meshBufferData.vertexBuffers[2], texcoordBufferMemoryList_.back(), transferQueue, transferCommandPool, texcoordBufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texcoords.data());
 		
 		//Index Buffer
@@ -123,10 +123,10 @@ namespace gwa
 	{
 		for (int i = 0; i < meshBufferDataList_.size(); ++i)
 		{
-			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].vertexBuffer, nullptr);
+			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].vertexBuffers[0], nullptr);
+			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].vertexBuffers[1], nullptr);
+			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].vertexBuffers[2], nullptr);
 			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].indexBuffer, nullptr);
-			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].normalBuffer, nullptr);
-			vkDestroyBuffer(logicalDevice_, meshBufferDataList_[i].texcoordBuffer, nullptr);
 		}
 		for (int i = 0; i < indexBufferMemoryList_.size(); ++i)
 		{

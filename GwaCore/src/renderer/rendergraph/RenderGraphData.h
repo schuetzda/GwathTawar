@@ -2,13 +2,12 @@
 #include "RenderValues.h"
 #include <map>
 #include <filesystem>
-
+#include <ecs/components/ECSObjects.h>
 namespace gwa::renderer
 {
 	struct RenderPassConfig
 	{
-		size_t* outputAttachmentHandles;
-		uint32_t outputAttachmentsCount;
+		std::vector<size_t> outputAttachmentHandles;
 		size_t depthStencilAttachmentHandle;
 	};
 
@@ -67,14 +66,14 @@ namespace gwa::renderer
 		DescriptorType type{};
 		uint32_t bindingSlot{};
 		ShaderStageFlagBits shaderStage{};
+		size_t inputAttachmentHandle{ };
 		uint32_t descriptorCount{ 1 };
 		uint32_t maxDescriptorCount{ 1 };
-		size_t inputAttachmentHandle{ 0 };
 		DescriptorBindingConfig(DescriptorType t, uint32_t slot, ShaderStageFlagBits stage, uint32_t count = 1, uint32_t maxCount = 1)
 			: type(t), bindingSlot(slot), shaderStage(stage), descriptorCount(count), maxDescriptorCount(maxCount) {
 		}
 		DescriptorBindingConfig(DescriptorType t, uint32_t slot, ShaderStageFlagBits stage, size_t inputAttachmentHandle, uint32_t count = 1, uint32_t maxCount = 1)
-			: type(t), bindingSlot(slot), shaderStage(stage), descriptorCount(count), maxDescriptorCount(maxCount), inputAttachmentHandle(inputAttachmentHandle) {
+			: type(t), bindingSlot(slot), shaderStage(stage), inputAttachmentHandle(inputAttachmentHandle), descriptorCount(count), maxDescriptorCount(maxCount){
 		}
 	};
 
@@ -90,7 +89,7 @@ namespace gwa::renderer
 		PipelineConfig pipelineConfig{};
 		std::vector<DescriptorSetConfig> descriptorSetConfigs{};
 	};
-	struct Attachment
+	struct RenderAttachment
 	{
 		Format format;
 		AttachmentLoadOp loadOp;
@@ -100,10 +99,22 @@ namespace gwa::renderer
 		ImageLayout finalLayout;
 	};
 
+	struct ResourceAttachment
+	{
+		ResourceAttachmentType type{};
+		gwa::ntity::ComponentHandle resourceHandle{};
+		union DataSizeInfo
+		{
+			uint32_t size;
+			uint32_t format[2];
+		} dataInfo{};
+	};
+
 
 	struct RenderGraphDescription
 	{
-		std::map<size_t, Attachment> attachments{};
+		std::map<size_t, RenderAttachment> renderAttachments{};
+		std::map<size_t, ResourceAttachment> resourceAttachments{};
 		std::vector<RenderGraphNode> graphNodes{};
 	};
 

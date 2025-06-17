@@ -27,7 +27,7 @@ namespace gwa::renderer
 	private:
 		void updateDescriptorSet(VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VkBuffer> uniformBuffers, std::span<const uint64_t> dataSizes, std::span<const VkImageView> textureImageView, VkSampler textureSampler);
 
-		VkDescriptorPool descriptorPool;
-		std::vector<std::vector<VkDescriptorSet>> descriptorSetsPerFrame;
+		VkDescriptorPool descriptorPool{};
+		std::vector<std::vector<VkDescriptorSet>> descriptorSetsPerFrame{};
 	};
 }

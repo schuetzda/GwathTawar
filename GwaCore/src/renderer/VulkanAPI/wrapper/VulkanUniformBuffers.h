@@ -18,10 +18,10 @@ namespace gwa
 	private:
 		void createBuffer(VkPhysicalDevice physicalDevice, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags bufferProperties, VkBuffer* buffer, VkDeviceMemory* bufferMemory) const;
 
-		std::vector<VkDeviceMemory> uniformBufferMemory_;
-		int imageCount_;
-		std::vector<VkBuffer> uniformBuffers_;
+		std::vector<VkDeviceMemory> uniformBufferMemory_{};
+		int imageCount_{0};
+		std::vector<VkBuffer> uniformBuffers_{};
 
-		VkDevice logicalDevice_;
+		VkDevice logicalDevice_{};
 	};
 }

@@ -60,9 +60,12 @@ namespace gwa
 	void VulkanUniformBuffers::updateUniformBuffers(uint32_t imageIndex, uint64_t uniformBufferSize, const void* uniformBufferData)
 	{
 		void* data;
+		const glm::mat4 uoMat = *static_cast<const glm::mat4*>(uniformBufferData);
 		vkMapMemory(logicalDevice_, uniformBufferMemory_[imageIndex], 0, uniformBufferSize, 0, &data);
 		memcpy(data, uniformBufferData, uniformBufferSize);
+		const glm::mat4 uboMat = *static_cast<const glm::mat4*>(data);
 		vkUnmapMemory(logicalDevice_, uniformBufferMemory_[imageIndex]);
+
 	}
 	void VulkanUniformBuffers::cleanup()
 	{
