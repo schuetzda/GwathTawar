@@ -18,9 +18,15 @@ namespace gwa::renderer
 		{
 			return vkRenderPass_;
 		}
+
+		uint32_t getOutputAttachmentCounts() const
+		{
+			return outputAttachmentsCount;
+		}
+
 	private:
-
-
 		VkRenderPass vkRenderPass_{};
+		uint32_t outputAttachmentsCount{ 0 };
 	};
+
 }

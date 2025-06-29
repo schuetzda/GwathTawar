@@ -11,7 +11,8 @@ namespace gwa
 		explicit VulkanCommandBuffer(VkCommandBuffer commandBuffer);
 		VulkanCommandBuffer(VkDevice logicalDevice, VkCommandPool commandPool);
 		void beginCommandBuffer(VkCommandBufferUsageFlags flags);
-		void beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer);
+
+		void beginRenderPass(uint32_t numberOfAttachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, bool useDepthBuffer);
 		void bindPipeline(VkPipeline pipeline);
 		void pipelineBarrier(const VkImageMemoryBarrier& barrier);
 		void setViewport(const VkViewport& viewport);

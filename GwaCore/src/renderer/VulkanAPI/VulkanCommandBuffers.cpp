@@ -32,7 +32,7 @@ namespace gwa
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffer::beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer)
+	void VulkanCommandBuffer::beginRenderPass(uint32_t numberOfAttachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, bool useDepthBuffer)
 	{
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -40,12 +40,19 @@ namespace gwa
 		renderPassBeginInfo.renderArea.offset = { 0,0 };
 		renderPassBeginInfo.renderArea.extent = extent;
 
-		std::array<VkClearValue,2> clearValues = { VkClearValue(),VkClearValue() };
-		clearValues[0].color = { .6f, .65f, .4f, 1.f };
-		clearValues[1].depthStencil.depth = 1.f;
+		std::vector<VkClearValue> clearValues(numberOfAttachments);
+		for (uint32_t i = 0; i < numberOfAttachments; ++i) {
+			clearValues[i].color = { 0.0f, 0.0f, 0.0f, 1.0f }; 	
+		}
 
-		renderPassBeginInfo.pClearValues = clearValues.data();
+		if (useDepthBuffer)
+		{
+			clearValues.emplace_back();
+			clearValues.back().depthStencil = { 1.0f, 0 };
+		}
+
 		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassBeginInfo.pClearValues = clearValues.data();
 		renderPassBeginInfo.framebuffer = framebuffer;
 
 		vkCmdBeginRenderPass(commandBuffer_, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);

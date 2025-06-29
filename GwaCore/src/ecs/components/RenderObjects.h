@@ -7,6 +7,7 @@
 
 namespace gwa
 {
+    constexpr uint32_t UNDEFINED_TEXTURE = std::numeric_limits<uint32_t>().max();
     struct Texture
     {
         uint32_t width{};
@@ -48,7 +49,8 @@ namespace gwa
                 width = a.width;
                 height = a.height;
                 size_t pixelCount = width * height * 4; 
-                if (a.pixels)                {
+                if (a.pixels)                
+                {
                     pixels = std::make_unique<uint8_t[]>(pixelCount);
                     std::copy(a.pixels.get(), a.pixels.get() + pixelCount, pixels.get()); 
                 }
@@ -61,25 +63,32 @@ namespace gwa
         }
     };
 
-    struct TexturedMeshBufferMemory
+    struct MeshBufferMemory
     {
         std::vector<glm::vec3> vertices;
         std::vector<uint32_t> indices;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
         glm::mat4 modelMatrix;
-        std::array<uint32_t, 3> materialTextureEntities{std::numeric_limits<uint32_t>::max()};
-        TexturedMeshBufferMemory(size_t verticesCount, size_t indicesCount)
+        std::array<uint32_t, 3> materialTextureEntities{UNDEFINED_TEXTURE , UNDEFINED_TEXTURE, UNDEFINED_TEXTURE};
+        MeshBufferMemory(size_t verticesCount, size_t indicesCount)
             : vertices(std::vector<glm::vec3>(verticesCount)),
             indices(std::vector<uint32_t>(indicesCount)),
             normals(std::vector<glm::vec3>(verticesCount)),
             texcoords(std::vector<glm::vec2>(verticesCount))
         {}
     };
-    struct TexturedMeshRenderObject
+
+    struct GltfEntityContainer
+    {
+        std::vector<uint32_t> meshBufferEntities;
+        std::vector<uint32_t> textures;
+    };
+
+    struct MeshRenderObject
 	{
 		glm::mat4 modelMatrix;
         uint32_t bufferID;
-        std::array<uint32_t, 3> materialTextureIDs{ std::numeric_limits<uint32_t>::max() };
+        std::array<uint32_t, 3> materialTextureIDs{UNDEFINED_TEXTURE, UNDEFINED_TEXTURE, UNDEFINED_TEXTURE };
 	};
 }

@@ -6,8 +6,8 @@
 #include <iostream>
 namespace gwa::renderer
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VkBuffer> uniformBuffers,
-		uint32_t maxFramesInFlight, std::span<const uint64_t> dataSizes, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler)
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VulkanUniformBuffers> uniformBuffers,
+		uint32_t maxFramesInFlight, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, const std::vector<VulkanImageViewCollection>& imageViewCollections)
 	{
 		std::vector<VkDescriptorPoolSize> poolSizes{};
 		uint32_t maxSets = 0;
@@ -17,22 +17,28 @@ namespace gwa::renderer
 
 		for (DescriptorSetConfig descriptorConfig : descriptorSetsConfig)
 		{
+			if (descriptorConfig.bindless)
+			{
+				setLayouts.push_back(descriptorSetLayout[1]);
+				maxSets++;
+			}
+			else
+			{
+				for (uint32_t i = 0; i < maxFramesInFlight; i++)
+				{
+					setLayouts.push_back(descriptorSetLayout[0]);
+				}
+				maxSets += maxFramesInFlight;
+			}
 			for (DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
 			{
 				if (descriptorConfig.bindless)
 				{
 					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.maxDescriptorCount);
-					setLayouts.push_back(descriptorSetLayout[1]);
-					maxSets++;
 				}
 				else
 				{
 					poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), bindingConfig.descriptorCount * maxFramesInFlight);
-					for (uint32_t i=0; i < maxFramesInFlight; i++)
-					{
-						setLayouts.push_back(descriptorSetLayout[0]);
-					}
-					maxSets += maxFramesInFlight;
 				}
 			}
 		}
@@ -71,8 +77,8 @@ namespace gwa::renderer
 
 			for (uint32_t i = 0; i < numberOfFrames; i++)
 			{
-				updateDescriptorSet(logicalDevice, descriptorSetConfig, descriptorSets[currentDescriptorSetIndex],
-					uniformBuffers, dataSizes, textureImageView, textureSampler);
+				updateDescriptorSet(i, logicalDevice, descriptorSetConfig, descriptorSets[currentDescriptorSetIndex],
+					uniformBuffers, textureImageView, textureSampler, framebufferImageViewsReference[i], imageViewCollections[i]);
 
 				descriptorSetsPerFrame.resize(maxFramesInFlight);
 				if (descriptorSetConfig.bindless) {
@@ -91,8 +97,7 @@ namespace gwa::renderer
 		}
 	}
 
-	void VulkanDescriptorSet::updateDescriptorSet(VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig,VkDescriptorSet descriptorSet, std::span<const VkBuffer> uniformBuffers,
-		std::span<const uint64_t> dataSizes, std::span<const VkImageView> textureImageView, VkSampler textureSampler)
+	void VulkanDescriptorSet::updateDescriptorSet(uint32_t currentFrame, VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig,VkDescriptorSet descriptorSet, std::span<const VulkanUniformBuffers> uniformBuffers, std::span<const VkImageView> textureImageView, VkSampler textureSampler, const std::unordered_map<size_t, VkImageView>& framebufferImageViewsReference, const VulkanImageViewCollection& imageViews)
 	{
 
 		std::vector<VkWriteDescriptorSet> descriptorWrites{};
@@ -100,9 +105,15 @@ namespace gwa::renderer
 		descriptorWrites.resize(numberOfBindings);
 		uint32_t uniformBufferIndex = 0;
 		uint32_t textureViewIndex = 0;
+		uint32_t imageReferenceIndex = 0;
+
 		std::vector<VkDescriptorBufferInfo> bufferInfos;
 		std::vector<VkDescriptorImageInfo> imageInfos;
-
+		std::vector<VkDescriptorImageInfo> inputImageReferenceInfos;
+		bufferInfos.resize(numberOfBindings);
+		inputImageReferenceInfos.resize(numberOfBindings);
+		
+		
 		for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
 		{
 			descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -117,10 +128,9 @@ namespace gwa::renderer
 			{
 				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
 				{
-					bufferInfos.emplace_back();
-					bufferInfos.back().buffer = uniformBuffers[uniformBufferIndex];		// Buffer to get data from
-					bufferInfos.back().offset = 0;						// position of start of data
-					bufferInfos.back().range = dataSizes[uniformBufferIndex];
+					bufferInfos[uniformBufferIndex].buffer = uniformBuffers[uniformBufferIndex].getUniformBuffers()[currentFrame];		// Buffer to get data from
+					bufferInfos[uniformBufferIndex].offset = 0;						// position of start of data
+					bufferInfos[uniformBufferIndex].range = uniformBuffers[uniformBufferIndex].getResource().dataInfo.size;
 
 					descriptorWrites[bindingIndex].pBufferInfo = &bufferInfos[uniformBufferIndex];// Information of buffer data to bind
 					uniformBufferIndex++;
@@ -129,19 +139,29 @@ namespace gwa::renderer
 			}
 			case DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
 			{
-				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+				if (descriptorSetConfig.bindings[bindingIndex].isAttachmentReference)
 				{
-					imageInfos.emplace_back();
-					imageInfos.back().imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					imageInfos.back().imageView = textureImageView[textureViewIndex];
-					imageInfos.back().sampler = textureSampler;
-
-					descriptorWrites[bindingIndex].pImageInfo = imageInfos.data();
-					textureViewIndex++;
+					inputImageReferenceInfos[imageReferenceIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					inputImageReferenceInfos[imageReferenceIndex].imageView = framebufferImageViewsReference.at(descriptorSetConfig.bindings[bindingIndex].inputAttachmentHandle);
+					inputImageReferenceInfos[imageReferenceIndex].sampler = textureSampler;
+					descriptorWrites[bindingIndex].pImageInfo = &inputImageReferenceInfos[imageReferenceIndex];
+					imageReferenceIndex++;
+				}
+				else
+				{
+					for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+					{
+						imageInfos.emplace_back();
+						imageInfos.back().imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						imageInfos.back().imageView = textureImageView[textureViewIndex];
+						imageInfos.back().sampler = textureSampler;
+						descriptorWrites[bindingIndex].pImageInfo = imageInfos.data();
+						textureViewIndex++;
+					}
 				}
 				break;
 			}
-			default:
+							default:
 				std::cerr << "Vulkan Descriptor Set support for binding " << descriptorSetConfig.bindings[bindingIndex].bindingSlot << " not implemented yet.";
 			}
 		}

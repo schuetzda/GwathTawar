@@ -6,7 +6,7 @@
 namespace gwa
 {
     struct StringViewHash {
-        using is_transparent = void; // Enables heterogeneous lookup
+        using is_transparent = void;  
         size_t operator()(std::string_view sv) const noexcept {
             return std::hash<std::string_view>{}(sv);
         }
@@ -14,7 +14,7 @@ namespace gwa
 	class gltfImporter
 	{
 	public:
-       static bool loadResource(gwa::ntity::Registry& registry, const std::filesystem::path& assetDirectory,
+       static uint32_t loadResource(gwa::ntity::Registry& registry, const std::filesystem::path& assetDirectory,
             const std::string& gltfFileName);
 	private:
         template <typename InType, typename OutType>

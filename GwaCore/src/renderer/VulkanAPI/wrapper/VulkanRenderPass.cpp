@@ -13,7 +13,7 @@ namespace gwa::renderer
 	
 	VulkanRenderPass::VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat, const RenderPassConfig& renderPassConfig, const std::map<size_t,RenderAttachment>& attachments, VkFormat depthFormat= VkFormat::VK_FORMAT_UNDEFINED)
 	{
-		const uint32_t outputAttachmentsCount = static_cast<uint32_t>(renderPassConfig.outputAttachmentHandles.size());
+		outputAttachmentsCount = static_cast<uint32_t>(renderPassConfig.outputAttachmentHandles.size());
 		std::vector<VkAttachmentDescription> attDescriptions;
 		attDescriptions.resize(outputAttachmentsCount);
 		std::vector<VkAttachmentReference> attReferences;

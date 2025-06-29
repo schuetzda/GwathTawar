@@ -34,7 +34,7 @@ namespace gwa::renderer
 			return *this;
 		}
 
-		RenderGraph& addResourceAttachment(AttachmentID attachmentID, ResourceAttachmentType type, ntity::ComponentHandle resourceHandle, ResourceAttachment::DataSizeInfo info)
+		RenderGraph& addResourceAttachment(AttachmentID attachmentID, ResourceAttachmentType type, ntity::ComponentHandle resourceHandle, ResourceAttachment::DataSizeInfo info = ResourceAttachment::DataSizeInfo(0))
 		{
 			graphDescription.resourceAttachments.try_emplace(hash(attachmentID), type, resourceHandle, info);
 			return *this;
@@ -93,10 +93,18 @@ namespace gwa::renderer
 		}
 
 		template<DescriptorType type>
-		RenderGraph& addBinding(uint32_t bindingSlot, ShaderStageFlagBits shaderStage, AttachmentID inputAttachmentHandle, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
-			requires (type == DescriptorType::DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && nodeAdded&& setDescriptorSet
+		RenderGraph& addBinding(AttachmentID inputAttachmentHandle, uint32_t bindingSlot, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
+			requires nodeAdded&& setDescriptorSet
 		{
 			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.emplace_back(type, bindingSlot, shaderStage, hash(inputAttachmentHandle), descriptorCount, maxDesciptorCount);
+			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.back().isAttachmentReference = true;
+			return *this;
+		}
+		
+		RenderGraph& addTexturedMesh(AttachmentID inputAttachmentHandle)
+			requires nodeAdded&& setDescriptorSet
+		{
+			graphDescription.graphNodes.back().texturedMeshHandles.push_back(hash(inputAttachmentHandle));
 			return *this;
 		}
 
@@ -107,7 +115,7 @@ namespace gwa::renderer
 		}
 
 		RenderGraphDescription createRenderGraph() const
-			requires nodeAdded && setRenderPass && setPipeline && setDescriptorSet
+			requires nodeAdded && setRenderPass && setPipeline	
 		{
 			return graphDescription;
 		}

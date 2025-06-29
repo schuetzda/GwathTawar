@@ -5,12 +5,12 @@
 #include <array>
 #include "QueueFamilyIndices.h"
 namespace gwa {
-	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight)	
+	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight)
 	{
 		createSwapchain(device, framebufferWidth, framebufferHeight, false);
 	}
 
-	void VulkanSwapchain::createSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight, bool recreateSwapchain= false)
+	void VulkanSwapchain::createSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight, bool recreateSwapchain = false)
 	{
 		SwapchainDetails swapchainDetails = SwapchainDetails::getSwapchainDetails(device->getPhysicalDevice(), device->getSurface());
 
@@ -43,7 +43,7 @@ namespace gwa {
 
 		if (indices.graphicsFamily != indices.presentationFamily)
 		{
-			std::array<uint32_t,2> queueFamilyIndices {
+			std::array<uint32_t, 2> queueFamilyIndices{
 				(uint32_t)indices.graphicsFamily,
 				(uint32_t)indices.presentationFamily
 			};

@@ -1,24 +1,28 @@
-#include "VulkanImageView.h"
+#include "VulkanImageViewCollection.h"
+#include <stdexcept>
 #include <cassert>
-
 namespace gwa::renderer
 {
-	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
-	{
-		createImageView(logicalDevice, image, format, aspectFlags);
+	void VulkanImageViewCollection::addImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
+		imageViews.emplace_back();
+		createImageView(static_cast<uint32_t>(imageViews.size() - 1), logicalDevice, image, format, aspectFlags);
 	}
-
-	void VulkanImageView::recreateImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	void VulkanImageViewCollection::addImageView(VkImageView imageView)
 	{
-		createImageView(logicalDevice, image, format, aspectFlags);
+		imageViews.push_back(imageView);
 	}
-
-	void VulkanImageView::cleanup(VkDevice logicalDevice)
+	void VulkanImageViewCollection::cleanup(VkDevice logicalDevice) 
 	{
-		vkDestroyImageView(logicalDevice, imageView, nullptr);
+		for (VkImageView imageView : imageViews)
+		{
+			vkDestroyImageView(logicalDevice, imageView, nullptr);
+		}
 	}
-
-	void VulkanImageView::createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	void VulkanImageViewCollection::recreateImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
+		createImageView(index, logicalDevice, image, format, aspectFlags);
+	}
+	void VulkanImageViewCollection::createImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -39,7 +43,7 @@ namespace gwa::renderer
 		viewCreateInfo.subresourceRange.layerCount = 1;					// number of array levels to view
 
 		//Create image view and return it
-		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
+		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageViews[index]);
 		assert(result == VK_SUCCESS);
 	}
 }

@@ -3,6 +3,10 @@
 #include <vector>
 #include <span>
 #include "renderer/rendergraph/DescriptorSetConfigurator.h"
+#include <unordered_map>
+#include "VulkanUniformBuffers.h"
+#include "VulkanImageViewCollection.h"
+
 namespace gwa::renderer
 {
 	class VulkanDescriptorSet
@@ -10,7 +14,10 @@ namespace gwa::renderer
 	public:
 		VulkanDescriptorSet() = default;
 
-		VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VkBuffer> uniformBuffers, uint32_t maxFramesInFlight, std::span<const uint64_t> dataSizes, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler);
+		VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VulkanUniformBuffers> uniformBuffers, uint32_t maxFramesInFlight, 
+			std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, 
+			const std::vector<VulkanImageViewCollection>& imageViewCollections);
+
 
 
 		void cleanup(VkDevice logicalDevice);
@@ -25,7 +32,7 @@ namespace gwa::renderer
 			return descriptorPool;
 		}
 	private:
-		void updateDescriptorSet(VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VkBuffer> uniformBuffers, std::span<const uint64_t> dataSizes, std::span<const VkImageView> textureImageView, VkSampler textureSampler);
+		void updateDescriptorSet(uint32_t currentFrame, VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VulkanUniformBuffers> uniformBuffers, std::span<const VkImageView> textureImageView, VkSampler textureSampler, const std::unordered_map<size_t, VkImageView>& framebufferImageViewsReference, const VulkanImageViewCollection& imageViews);
 
 		VkDescriptorPool descriptorPool{};
 		std::vector<std::vector<VkDescriptorSet>> descriptorSetsPerFrame{};

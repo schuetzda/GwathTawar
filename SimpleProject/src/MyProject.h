@@ -1,6 +1,7 @@
 #pragma once
 #include <GwathTawar.h>
 #include <deque>
+#include <ecs/components/RenderObjects.h>
 	
 class MyProject : public gwa::Game
 {
@@ -16,5 +17,7 @@ private:
 	uint32_t frameCount{ 0 };
 	const size_t maxFrames{ 100 };
 	uint32_t uboEntity;
+
+	uint32_t gltfEntity;
 };
 

@@ -59,6 +59,7 @@ namespace gwa::renderer
 		RasterizerConfig rasterizerConfig{};
 		bool enableMSAA = false;
 		bool enableDepthTesting = true;
+		uint32_t colorAttachmentCount{ 1 };
 	};
 
 	struct DescriptorBindingConfig
@@ -69,6 +70,7 @@ namespace gwa::renderer
 		size_t inputAttachmentHandle{ };
 		uint32_t descriptorCount{ 1 };
 		uint32_t maxDescriptorCount{ 1 };
+		bool isAttachmentReference = false;
 		DescriptorBindingConfig(DescriptorType t, uint32_t slot, ShaderStageFlagBits stage, uint32_t count = 1, uint32_t maxCount = 1)
 			: type(t), bindingSlot(slot), shaderStage(stage), descriptorCount(count), maxDescriptorCount(maxCount) {
 		}
@@ -80,6 +82,7 @@ namespace gwa::renderer
 	struct DescriptorSetConfig
 	{
 		std::vector<DescriptorBindingConfig> bindings{};
+		std::vector<size_t> texturedMeshHandles{};
 		bool bindless{};
 	};
 
@@ -88,6 +91,8 @@ namespace gwa::renderer
 		RenderPassConfig renderPass{};
 		PipelineConfig pipelineConfig{};
 		std::vector<DescriptorSetConfig> descriptorSetConfigs{};
+		std::vector<size_t> texturedMeshHandles;
+
 	};
 	struct RenderAttachment
 	{

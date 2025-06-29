@@ -197,7 +197,7 @@ namespace gwa::ntity
 		 * @return Return the associated Component or nullptr if version does not match or entity is invalid
 		 */
 		template<typename Component>
-		ComponentHandle getFromComponentHandle(const ComponentHandle& handle)
+		Component* getFromComponentHandle(const ComponentHandle& handle)
 		{
 			const uint32_t typeID = TypeIDGenerator::type<Component>();
 			assert(typeID < sparseSets.size() && typeID == handle.typeID);

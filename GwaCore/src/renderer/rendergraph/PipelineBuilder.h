@@ -44,6 +44,12 @@ namespace gwa::renderer
 			return *this;
 		}
 
+		PipelineBuilder& setColorAttachmentCount(uint32_t count)
+		{
+			pipelineConfig.colorAttachmentCount = count;
+			return *this;
+		}
+
 		PipelineBuilder& setDepthBuffering(bool enable)
 		{
 			pipelineConfig.enableDepthTesting = enable;

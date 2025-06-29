@@ -1,6 +1,6 @@
 /* Swapchain
 List of image buffers that the GPU draws into.
-Those are presented to the display hardware 
+Those are presented to the display hardware
 */
 #pragma once
 #include <vulkan/vulkan_core.h>
@@ -27,7 +27,7 @@ namespace gwa {
 		{
 			return vkSwapchain_;
 		}
-		const VkSwapchainKHR* getSwapchainPtr() 
+		const VkSwapchainKHR* getSwapchainPtr()
 		{
 			return  &vkSwapchain_;
 		}
@@ -55,7 +55,7 @@ namespace gwa {
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
 		VkImageView createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
-	
+
 		VkSwapchainKHR vkSwapchain_{};
 		VkFormat vkSwapchainImageFormat_{};
 		VkExtent2D vkSwapchainExtent_{};

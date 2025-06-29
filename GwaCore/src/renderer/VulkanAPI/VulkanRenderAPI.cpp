@@ -1,5 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <io/TextureReader.h>
 
 #include "VulkanRenderAPI.h"
 #include <array>
@@ -19,9 +20,9 @@
 
 
 namespace gwa::renderer {
-	void VulkanRenderAPI::init(const Window *  window, gwa::ntity::Registry& registry, const RenderGraphDescription& description) 
+	void VulkanRenderAPI::init(const Window* window, gwa::ntity::Registry& registry, const RenderGraphDescription& description)
 	{
-		
+
 #ifdef GWA_DEBUG
 		const std::vector<const char*> validationLayers = {
 			"VK_LAYER_KHRONOS_validation"
@@ -31,7 +32,7 @@ namespace gwa::renderer {
 #endif
 
 		// Create Vulkan instance and enable/ disable ValidationLayers
-		m_instance = VulkanInstance(window->getAppTitle(), std::string("Gwa Engine"), VK_MAKE_API_VERSION(1, 3, 0, 0), 
+		m_instance = VulkanInstance(window->getAppTitle(), std::string("Gwa Engine"), VK_MAKE_API_VERSION(1, 3, 0, 0),
 			VK_MAKE_API_VERSION(0, 1, 0, 0), VK_API_VERSION_1_3, &validationLayers);
 
 		m_device = VulkanDevice(window, m_instance.getVkInstance(), deviceExtensions);
@@ -45,6 +46,8 @@ namespace gwa::renderer {
 		const size_t nodeCount = description.graphNodes.size();
 		renderNodes.resize(nodeCount);
 		dataNodes.resize(nodeCount);
+
+		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 
 		for (size_t nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
 		{
@@ -63,70 +66,122 @@ namespace gwa::renderer {
 			curRenderNode.renderPass = VulkanRenderPass(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getImageFormat(), curRenderGraphNode.renderPass, description.renderAttachments, depthFormat);
 			curRenderNode.descriptorSetLayout = VulkanDescriptorSetLayout(m_device.getLogicalDevice(), curRenderGraphNode.descriptorSetConfigs);
 			curRenderNode.pushConstant = VulkanPushConstant(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(pushConstantObject)); //TODO
-			curRenderNode.pipeline = VulkanPipeline(m_device.getLogicalDevice(), description.graphNodes.back().pipelineConfig, curRenderNode.renderPass.getRenderPass(), curRenderNode.pushConstant.getRange(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts());
+			curRenderNode.pipeline = VulkanPipeline(m_device.getLogicalDevice(), curRenderGraphNode.pipelineConfig, curRenderNode.renderPass.getRenderPass(), curRenderNode.pushConstant.getRange(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts());
+			curRenderNode.useDepthBuffer = curRenderGraphNode.pipelineConfig.enableDepthTesting;
+			curDataNode.frameBufferImageViews.resize(m_swapchain.getSwapchainImagesSize());
+			framebufferImageViewsReference.resize(m_swapchain.getSwapchainImagesSize());
 
-			if (curRenderGraphNode.pipelineConfig.enableDepthTesting && nodeIndex == nodeCount-1)
+			if (nodeIndex != nodeCount - 1)
 			{
-				m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-					depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-				m_swapchainDepthBufferView.addImageView(m_device.getLogicalDevice(), m_swapchainDepthBufferImage.getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-				m_swapchainFramebuffers = VulkanSwapchainFramebuffers(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(),
-				curRenderNode.renderPass.getRenderPass(), m_swapchainDepthBufferView.getImageView(0), m_swapchain.getSwapchainExtent());
+				for (size_t attachmentHandle : curRenderGraphNode.renderPass.outputAttachmentHandles)
+				{
+					const RenderAttachment attachment = description.renderAttachments.at(attachmentHandle);
+					for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
+					{
+						curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), framebufferSize.width, framebufferSize.height, static_cast<VkFormat>(attachment.format),
+							VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+						curDataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), curDataNode.framebufferImages.back().getImage(), static_cast<VkFormat>(attachment.format), VK_IMAGE_ASPECT_COLOR_BIT);
+						framebufferImageViewsReference[i].emplace(attachmentHandle, curDataNode.frameBufferImageViews[i].getImageViews().back());
+					}
+				}
 			}
-			
-			m_meshBuffers = VulkanMeshBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
-			
+			else
 			{
-				std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
+				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
+				{
+					curDataNode.frameBufferImageViews[i].addImageView(m_swapchain.getSwapchainImages()[i].imageView);
+				}
+			}
 
-				uint32_t index = 0;
-				const size_t numberOfTextures = registry.getComponentCount<Texture>();
-				m_textures.resize(numberOfTextures);
-				for (uint32_t textureEntity : registry.getEntities<Texture>())
+			if (curRenderGraphNode.pipelineConfig.enableDepthTesting)
+			{
+				size_t depthAttachmentHandle = curRenderGraphNode.renderPass.depthStencilAttachmentHandle;
+				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
+				{
+					curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+						depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+					curDataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), curDataNode.framebufferImages.back().getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+					framebufferImageViewsReference[i].emplace(depthAttachmentHandle, curDataNode.frameBufferImageViews[i].getImageViews().back());
+				}
+			}
+			curRenderNode.framebuffers = VulkanFramebuffers(m_device.getLogicalDevice(), curDataNode.frameBufferImageViews, curRenderNode.renderPass.getRenderPass(), VkExtent2D{ framebufferSize.width, framebufferSize.height });
+
+			curRenderNode.meshBuffers = VulkanMeshBuffers();
+			curDataNode.meshBuffersMemory = VulkanMeshBufferMemory();
+
+			std::unordered_map<uint32_t, uint32_t>entityToIndexMap;
+			uint32_t index = 1;
+			size_t numberOfTextures = 1;
+			Texture defaultTexture = TextureReader::loadTexture("./assets/defaultTexture.png");
+			curDataNode.textures.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), defaultTexture, m_graphicsCommandPool.getCommandPool());
+			curDataNode.textureViews.addImageView(m_device.getLogicalDevice(), curDataNode.textures[0].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+			for (size_t meshKey : curRenderGraphNode.texturedMeshHandles)
+			{
+				const ResourceAttachment gltfMeshAttachment = description.resourceAttachments.at(meshKey);
+				assert(gltfMeshAttachment.type == ResourceAttachmentType::ATTACHMENT_TYPE_TEXTURED_MESH);
+
+				const GltfEntityContainer* gltfEntity = registry.getFromComponentHandle<GltfEntityContainer>(gltfMeshAttachment.resourceHandle);
+
+				numberOfTextures += gltfEntity->textures.size();
+				curDataNode.textures.resize(numberOfTextures);
+				for (uint32_t textureEntity : gltfEntity->textures)
 				{
 					entityToIndexMap[textureEntity] = index;
 					Texture const* texture = registry.getComponent<Texture>(textureEntity);
 					TextureImage textureImage = TextureImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getGraphicsQueue(), *texture, m_graphicsCommandPool.getCommandPool());
-					m_textures[index] = textureImage;
-					m_textureViews.addImageView(m_device.getLogicalDevice(), m_textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+					curDataNode.textures[index] = textureImage;
+					curDataNode.textureViews.addImageView(m_device.getLogicalDevice(), curDataNode.textures[index].getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 					index++;
 					registry.deleteEntity(textureEntity);
 				}
 
-				for (uint32_t meshBufferEntity : registry.getEntities<TexturedMeshBufferMemory>())
+				for (uint32_t meshBufferEntity : gltfEntity->meshBufferEntities)
 				{
-					TexturedMeshBufferMemory const* meshBufferMemory = registry.getComponent<TexturedMeshBufferMemory>(meshBufferEntity);
-					const uint32_t id = m_meshBuffers.addBuffer(meshBufferMemory->vertices, meshBufferMemory->normals, meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
+					MeshBufferMemory const* meshBufferMemory = registry.getComponent<MeshBufferMemory>(meshBufferEntity);
+					const uint32_t id = curRenderNode.meshBuffers.addBuffer(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), curDataNode.meshBuffersMemory, meshBufferMemory->vertices, meshBufferMemory->normals, meshBufferMemory->texcoords, meshBufferMemory->indices, m_device.getGraphicsQueue(), m_graphicsCommandPool.getCommandPool());
 					uint32_t entityID = registry.registerEntity();
-					TexturedMeshRenderObject renderObject;
+					MeshRenderObject renderObject;
 
-					assert(meshBufferMemory->materialTextureEntities.size() == renderObject.materialTextureIDs.size()); //TexturedMeshBufferMemory and TexturedMeshRenderObject are required to have the same amount of textures.
 					for (size_t i = 0; i < meshBufferMemory->materialTextureEntities.size(); i++) {
-						renderObject.materialTextureIDs[i] = entityToIndexMap.at(meshBufferMemory->materialTextureEntities[i]);
+						if (meshBufferMemory->materialTextureEntities[i] != UNDEFINED_TEXTURE)
+						{
+							renderObject.materialTextureIDs[i] = entityToIndexMap.at(meshBufferMemory->materialTextureEntities[i]);
+						}
+						else
+						{
+							renderObject.materialTextureIDs[i] = 0;
+						}
 					}
 					renderObject.bufferID = id;
 					renderObject.modelMatrix = meshBufferMemory->modelMatrix;
-					registry.emplace<TexturedMeshRenderObject>(entityID, std::move(renderObject));
+					registry.emplace<MeshRenderObject>(entityID, std::move(renderObject));
 					registry.deleteEntity(meshBufferEntity);
 				}
 			}
-			registry.flushComponents<TexturedMeshBufferMemory>();
+			registry.flushComponents<MeshBufferMemory>();
 			registry.flushComponents<Texture>();
 
-			m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 
-			size_t uboHandle = curRenderGraphNode.descriptorSetConfigs[0].bindings[0].inputAttachmentHandle;
-			uboAttachment = description.resourceAttachments.at(uboHandle);
-			m_mvpUniformBuffers = VulkanUniformBuffers(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), uboAttachment.dataInfo.size, m_swapchain.getSwapchainImagesSize());
+			for (DescriptorSetConfig descriptorConfig : curRenderGraphNode.descriptorSetConfigs)
+			{
+				for (DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
+				{
+					if (bindingConfig.type == DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+					{
+						size_t uboHandle = curRenderGraphNode.descriptorSetConfigs[0].bindings[0].inputAttachmentHandle;
+						ResourceAttachment uboAttachment = description.resourceAttachments.at(uboHandle);
+						curRenderNode.uniformBuffers.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), uboAttachment.dataInfo.size, maxFramesInFlight_, uboAttachment);
+					}
+				}
+			}
 
-			std::array<uint64_t, 2> bufferSizes = { description.resourceAttachments.at(uboHandle).dataInfo.size, description.resourceAttachments.at(uboHandle).dataInfo.size };
-			curRenderNode.descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), std::span<const VkDescriptorSetLayout>(curRenderNode.descriptorSetLayout.getDescriptorSetLayouts()), std::span<const VkBuffer>(m_mvpUniformBuffers.getUniformBuffers()),
-				maxFramesInFlight_, std::span<const uint64_t>(bufferSizes), std::span<const DescriptorSetConfig>(description.graphNodes.back().descriptorSetConfigs), std::span<const VkImageView>(m_textureViews.getImageViews()), m_textureSampler.getImageSampler());
+			curRenderNode.descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts(), curRenderNode.uniformBuffers,
+				maxFramesInFlight_, curRenderGraphNode.descriptorSetConfigs, curDataNode.textureViews.getImageViews(), m_textureSampler.getImageSampler(), framebufferImageViewsReference, curDataNode.frameBufferImageViews);
 
-			m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), curRenderNode.renderPass.getRenderPass(), m_device.getGraphicsQueue());
 		}
 
+		m_imgui = VulkanImguiIntegration(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_device.getSurface(), m_instance.getVkInstance(), renderNodes.back().renderPass.getRenderPass(), m_device.getGraphicsQueue());
 		m_renderFinished = VulkanSemaphore(m_device.getLogicalDevice(), m_swapchain.getSwapchainImagesSize());
 		m_imageAvailable = VulkanSemaphore(m_device.getLogicalDevice(), maxFramesInFlight_);
 		m_drawFences = VulkanFence(m_device.getLogicalDevice(), maxFramesInFlight_);
@@ -163,7 +218,7 @@ namespace gwa::renderer {
 		recordCommands(imageIndex, registry);
 
 	
-		// Update and Render additional Platform Windows
+		// Update and Render additional Platform Windows shader.
 		if (const ImGuiIO& io = ImGui::GetIO(); io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			m_imgui.updatePlatform();
@@ -208,84 +263,120 @@ namespace gwa::renderer {
 
 		void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
 	{
+			
 		//https://developer.nvidia.com/vulkan-shader-resource-binding
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
 		m_graphicsCommandBuffers[currentFrame].beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-		m_graphicsCommandBuffers[currentFrame].beginRenderPass(renderNodes[0].renderPass.getRenderPass(), extent,
-			m_swapchainFramebuffers.getFramebuffers()[imageIndex]);
-		m_graphicsCommandBuffers[currentFrame].bindPipeline(renderNodes[0].pipeline.getPipeline());
-
-		const void* uboData = registry.getRawComponentData(uboAttachment.resourceHandle);
-		const glm::mat4 uboMat= *static_cast<const glm::mat4*>(uboData);
-		m_mvpUniformBuffers.updateUniformBuffers(imageIndex,uboAttachment.dataInfo.size, uboData);
-
-		m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f,(float)extent.width, (float)extent.height, 0.f, 1.f });
-		m_graphicsCommandBuffers[currentFrame].setScissor({ {0,0},extent });
-		
-		const std::vector<VkDescriptorSet>& currentFrameDescriptors = renderNodes[0].descriptorSet.getDescriptorSets(currentFrame);
-		m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), renderNodes[0].pipeline.getPipelineLayout());
-		for (uint32_t entity: registry.getEntities<TexturedMeshRenderObject>())
+		for (RenderNode renderNode : renderNodes)
 		{
-			TexturedMeshRenderObject const* renderObject = registry.getComponent<TexturedMeshRenderObject>(entity);
-			VulkanMeshBuffers::MeshBufferData meshData = m_meshBuffers.getMeshBufferData(renderObject->bufferID);
-			std::array<VkDeviceSize, meshData.vertexBuffers.size()> offsets{ 0 };
-			m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(meshData.vertexBuffers.data(), static_cast<uint32_t>(meshData.vertexBuffers.size()), offsets.data());
-			m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
+			m_graphicsCommandBuffers[currentFrame].beginRenderPass(renderNode.renderPass.getOutputAttachmentCounts(), renderNode.renderPass.getRenderPass(), extent,
+				renderNode.framebuffers.getFramebuffers()[imageIndex], renderNode.useDepthBuffer);
+			m_graphicsCommandBuffers[currentFrame].bindPipeline(renderNode.pipeline.getPipeline());
 
-			pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
-			m_graphicsCommandBuffers[currentFrame].pushConstants(renderNodes[0].pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
+			
+			for (VulkanUniformBuffers buffers : renderNode.uniformBuffers)
+			{
+				const void* uboData = registry.getRawComponentData(buffers.getResource().resourceHandle);
+				buffers.updateUniformBuffers(m_device.getLogicalDevice(), currentFrame, buffers.getResource().dataInfo.size, uboData);
+			}
 
-			m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
+			m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f,(float)extent.width, (float)extent.height, 0.f, 1.f });
+			m_graphicsCommandBuffers[currentFrame].setScissor({ {0,0},extent });
+
+			const std::vector<VkDescriptorSet>& currentFrameDescriptors = renderNode.descriptorSet.getDescriptorSets(currentFrame);
+
+			if (renderNode.renderPass.getOutputAttachmentCounts() != 1)
+			{
+
+				m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), renderNode.pipeline.getPipelineLayout());
+				for (uint32_t entity : registry.getEntities<MeshRenderObject>())
+				{
+					MeshRenderObject const* renderObject = registry.getComponent<MeshRenderObject>(entity);
+					VulkanMeshBuffers::MeshBufferData meshData = renderNode.meshBuffers.getMeshBufferData(renderObject->bufferID);
+					std::array<VkDeviceSize, meshData.vertexBuffers.size()> offsets{ 0 };
+					m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(meshData.vertexBuffers.data(), static_cast<uint32_t>(meshData.vertexBuffers.size()), offsets.data());
+					m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
+
+					pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
+					m_graphicsCommandBuffers[currentFrame].pushConstants(renderNode.pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
+
+					m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
+				}
+			}
+			else
+			{	
+				m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f, (float)extent.width, (float)extent.height, 0.f, 1.f });
+				m_graphicsCommandBuffers[currentFrame].setScissor({ {0, 0}, extent });
+
+				m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(
+					static_cast<uint32_t>(currentFrameDescriptors.size()),
+					currentFrameDescriptors.data(),
+					renderNode.pipeline.getPipelineLayout()
+				);
+
+				vkCmdDraw(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 3, 1, 0, 0);
+			}
+
+			//Render Imgui UI
+			if (renderNode.renderPass.getOutputAttachmentCounts() == 1)
+				m_imgui.renderData(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
+
+			m_graphicsCommandBuffers[currentFrame].endRenderPass();
 		}
-
-		//Render Imgui UI
-		m_imgui.renderData(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
-
-		m_graphicsCommandBuffers[currentFrame].endRenderPass();
 		m_graphicsCommandBuffers[currentFrame].endCommandBuffer();
 	}
 	void VulkanRenderAPI::recreateSwapchain(WindowSize framebufferSize)
 	{
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
-		m_swapchainFramebuffers.cleanup(m_device.getLogicalDevice());
-		m_swapchainDepthBufferView.cleanup(m_device.getLogicalDevice());
-		m_swapchainDepthBufferImage.cleanup();
 		m_swapchain.recreateSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
-		m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+		/*m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
 			depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		m_swapchainDepthBufferView.recreateImageView(0, m_device.getLogicalDevice(), m_swapchainDepthBufferImage.getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-		m_swapchainFramebuffers.recreateSwapchain(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), renderNodes[0].renderPass.getRenderPass(),
+		m_swapchainFramebuffers.recreateFramebuffer(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), renderNodes[0].renderPass.getRenderPass(),
 			m_swapchainDepthBufferView.getImageView(0), m_swapchain.getSwapchainExtent());
+			*/
 	}
 
 	void VulkanRenderAPI::shutdown() {
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
 		m_imgui.cleanup(m_device.getLogicalDevice());
 
-		m_textureViews.cleanup(m_device.getLogicalDevice());
 
-		for (TextureImage texture : m_textures)
-			texture.cleanup();
-
+		
 		m_textureSampler.cleanup();
-		m_meshBuffers.cleanup();
 		m_drawFences.cleanup();
 		m_renderFinished.cleanup();
 		
 		m_imageAvailable.cleanup();
 
-		m_mvpUniformBuffers.cleanup();
 		m_graphicsCommandPool.cleanup();
-		m_swapchainFramebuffers.cleanup(m_device.getLogicalDevice());
-		m_swapchainDepthBufferView.cleanup(m_device.getLogicalDevice());
-		m_swapchainDepthBufferImage.cleanup();
 		for (RenderNode node : renderNodes)
 		{
 			node.descriptorSet.cleanup(m_device.getLogicalDevice());
 			node.pipeline.cleanup(m_device.getLogicalDevice());
 			node.descriptorSetLayout.cleanup(m_device.getLogicalDevice());
 			node.renderPass.cleanup(m_device.getLogicalDevice());
+			node.meshBuffers.cleanup(m_device.getLogicalDevice());
+			for (VulkanUniformBuffers buffers : node.uniformBuffers)
+			{
+				buffers.cleanup(m_device.getLogicalDevice());
+			}
+			node.framebuffers.cleanup(m_device.getLogicalDevice());
 		}
+
+		for (DataNode node : dataNodes)
+		{
+			node.textureViews.cleanup(m_device.getLogicalDevice());
+			for (TextureImage texture : node.textures)
+				texture.cleanup();
+			node.meshBuffersMemory.cleanup(m_device.getLogicalDevice());
+			for (VulkanImage vulkanImage : node.framebufferImages)
+				vulkanImage.cleanup();
+			for (VulkanImageViewCollection imageViews : node.frameBufferImageViews)
+				imageViews.cleanup(m_device.getLogicalDevice());
+
+		}
+
 		m_swapchain.cleanup(m_device.getLogicalDevice());
 		m_device.cleanup();
 		m_instance.cleanup();

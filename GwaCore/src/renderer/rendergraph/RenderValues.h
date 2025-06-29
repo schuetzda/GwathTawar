@@ -241,6 +241,7 @@ namespace gwa::renderer
         DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC = 8,
         DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC = 9,
         DESCRIPTOR_TYPE_INPUT_ATTACHMENT = 10,
+        DESCRIPTOR_TYPE_INPUT_REFERENCE = 11,
         DESCRIPTOR_TYPE_MAX_ENUM = 0x7FFFFFFF
     };
 
@@ -269,7 +270,8 @@ namespace gwa::renderer
     enum class ResourceAttachmentType
     {
         ATTACHMENT_TYPE_BUFFER,
-        ATTACHMENT_TYPE_TEXTURE
+        ATTACHMENT_TYPE_TEXTURE,
+        ATTACHMENT_TYPE_TEXTURED_MESH
     };
 
     //https://www.justsoftwaresolutions.co.uk/cplusplus/using-enum-classes-as-bitfields.html
@@ -288,5 +290,6 @@ namespace gwa::renderer
     }
 
     template<> struct enable_bitmask_operators<ShaderStageFlagBits> { static constexpr bool value = true; };
+    template<> struct enable_bitmask_operators<DescriptorType> { static constexpr bool value = true; };
 
 }

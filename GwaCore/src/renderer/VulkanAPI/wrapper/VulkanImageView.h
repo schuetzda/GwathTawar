@@ -1,29 +1,21 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
-#include <vector>
+#include <vulkan/vulkan.h>
 namespace gwa::renderer
 {
 	class VulkanImageView
 	{
 	public:
 		VulkanImageView() = default;
-		void addImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		void recreateImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
 		void cleanup(VkDevice logicalDevice);
-		void recreateImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-		 
-		VkImageView getImageView(uint32_t index) const
+		VkImageView getImageView() const
 		{
-			if (index >= imageViews.size())
-				return nullptr;
-			return imageViews[index];
-		}
-		const std::vector<VkImageView>& getImageViews() const
-		{
-			return imageViews;
+			return imageView;
 		}
 	private:
-		void createImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-		std::vector<VkImageView> imageViews{};
-
+		void createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView imageView;
 	};
 }
