@@ -88,15 +88,15 @@ namespace gwa::renderer
 		}
 
 		template<DescriptorType type>
-		RenderGraph& addBinding(uint32_t bindingSlot, ShaderStageFlagBits shaderStage, AttachmentID inputAttachmentHandle, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
-			requires (type != DescriptorType::DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && nodeAdded && setDescriptorSet && isInitialized
+		RenderGraph& addBinding(AttachmentID inputAttachmentHandle, uint32_t bindingSlot, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
+			requires (type != DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) && nodeAdded && setDescriptorSet && isInitialized
 		{
 			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.emplace_back(type, bindingSlot, shaderStage, hash(inputAttachmentHandle), descriptorCount, maxDesciptorCount);
 			return *this;
 		}
 		template<DescriptorType type>
 		RenderGraph& addBinding(uint32_t bindingSlot, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
-			requires (type != DescriptorType::DESCRIPTOR_TYPE_INPUT_ATTACHMENT) && nodeAdded&& setDescriptorSet && isInitialized
+			requires nodeAdded&& setDescriptorSet && isInitialized
 		{
 			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.emplace_back(type, bindingSlot, shaderStage, descriptorCount, maxDesciptorCount);
 			return *this;
@@ -104,7 +104,7 @@ namespace gwa::renderer
 
 		template<DescriptorType type>
 		RenderGraph& addBinding(AttachmentID inputAttachmentHandle, uint32_t bindingSlot, ShaderStageFlagBits shaderStage, uint32_t descriptorCount = 1, uint32_t maxDesciptorCount = 1)
-			requires nodeAdded&& setDescriptorSet && isInitialized
+			requires nodeAdded&& setDescriptorSet && isInitialized && (type == DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 		{
 			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.emplace_back(type, bindingSlot, shaderStage, hash(inputAttachmentHandle), descriptorCount, maxDesciptorCount);
 			graphDescription.graphNodes.back().descriptorSetConfigs.back().bindings.back().isAttachmentReference = true;

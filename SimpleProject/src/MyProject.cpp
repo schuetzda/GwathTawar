@@ -13,8 +13,8 @@
 
 void MyProject::init(gwa::ntity::Registry& registry, gwa::QuaternionCamera& camera)
 {
-	const std::array<uint32_t, 5> componentEstimate{ 10, 10, 2, 5, 1024};
-	registry.initComponentList<gwa::MeshBufferMemory, gwa::MeshRenderObject, glm::mat4, gwa::GltfEntityContainer, gwa::Texture>(componentEstimate, 100);
+	const std::array<uint32_t, 6> componentEstimate{ 10, 10, 2, 5, 1024, 10};
+	registry.initComponentList<gwa::MeshBufferMemory, gwa::MeshRenderObject, glm::mat4, gwa::GltfEntityContainer, gwa::Texture, gwa::RenderPointLight>(componentEstimate, 100);
 
 	std::filesystem::path assetPath("./assets/Sponza");
 	std::string gltfFileName("Sponza.gltf");
@@ -26,6 +26,9 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 	glm::mat4 viewProjMat = camera.getProjMatrix() * camera.getViewMatrix();
 	uboEntity = registry.registerEntity();
 	registry.emplace(uboEntity, std::move(viewProjMat));
+
+	uint32_t lightEntity = registry.registerEntity();
+	registry.emplace<gwa::RenderPointLight>(lightEntity, glm::vec4(0.0f, 500.0f, 1.0f, 0.0f), glm::vec3(1.f), 350000.f);
 
 	gwa::renderer::PipelineBuilder pipelineBuilder{};
 	gwa::renderer::PipelineConfig gBufferPipelineConfig =
@@ -61,11 +64,13 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		output,
 		projView,
 		sponzaScene,
-		damagedHelmet
+		damagedHelmet,
+		lightSource
 	};
 
 	gwa::renderer::RenderGraph<deferred> graph{};
 	gwa::ntity::ComponentHandle viewProjHandle = registry.getComponentHandle<glm::mat4>(uboEntity);
+	gwa::ntity::ComponentHandle lightSourceHandle = registry.getComponentHandle<gwa::RenderPointLight>(lightEntity);
 	const uint32_t textureCount = static_cast<uint32_t>(registry.getComponent<gwa::GltfEntityContainer>(gltfEntity)->textures.size());
 
 	description = graph.init()
@@ -84,11 +89,12 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addRenderAttachment(deferred::lightingColor,
 			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT)
 		.addResourceAttachment(deferred::projView, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, viewProjHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{ sizeof(glm::mat4) })
+		.addResourceAttachment(deferred::lightSource, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, lightSourceHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{ sizeof(gwa::RenderPointLight) })
 		.addResourceAttachment(deferred::sponzaScene, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_TEXTURED_MESH, registry.getComponentHandle<gwa::GltfEntityContainer>(gltfEntity))
 		.addGraphNode()
 		.addRenderPass<3>({ deferred::gBufferColor, deferred::position, deferred::normal }, deferred::depth)
 		.addDescriptorSet(false)
-		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT, deferred::projView)
+		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(deferred::projView, 0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT)
 		.addDescriptorSet(true)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, textureCount, 1024)
 		.addTexturedMesh(deferred::sponzaScene)
@@ -100,6 +106,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::gBufferColor, 0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::position, 1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::normal, 2, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
+		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(deferred::lightSource, 3, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT)
 		.createRenderGraph().getRenderGraph();
 }
 

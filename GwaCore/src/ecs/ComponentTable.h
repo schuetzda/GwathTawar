@@ -129,7 +129,7 @@ namespace gwa::ntity
 			{
 				grow<Component>();
 			}
-			Component const* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
+			Component* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
 			new(currentPointer) Component(std::forward<Args>(args)...);
 			currentComponentsCount_++;
 		}

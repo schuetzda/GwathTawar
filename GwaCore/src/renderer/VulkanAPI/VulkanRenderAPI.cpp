@@ -166,18 +166,21 @@ namespace gwa::renderer {
 			registry.flushComponents<MeshBufferMemory>();
 			registry.flushComponents<Texture>();
 
-
+			uint32_t descriptorConfigIndex = 0;
 			for (DescriptorSetConfig descriptorConfig : curRenderGraphNode.descriptorSetConfigs)
 			{
+				uint32_t bindingConfigIndex = 0;
 				for (DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
 				{
 					if (bindingConfig.type == DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 					{
-						size_t uboHandle = curRenderGraphNode.descriptorSetConfigs[0].bindings[0].inputAttachmentHandle;
+						size_t uboHandle = curRenderGraphNode.descriptorSetConfigs[descriptorConfigIndex].bindings[bindingConfigIndex].inputAttachmentHandle;
 						ResourceAttachment uboAttachment = description.resourceAttachments.at(uboHandle);
 						curRenderNode.uniformBuffers.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), uboAttachment.dataInfo.size, maxFramesInFlight_, uboAttachment);
 					}
+					bindingConfigIndex++;
 				}
+				descriptorConfigIndex++;
 			}
 
 			curRenderNode.descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts(), curRenderNode.uniformBuffers,

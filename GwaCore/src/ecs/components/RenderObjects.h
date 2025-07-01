@@ -91,4 +91,11 @@ namespace gwa
         uint32_t bufferID;
         std::array<uint32_t, 3> materialTextureIDs{UNDEFINED_TEXTURE, UNDEFINED_TEXTURE, UNDEFINED_TEXTURE };
 	};
+
+    struct RenderPointLight
+    {
+        glm::vec4 position;
+        glm::vec3 color;
+        float radius;
+    };
 }

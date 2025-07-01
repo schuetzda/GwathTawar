@@ -51,7 +51,7 @@ namespace gwa::ntity
 			denseList.emplace_back(entity);
 			versions.emplace_back(0);
 			sparseList[entity] = static_cast<uint32_t>(denseList.size() - 1);
-			componentTable.emplace_back<Component, Args...>(entity, std::forward<Args>(args)...);
+			componentTable.emplace_back<Component, Args...>(std::forward<Args>(args)...);
 		}
 
 		/**

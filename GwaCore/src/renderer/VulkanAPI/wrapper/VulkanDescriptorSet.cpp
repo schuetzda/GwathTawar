@@ -121,11 +121,11 @@ namespace gwa::renderer
 			{
 				bufferInfos.emplace_back();
 				bufferInfos[uniformBufferIndex].resize(binding.descriptorCount);
-				for (uint32_t descriptorIndex = 0; descriptorIndex < binding.descriptorCount; descriptorIndex++)
+				for (uint32_t i = 0; i < binding.descriptorCount; i++)
 				{
-					bufferInfos[uniformBufferIndex][descriptorIndex].buffer = uniformBuffers[uniformBufferIndex].getUniformBuffers()[currentFrame];		// Buffer to get data from
-					bufferInfos[uniformBufferIndex][descriptorIndex].offset = 0;						// position of start of data
-					bufferInfos[uniformBufferIndex][descriptorIndex].range = uniformBuffers[uniformBufferIndex].getResource().dataInfo.size;
+					bufferInfos[uniformBufferIndex][i].buffer = uniformBuffers[uniformBufferIndex].getUniformBuffers()[currentFrame];		// Buffer to get data from
+					bufferInfos[uniformBufferIndex][i].offset = 0;						// position of start of data
+					bufferInfos[uniformBufferIndex][i].range = uniformBuffers[uniformBufferIndex].getResource().dataInfo.size;
 
 				}
 				descriptorWrites[bindingIndex].pBufferInfo = bufferInfos[uniformBufferIndex].data();// Information of buffer data to bind
@@ -137,17 +137,17 @@ namespace gwa::renderer
 				imageInfos.emplace_back();
 				const bool isAttachmentReference = binding.isAttachmentReference;
 				imageInfos[imageReferenceIndex].resize(binding.descriptorCount);
-				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+				for (uint32_t i = 0; i < descriptorWrites[bindingIndex].descriptorCount; i++)
 				{
-					imageInfos[imageReferenceIndex][descriptorIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					imageInfos[imageReferenceIndex][descriptorIndex].imageView = isAttachmentReference ? framebufferImageViewsReference.at(binding.inputAttachmentHandle) : textureImageView[textureViewIndex++];
-					imageInfos[imageReferenceIndex][descriptorIndex].sampler = isAttachmentReference ? framebufferSampler : textureSampler;
+					imageInfos[imageReferenceIndex][i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[imageReferenceIndex][i].imageView = isAttachmentReference ? framebufferImageViewsReference.at(binding.inputAttachmentHandle) : textureImageView[textureViewIndex++];
+					imageInfos[imageReferenceIndex][i].sampler = isAttachmentReference ? framebufferSampler : textureSampler;
 				}
 				descriptorWrites[bindingIndex].pImageInfo = imageInfos[imageReferenceIndex].data();
 				imageReferenceIndex++;
 				if (isAttachmentReference)
 				{
-					attachmentReferenceBindings[currentFrame].push_back(std::pair<DescriptorBindingConfig, uint32_t>(binding, descriptorIndex));
+					attachmentReferenceBindings[currentFrame].emplace_back(binding, descriptorIndex);
 				}
 				break;
 			}
@@ -174,23 +174,22 @@ namespace gwa::renderer
 			std::vector<std::vector<VkDescriptorImageInfo>> imageInfos;
 			imageInfos.resize(numberOfBindings);
 			uint32_t bindingIndex = 0;
-			for (const std::pair<DescriptorBindingConfig,uint32_t>& bindingConfig : attachmentReferenceBindings[frameIndex])
+			for (const auto& [bindingConfig, descriptorIndex] : attachmentReferenceBindings[frameIndex])
 			{
 				descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrites[bindingIndex].dstSet = descriptorSetsPerFrame[frameIndex][bindingConfig.second];
-				descriptorWrites[bindingIndex].dstBinding = bindingConfig.first.bindingSlot;				// Binding to update matches with binding on layout/shader)
+				descriptorWrites[bindingIndex].dstSet = descriptorSetsPerFrame[frameIndex][descriptorIndex];
+				descriptorWrites[bindingIndex].dstBinding = bindingConfig.bindingSlot;				// Binding to update matches with binding on layout/shader)
 				descriptorWrites[bindingIndex].dstArrayElement = 0;		// Index in array to update
-				descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(bindingConfig.first.type);
-				descriptorWrites[bindingIndex].descriptorCount = bindingConfig.first.descriptorCount;		// Amount to update
+				descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(bindingConfig.type);
+				descriptorWrites[bindingIndex].descriptorCount = bindingConfig.descriptorCount;		// Amount to update
 
 				imageInfos.emplace_back();
-				const bool isAttachmentReference = bindingConfig.first.isAttachmentReference;
-				imageInfos[bindingIndex].resize(bindingConfig.first.descriptorCount);
-				for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorWrites[bindingIndex].descriptorCount; descriptorIndex++)
+				imageInfos[bindingIndex].resize(bindingConfig.descriptorCount);
+				for (uint32_t i = 0; i < descriptorWrites[bindingIndex].descriptorCount; i++)
 				{
-					imageInfos[bindingIndex][descriptorIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					imageInfos[bindingIndex][descriptorIndex].imageView = framebufferImageViewsReference[frameIndex].at(bindingConfig.first.inputAttachmentHandle);
-					imageInfos[bindingIndex][descriptorIndex].sampler = framebufferSampler;
+					imageInfos[bindingIndex][i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[bindingIndex][i].imageView = framebufferImageViewsReference[frameIndex].at(bindingConfig.inputAttachmentHandle);
+					imageInfos[bindingIndex][i].sampler = framebufferSampler;
 				}
 				descriptorWrites[bindingIndex].pImageInfo = imageInfos[bindingIndex].data();
 				bindingIndex++;
