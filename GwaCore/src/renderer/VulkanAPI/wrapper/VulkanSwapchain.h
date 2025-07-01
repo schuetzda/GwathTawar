@@ -39,13 +39,14 @@ namespace gwa {
 		{
 			return vkSwapchainExtent_;
 		}
-		const std::vector<VulkanSwapchainImage>& getSwapchainImages() const
-		{
-			return swapchainImages_;
-		}
 		uint32_t getSwapchainImagesSize() const
 		{
-			return static_cast<uint32_t>(swapchainImages_.size());
+			return static_cast<uint32_t>(swapchainImages.size());
+		}
+
+		const std::vector<VkImage>& getSwapchainImages() const
+		{
+			return swapchainImages;
 		}
 
 	private:
@@ -59,6 +60,6 @@ namespace gwa {
 		VkSwapchainKHR vkSwapchain_{};
 		VkFormat vkSwapchainImageFormat_{};
 		VkExtent2D vkSwapchainExtent_{};
-		std::vector<VulkanSwapchainImage> swapchainImages_{};
+		std::vector<VkImage> swapchainImages;
 	};
 }

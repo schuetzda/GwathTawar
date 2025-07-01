@@ -48,7 +48,10 @@ namespace gwa::renderer {
 		dataNodes.resize(nodeCount);
 
 		m_textureSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
+		m_framebufferSampler = VulkanImageSampler(m_device.getLogicalDevice(), m_device.getPhysicalDevice());
 
+		framebufferImageViewsReference.resize(m_swapchain.getSwapchainImagesSize());
+		attachmentInfos = description.renderAttachments;
 		for (size_t nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
 		{
 			const RenderGraphNode curRenderGraphNode = description.graphNodes[nodeIndex];
@@ -69,17 +72,17 @@ namespace gwa::renderer {
 			curRenderNode.pipeline = VulkanPipeline(m_device.getLogicalDevice(), curRenderGraphNode.pipelineConfig, curRenderNode.renderPass.getRenderPass(), curRenderNode.pushConstant.getRange(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts());
 			curRenderNode.useDepthBuffer = curRenderGraphNode.pipelineConfig.enableDepthTesting;
 			curDataNode.frameBufferImageViews.resize(m_swapchain.getSwapchainImagesSize());
-			framebufferImageViewsReference.resize(m_swapchain.getSwapchainImagesSize());
 
 			if (nodeIndex != nodeCount - 1)
 			{
 				for (size_t attachmentHandle : curRenderGraphNode.renderPass.outputAttachmentHandles)
 				{
 					const RenderAttachment attachment = description.renderAttachments.at(attachmentHandle);
+					curDataNode.renderAttachmentHandles.push_back(attachmentHandle);
+					curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), framebufferSize.width, framebufferSize.height, static_cast<VkFormat>(attachment.format),
+							VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 					for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
 					{
-						curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), framebufferSize.width, framebufferSize.height, static_cast<VkFormat>(attachment.format),
-							VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 						curDataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), curDataNode.framebufferImages.back().getImage(), static_cast<VkFormat>(attachment.format), VK_IMAGE_ASPECT_COLOR_BIT);
 						framebufferImageViewsReference[i].emplace(attachmentHandle, curDataNode.frameBufferImageViews[i].getImageViews().back());
 					}
@@ -89,17 +92,18 @@ namespace gwa::renderer {
 			{
 				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
 				{
-					curDataNode.frameBufferImageViews[i].addImageView(m_swapchain.getSwapchainImages()[i].imageView);
+					curDataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages()[i], m_swapchain.getImageFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
 				}
 			}
 
 			if (curRenderGraphNode.pipelineConfig.enableDepthTesting)
 			{
 				size_t depthAttachmentHandle = curRenderGraphNode.renderPass.depthStencilAttachmentHandle;
+				curDataNode.renderAttachmentHandles.push_back(depthAttachmentHandle);
+				curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
+					depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
 				{
-					curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-						depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 					curDataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), curDataNode.framebufferImages.back().getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 					framebufferImageViewsReference[i].emplace(depthAttachmentHandle, curDataNode.frameBufferImageViews[i].getImageViews().back());
 				}
@@ -177,7 +181,7 @@ namespace gwa::renderer {
 			}
 
 			curRenderNode.descriptorSet = VulkanDescriptorSet(m_device.getLogicalDevice(), curRenderNode.descriptorSetLayout.getDescriptorSetLayouts(), curRenderNode.uniformBuffers,
-				maxFramesInFlight_, curRenderGraphNode.descriptorSetConfigs, curDataNode.textureViews.getImageViews(), m_textureSampler.getImageSampler(), framebufferImageViewsReference, curDataNode.frameBufferImageViews);
+				maxFramesInFlight_, curRenderGraphNode.descriptorSetConfigs, curDataNode.textureViews.getImageViews(), m_textureSampler.getImageSampler(), m_framebufferSampler.getImageSampler(), framebufferImageViewsReference, curDataNode.frameBufferImageViews);
 
 		}
 
@@ -305,9 +309,6 @@ namespace gwa::renderer {
 			}
 			else
 			{	
-				m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f, (float)extent.width, (float)extent.height, 0.f, 1.f });
-				m_graphicsCommandBuffers[currentFrame].setScissor({ {0, 0}, extent });
-
 				m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(
 					static_cast<uint32_t>(currentFrameDescriptors.size()),
 					currentFrameDescriptors.data(),
@@ -328,13 +329,59 @@ namespace gwa::renderer {
 	void VulkanRenderAPI::recreateSwapchain(WindowSize framebufferSize)
 	{
 		vkDeviceWaitIdle(m_device.getLogicalDevice());
-		m_swapchain.recreateSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
-		/*m_swapchainDepthBufferImage = VulkanImage(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), m_swapchain.getSwapchainExtent().width, m_swapchain.getSwapchainExtent().height,
-			depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		m_swapchainDepthBufferView.recreateImageView(0, m_device.getLogicalDevice(), m_swapchainDepthBufferImage.getImage(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-		m_swapchainFramebuffers.recreateFramebuffer(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages(), renderNodes[0].renderPass.getRenderPass(),
-			m_swapchainDepthBufferView.getImageView(0), m_swapchain.getSwapchainExtent());
-			*/
+		framebufferImageViewsReference.clear();
+		framebufferImageViewsReference.resize(m_swapchain.getSwapchainImagesSize());
+
+		for (uint32_t renderPassIndex = 0; renderPassIndex < renderNodes.size(); renderPassIndex++)
+		{
+			DataNode& dataNode = dataNodes[renderPassIndex];
+			RenderNode& renderNode = renderNodes[renderPassIndex];
+			for (VulkanImageViewCollection imageViews: dataNode.frameBufferImageViews)
+			{
+				imageViews.cleanup(m_device.getLogicalDevice());
+			}
+			for (VulkanImage image : dataNode.framebufferImages)
+			{
+				image.cleanup(m_device.getLogicalDevice());
+			}
+			dataNode.framebufferImages.clear();
+			dataNode.frameBufferImageViews.clear();
+			dataNode.frameBufferImageViews.resize(m_swapchain.getSwapchainImagesSize());
+
+			m_swapchain.recreateSwapchain(&m_device, framebufferSize.width, framebufferSize.height);
+
+			if (renderPassIndex == renderNodes.size() - 1)
+			{
+				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
+				{
+					dataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), m_swapchain.getSwapchainImages()[i], m_swapchain.getImageFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
+				}
+			}
+			for (size_t renderAttachmentHandle : dataNode.renderAttachmentHandles)
+			{
+				RenderAttachment renderAttachment = attachmentInfos.at(renderAttachmentHandle);
+				VkImageAspectFlags aspectFlag = VK_IMAGE_ASPECT_COLOR_BIT;
+				VkImageUsageFlags usageFlag = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+				VkFormat format = static_cast<VkFormat>(renderAttachment.format);
+				if (renderAttachment.format == Format::FORMAT_DEPTH_FORMAT)
+				{
+					aspectFlag = VK_IMAGE_ASPECT_DEPTH_BIT;
+					usageFlag = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+					format = depthFormat;
+				}
+
+				dataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), framebufferSize.width, framebufferSize.height, format,
+					VK_IMAGE_TILING_OPTIMAL, usageFlag, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+				for (uint32_t i = 0; i < m_swapchain.getSwapchainImagesSize(); i++)
+				{
+					dataNode.frameBufferImageViews[i].addImageView(m_device.getLogicalDevice(), dataNode.framebufferImages.back().getImage(), format, aspectFlag);
+					framebufferImageViewsReference[i].emplace(renderAttachmentHandle, dataNode.frameBufferImageViews[i].getImageViews().back());
+				}
+			}
+			renderNode.descriptorSet.updateAttachmentReferences(m_device.getLogicalDevice(), framebufferImageViewsReference, m_framebufferSampler.getImageSampler());
+
+			renderNode.framebuffers.recreateFramebuffer(m_device.getLogicalDevice(), dataNode.frameBufferImageViews, renderNode.renderPass.getRenderPass(), m_swapchain.getSwapchainExtent());
+		}
 	}
 
 	void VulkanRenderAPI::shutdown() {
@@ -342,7 +389,7 @@ namespace gwa::renderer {
 		m_imgui.cleanup(m_device.getLogicalDevice());
 
 
-		
+		m_framebufferSampler.cleanup();
 		m_textureSampler.cleanup();
 		m_drawFences.cleanup();
 		m_renderFinished.cleanup();
@@ -368,10 +415,10 @@ namespace gwa::renderer {
 		{
 			node.textureViews.cleanup(m_device.getLogicalDevice());
 			for (TextureImage texture : node.textures)
-				texture.cleanup();
+				texture.cleanup(m_device.getLogicalDevice());
 			node.meshBuffersMemory.cleanup(m_device.getLogicalDevice());
 			for (VulkanImage vulkanImage : node.framebufferImages)
-				vulkanImage.cleanup();
+				vulkanImage.cleanup(m_device.getLogicalDevice());
 			for (VulkanImageViewCollection imageViews : node.frameBufferImageViews)
 				imageViews.cleanup(m_device.getLogicalDevice());
 

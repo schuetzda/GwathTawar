@@ -37,7 +37,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.setColorAttachmentCount(3)
 		.setPipelineInputAssembly(gwa::renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
 		.setViewport(0, 0, static_cast<float>(window.getFramebufferSize().width), static_cast<float>(window.getFramebufferSize().height))
-		.setMSAA(false)
+		.setMSAA(true)
 		.setDepthBuffering(true)
 		.build();
 
@@ -47,7 +47,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.setColorAttachmentCount(1)
 		.setPipelineInputAssembly(gwa::renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false)
 		.setViewport(0, 0, static_cast<float>(window.getFramebufferSize().width), static_cast<float>(window.getFramebufferSize().height))
-		.setMSAA(false)
+		.setMSAA(true)
 		.setDepthBuffering(false)
 		.build();
 
@@ -68,41 +68,21 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 	gwa::ntity::ComponentHandle viewProjHandle = registry.getComponentHandle<glm::mat4>(uboEntity);
 	const uint32_t textureCount = static_cast<uint32_t>(registry.getComponent<gwa::GltfEntityContainer>(gltfEntity)->textures.size());
 
-	description = graph.addRenderAttachment(deferred::gBufferColor,
-			gwa::renderer::Format::FORMAT_R16G16B16A16_SFLOAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
+	description = graph.init()
+		.addRenderAttachment(deferred::gBufferColor,
+			gwa::renderer::Format::FORMAT_R8G8B8A8_UNORM,
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.addRenderAttachment(deferred::normal,
 			gwa::renderer::Format::FORMAT_R16G16B16A16_SFLOAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.addRenderAttachment(deferred::position,
 			gwa::renderer::Format::FORMAT_R16G16B16A16_SFLOAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 		.addRenderAttachment(deferred::depth,
 			gwa::renderer::Format::FORMAT_DEPTH_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
 			gwa::renderer::ImageLayout::IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 		.addRenderAttachment(deferred::lightingColor,
-			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT,
-			gwa::renderer::AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR,
-			gwa::renderer::AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE,
-			gwa::renderer::SampleCountFlagBits::SAMPLE_COUNT_1_BIT,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_UNDEFINED,
-			gwa::renderer::ImageLayout::IMAGE_LAYOUT_PRESENT_SRC_KHR)
+			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT)
 		.addResourceAttachment(deferred::projView, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, viewProjHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{ sizeof(glm::mat4) })
 		.addResourceAttachment(deferred::sponzaScene, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_TEXTURED_MESH, registry.getComponentHandle<gwa::GltfEntityContainer>(gltfEntity))
 		.addGraphNode()
@@ -110,8 +90,8 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addDescriptorSet(false)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT, deferred::projView)
 		.addDescriptorSet(true)
-		.addTexturedMesh(deferred::sponzaScene)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, textureCount, 1024)
+		.addTexturedMesh(deferred::sponzaScene)
 		.addPipeline(gBufferPipelineConfig)
 		.addGraphNode()
 		.addRenderPass<1>({ deferred::lightingColor })
@@ -120,7 +100,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::gBufferColor, 0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::position, 1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::normal, 2, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
-		.createRenderGraph();
+		.createRenderGraph().getRenderGraph();
 }
 
 

@@ -64,9 +64,11 @@ namespace gwa::renderer {
 			VulkanImageViewCollection textureViews{};
 			std::vector<VulkanImage> framebufferImages;
 			std::vector<VulkanImageViewCollection> frameBufferImageViews;
+			std::vector<size_t> renderAttachmentHandles;
 		};
 
 		std::vector<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference;
+		std::map<size_t, RenderAttachment> attachmentInfos;
 
 		
 		std::vector<RenderNode> renderNodes{};
@@ -82,6 +84,7 @@ namespace gwa::renderer {
 		VulkanSemaphore m_imageAvailable{};
 		VulkanFence m_drawFences{};
 		VulkanImageSampler m_textureSampler{};
+		VulkanImageSampler m_framebufferSampler{};
 		VulkanImguiIntegration m_imgui{};
 
 		VkFormat depthFormat = VkFormat::VK_FORMAT_UNDEFINED;

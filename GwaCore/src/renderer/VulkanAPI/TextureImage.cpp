@@ -28,9 +28,9 @@ namespace gwa
         stagingBuffer.cleanup();
     }
 
-    void TextureImage::cleanup() 
+    void TextureImage::cleanup(VkDevice logicalDevice) 
     {
-        textureImage_.cleanup();
+        textureImage_.cleanup(logicalDevice);
     }
 
     void TextureImage::transitionImageLayout(VkDevice logicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout) const

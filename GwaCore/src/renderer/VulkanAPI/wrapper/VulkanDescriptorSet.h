@@ -15,12 +15,11 @@ namespace gwa::renderer
 		VulkanDescriptorSet() = default;
 
 		VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VulkanUniformBuffers> uniformBuffers, uint32_t maxFramesInFlight, 
-			std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, 
+			std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler, VkSampler framebufferSampler, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference,
 			const std::vector<VulkanImageViewCollection>& imageViewCollections);
 
-
-
 		void cleanup(VkDevice logicalDevice);
+		void updateAttachmentReferences(VkDevice logicalDevice, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, VkSampler framebufferSampler);
 
 		const std::vector<VkDescriptorSet>& getDescriptorSets(uint32_t currentFrame) const
 		{
@@ -32,9 +31,10 @@ namespace gwa::renderer
 			return descriptorPool;
 		}
 	private:
-		void updateDescriptorSet(uint32_t currentFrame, VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VulkanUniformBuffers> uniformBuffers, std::span<const VkImageView> textureImageView, VkSampler textureSampler, const std::unordered_map<size_t, VkImageView>& framebufferImageViewsReference, const VulkanImageViewCollection& imageViews);
+		void updateDescriptorSet(uint32_t currentFrame, uint32_t descriptorIndex, VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VulkanUniformBuffers> uniformBuffers, std::span<const VkImageView> textureImageView, VkSampler textureSampler, VkSampler framebufferSampler, const std::unordered_map<size_t, VkImageView>& framebufferImageViewsReference, const VulkanImageViewCollection& imageViews);
 
 		VkDescriptorPool descriptorPool{};
 		std::vector<std::vector<VkDescriptorSet>> descriptorSetsPerFrame{};
+		std::vector<std::vector<std::pair<DescriptorBindingConfig,uint32_t>>> attachmentReferenceBindings{};
 	};
 }

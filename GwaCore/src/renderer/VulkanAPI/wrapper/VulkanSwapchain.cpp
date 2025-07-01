@@ -79,17 +79,8 @@ namespace gwa {
 		// Get Swapchain images
 		uint32_t swapchainImageCount;
 		vkGetSwapchainImagesKHR(device->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, nullptr);
-		std::vector<VkImage> images(swapchainImageCount);
-		vkGetSwapchainImagesKHR(device->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, images.data());
-		swapchainImages_.resize(swapchainImageCount);
-		for (uint32_t i = 0; i < swapchainImageCount; i++)
-		{
-			VulkanSwapchainImage swapchainImage = {};
-			swapchainImage.image = images[i];
-			swapchainImage.imageView = createImageView(device->getLogicalDevice(), images[i], vkSwapchainImageFormat_, VK_IMAGE_ASPECT_COLOR_BIT);
-
-			swapchainImages_[i] = swapchainImage;
-		}
+		swapchainImages.resize(swapchainImageCount);
+		vkGetSwapchainImagesKHR(device->getLogicalDevice(), vkSwapchain_, &swapchainImageCount, swapchainImages.data());
 	}
 	VkPresentModeKHR VulkanSwapchain::chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const
 	{
@@ -175,21 +166,12 @@ namespace gwa {
 	void VulkanSwapchain::cleanup(VkDevice logicalDevice)
 	{
 		vkDeviceWaitIdle(logicalDevice);
-		for (auto image : swapchainImages_)
-		{
-			vkDestroyImageView(logicalDevice, image.imageView, nullptr);
-		}
 		vkDestroySwapchainKHR(logicalDevice, vkSwapchain_, nullptr);
 	}
 
 	void VulkanSwapchain::recreateSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight)
 	{
-		vkDeviceWaitIdle(device->getLogicalDevice());
-		for (auto image : swapchainImages_)
-		{
-			vkDestroyImageView(device->getLogicalDevice(), image.imageView, nullptr);
-		}
-		swapchainImages_.clear();
+		swapchainImages.clear();
 		createSwapchain(device, framebufferWidth, framebufferHeight, true);
 	}
 

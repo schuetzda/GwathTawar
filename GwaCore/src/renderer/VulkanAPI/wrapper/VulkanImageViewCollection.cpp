@@ -17,6 +17,7 @@ namespace gwa::renderer
 		{
 			vkDestroyImageView(logicalDevice, imageView, nullptr);
 		}
+		imageViews.clear();
 	}
 	void VulkanImageViewCollection::recreateImageView(uint32_t index, VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{

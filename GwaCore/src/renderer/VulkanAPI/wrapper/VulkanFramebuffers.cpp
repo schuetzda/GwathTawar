@@ -10,8 +10,9 @@ namespace gwa::renderer
 	{
 		createFramebuffers(logicalDevice, framebufferImageViews, renderPass, framebufferExtent);
 	}
-	void VulkanFramebuffers::recreateFramebuffer(VkDevice logicalDevice, const std::span<VulkanImageViewCollection> framebufferImageViews, VkRenderPass renderPass, const std::span<VulkanImageViewCollection> depthBufferImageViews, VkExtent2D swapchainExtent)
+	void VulkanFramebuffers::recreateFramebuffer(VkDevice logicalDevice, const std::span<VulkanImageViewCollection> framebufferImageViews, VkRenderPass renderPass, VkExtent2D swapchainExtent)
 	{
+		cleanup(logicalDevice);
 		createFramebuffers(logicalDevice, framebufferImageViews, renderPass, swapchainExtent);
 	}
 	

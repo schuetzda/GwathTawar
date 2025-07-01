@@ -14,7 +14,7 @@ namespace gwa::renderer
 		VulkanFramebuffers() = default;
 		VulkanFramebuffers(VkDevice logicalDevice, const std::span<VulkanImageViewCollection> framebufferImageViews, VkRenderPass renderPass, VkExtent2D framebufferExtent);
 
-		void recreateFramebuffer(VkDevice logicalDevice, const std::span<VulkanImageViewCollection> framebufferImageViews, VkRenderPass renderPass, const std::span<VulkanImageViewCollection> depthBufferImageViews, VkExtent2D swapchainExtent);
+		void recreateFramebuffer(VkDevice logicalDevice, const std::span<VulkanImageViewCollection> framebufferImageViews, VkRenderPass renderPass, VkExtent2D swapchainExtent);
 
 		void cleanup(VkDevice logicalDevice);
 		std::vector<VkFramebuffer>& getFramebuffers()

@@ -18,7 +18,7 @@ namespace gwa::renderer
 				return nullptr;
 			return imageViews[index];
 		}
-		const std::vector<VkImageView>& getImageViews() const
+		std::vector<VkImageView>& getImageViews() 
 		{
 			return imageViews;
 		}
