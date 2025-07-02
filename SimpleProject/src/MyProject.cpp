@@ -141,7 +141,7 @@ void MyProject::renderUI(float ts)
 	ImGui::Text("f,g- In-\\Decrease camera speed");
 	ImGui::Text("q,e- Camera roll");
 
-	ImGui::InputFloat("Light Radius: %f", &lightRadius, 25.f);
+	ImGui::InputFloat("Light Radius:", &lightRadius, 25.f);
 	ImGui::ColorEdit3("Color", glm::value_ptr(lightColor));
 
 }
@@ -153,8 +153,9 @@ void MyProject::run(float ts, gwa::ntity::Registry& registry, gwa::QuaternionCam
 
 	angle += angularSpeed * ts;
 	if (angle > 2 * std::numbers::pi)
-		angle -= 2 * std::numbers::pi;
+		angle -= 2.f * static_cast<float>(std::numbers::pi);
 
+	
 	gwa::LightInformation* lightInfo = registry.getComponent<gwa::LightInformation>(lightEntity);
 	for (gwa::RenderPointLight& light: lightInfo->lights)
 	{
@@ -164,6 +165,7 @@ void MyProject::run(float ts, gwa::ntity::Registry& registry, gwa::QuaternionCam
 		light.color = lightColor;
 	}
 	lightInfo->viewPos = camera.getPosition();
+	
 }
 
 void MyProject::shutdown()
