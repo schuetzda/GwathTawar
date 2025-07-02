@@ -1,29 +1,21 @@
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
+#include "TextureReader.h"
 
 #include <fstream>
 #include "gltfImporter.h"
 #include <iostream>
 #include "FileReader.h"
 #include <span> 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <functional>
+
 namespace gwa
 {
-	Texture loadTexture(const char* path)
-	{
-		int texWidth{ 0 };
-		int texHeight{ 0 };
-		int texChannels{ 0 };
-		uint8_t* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-		return Texture(texWidth, texHeight, pixels);
-
-	}
-	bool gltfImporter::loadResource(gwa::ntity::Registry& registry, const std::filesystem::path& assetDirectory,
+		uint32_t gltfImporter::loadResource(gwa::ntity::Registry& registry, const std::filesystem::path& assetDirectory,
 		const std::string& gltfFileName)
 	{
+		GltfEntityContainer gltfObject;
+
 		cgltf_options options = {};
 		std::unique_ptr<cgltf_data> gltfDataPtr;
 		{
@@ -33,7 +25,8 @@ namespace gwa
 			if (result != cgltf_result_success)
 			{
 				cgltf_free(gltfDataPtr.get());
-				return false;
+				std::cerr << "Couldn't parse gltf file";
+				return -1;
 			}
 		}
 		
@@ -50,7 +43,6 @@ namespace gwa
 
 		std::unordered_map<std::string, uint32_t, StringViewHash, std::equal_to<>> textureEntityMap;
 		const uint32_t texturesCount = static_cast<uint32_t>(gltfDataPtr->textures_count);
-		registry.initNewComponent<Texture>(texturesCount);
 		for (uint32_t i = 0; i < gltfDataPtr->textures_count; i++)
 		{
 			std::string_view key = gltfDataPtr->textures[i].image->uri;
@@ -58,14 +50,18 @@ namespace gwa
 			if (!textureEntityMap.contains(key))
 			{
 				uint32_t entity = registry.registerEntity();
-				registry.emplace<Texture>(entity, std::move(loadTexture(texturePath.string().c_str())));
-				textureEntityMap.emplace(key, i);
+				registry.emplace<Texture>(entity, std::move(TextureReader::loadTexture(texturePath.string().c_str())));
+				textureEntityMap.emplace(key, entity);
+
+				gltfObject.textures.push_back(entity);
 			}
 		}
 		
 		for (int meshIndex = 0; meshIndex < gltfDataPtr->meshes_count; ++meshIndex)
 		{
 			cgltf_mesh curMesh = gltfDataPtr->meshes[meshIndex];
+
+						
 			//Currently Mesh to Primitive dependency is not stored in our data structure
 			for (int primitiveIndex = 0; primitiveIndex < curMesh.primitives_count; ++primitiveIndex)
 			{
@@ -88,7 +84,7 @@ namespace gwa
 						normalAttributeIndex = attributeIndex;
 						break;
 					case cgltf_attribute_type_texcoord:
-						assert(texcoordAttributeIndex == -1);
+						//assert(texcoordAttributeIndex == -1);
 						texcoordAttributeIndex = attributeIndex;
 						break;
 					default:
@@ -100,7 +96,7 @@ namespace gwa
 				//TexturedMesh
 				if (containsIndices && positionAttributeIndex >= 0 && normalAttributeIndex >= 0)
 				{
-					TexturedMeshBufferMemory meshBufferData = TexturedMeshBufferMemory(curPrimitive.attributes[positionAttributeIndex].data->count, curPrimitive.indices->count);
+					MeshBufferMemory meshBufferData = MeshBufferMemory(curPrimitive.attributes[positionAttributeIndex].data->count, curPrimitive.indices->count);
 					//Position
 					if (curPrimitive.attributes[positionAttributeIndex].data->type == cgltf_type_vec3) {
 						convertToVector<glm::vec3, glm::vec3>(bufferMemoryMap[curPrimitive.attributes[positionAttributeIndex].data->buffer_view->buffer->uri],
@@ -152,16 +148,14 @@ namespace gwa
 					}
 
 					//Textures
-					//NOTE Right now all textures get loaded before creating the descriptor sets. To reduce maximum memory use you can load one texture at a directly before creating the descriptor set
-					// and realase it directly after
 					if (curPrimitive.material && curPrimitive.material->has_pbr_metallic_roughness)
 					{
 						if (curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture)
 						{
-							std::filesystem::path colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
-							if (textureEntityMap.contains(colorTexturePath.string()))
+							std::string colorTexturePath = curPrimitive.material->pbr_metallic_roughness.base_color_texture.texture->image->uri;
+							if (textureEntityMap.contains(colorTexturePath))
 							{
-								meshBufferData.materialTextureEntities[0] = textureEntityMap[colorTexturePath.string()];
+								meshBufferData.materialTextureEntities[0] = textureEntityMap[colorTexturePath];
 							}
 							else {
 								std::cerr << "Texture " << colorTexturePath << " was not preloaded \n";
@@ -169,26 +163,45 @@ namespace gwa
 						}
 						if (curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture)
 						{
-							std::filesystem::path metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
-							if (textureEntityMap.contains(metallicRoughnessTexturePath.string()))
+							std::string metallicRoughnessTexturePath = curPrimitive.material->pbr_metallic_roughness.metallic_roughness_texture.texture->image->uri;
+							if (textureEntityMap.contains(metallicRoughnessTexturePath))
 							{
-								meshBufferData.materialTextureEntities[1] = textureEntityMap[metallicRoughnessTexturePath.string()];
+								meshBufferData.materialTextureEntities[1] = textureEntityMap[metallicRoughnessTexturePath];
 							}
 							else {
 								std::cerr << "Texture " << metallicRoughnessTexturePath << " was not preloaded \n";
 							}
 						}
+						if (curPrimitive.material && curPrimitive.material->normal_texture.texture)
+						{
+							std::string normalTexturePath = curPrimitive.material->normal_texture.texture->image->uri;
+							if (textureEntityMap.contains(normalTexturePath))
+							{
+								meshBufferData.materialTextureEntities[2] = textureEntityMap[normalTexturePath];
+							}
+							else
+							{
+								std::cerr << "Texture " << normalTexturePath << " was not preloaded \n";
+							}
+
+						}
 					}
-					
+					meshBufferData.modelMatrix = glm::mat4(1.f);
 					uint32_t meshEntity = registry.registerEntity();
-					registry.emplace<TexturedMeshBufferMemory>(meshEntity, std::move(meshBufferData));
-				}
+
+					registry.emplace<MeshBufferMemory>(meshEntity, std::move(meshBufferData));
+					gltfObject.meshBufferEntities.emplace_back(meshEntity);
+
+									}
 			}
 		}
 
 		bufferMemoryMap.clear();
 		cgltf_free(gltfDataPtr.get());
 		gltfDataPtr.release();
-		return true;
+
+		uint32_t gltfEntity = registry.registerEntity();
+		registry.emplace<GltfEntityContainer>(gltfEntity, std::move(gltfObject));
+		return gltfEntity;
 	}
 }

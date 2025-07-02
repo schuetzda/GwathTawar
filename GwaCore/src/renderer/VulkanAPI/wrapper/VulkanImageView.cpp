@@ -1,9 +1,24 @@
 #include "VulkanImageView.h"
-#include <stdexcept>
 #include <cassert>
-namespace gwa
+
+namespace gwa::renderer
 {
-	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags):logicalDevice_(logicalDevice)
+	VulkanImageView::VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
+		createImageView(logicalDevice, image, format, aspectFlags);
+	}
+
+	void VulkanImageView::recreateImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	{
+		createImageView(logicalDevice, image, format, aspectFlags);
+	}
+
+	void VulkanImageView::cleanup(VkDevice logicalDevice)
+	{
+		vkDestroyImageView(logicalDevice, imageView, nullptr);
+	}
+
+	void VulkanImageView::createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewCreateInfo = {};
 		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -24,12 +39,7 @@ namespace gwa
 		viewCreateInfo.subresourceRange.layerCount = 1;					// number of array levels to view
 
 		//Create image view and return it
-		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView_);
+		VkResult result = vkCreateImageView(logicalDevice, &viewCreateInfo, nullptr, &imageView);
 		assert(result == VK_SUCCESS);
-
 	}
-	void VulkanImageView::cleanup()
-	{
-		vkDestroyImageView(logicalDevice_, imageView_, nullptr);
-	}
-	}
+}

@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
-namespace gwa
+namespace gwa::renderer
 {
 	class VulkanImguiIntegration
 	{
@@ -11,7 +11,7 @@ namespace gwa
 
 		void cleanup(VkDevice logicalDevice);
 		void updatePlatform();
-		void renderData(VkCommandBuffer commandBuffer);
+		void renderData(VkCommandBuffer commandBuffer) const;
 	private:
 		VkDescriptorPool imguiPool;
 	};

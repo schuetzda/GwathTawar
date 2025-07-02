@@ -7,8 +7,11 @@
 namespace gwa
 
 {
-	QuaternionCamera::QuaternionCamera()
+	QuaternionCamera::QuaternionCamera(float aspectRatio)
 	{
+		projMat = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 10000.0f);
+		projMat[1][1] *= -1;	// Invert the y-axis because difference between OpenGL and Vulkan standard
+
 		position_ = glm::vec3(0.0f, 0.0f, 2.0f);
 		glm::vec3 lookAt = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3  direction = lookAt - position_;
@@ -20,8 +23,6 @@ namespace gwa
 		pitch = eulerAngles.x;
 		yaw = eulerAngles.y;
 		roll = eulerAngles.z;
-
-		getViewMatrix();
 	}
 
 	// NOTE: The callback here should be replaced by proper event handling with callback functions once ecs is implemented.

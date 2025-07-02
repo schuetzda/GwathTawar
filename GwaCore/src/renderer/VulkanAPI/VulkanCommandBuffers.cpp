@@ -1,6 +1,7 @@
 #include "VulkanCommandBuffers.h"
 #include <stdexcept>
 #include <cassert>
+#include <array>
 
 namespace gwa
 {
@@ -31,7 +32,7 @@ namespace gwa
 		assert(result == VK_SUCCESS);
 	}
 
-	void VulkanCommandBuffer::beginRenderPass(VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer)
+	void VulkanCommandBuffer::beginRenderPass(uint32_t numberOfAttachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer framebuffer, bool useDepthBuffer)
 	{
 		VkRenderPassBeginInfo renderPassBeginInfo = {};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -39,13 +40,19 @@ namespace gwa
 		renderPassBeginInfo.renderArea.offset = { 0,0 };
 		renderPassBeginInfo.renderArea.extent = extent;
 
-		const uint32_t clearValuesSize = 2;
-		VkClearValue clearValues[2] = { VkClearValue(),VkClearValue() };
-		clearValues[0].color = { .6f, .65f, .4f, 1.f };
-		clearValues[1].depthStencil.depth = 1.f;
+		std::vector<VkClearValue> clearValues(numberOfAttachments);
+		for (uint32_t i = 0; i < numberOfAttachments; ++i) {
+			clearValues[i].color = { 0.0f, 0.0f, 0.0f, 1.0f }; 	
+		}
 
-		renderPassBeginInfo.pClearValues = clearValues;
-		renderPassBeginInfo.clearValueCount = clearValuesSize;
+		if (useDepthBuffer)
+		{
+			clearValues.emplace_back();
+			clearValues.back().depthStencil = { 1.0f, 0 };
+		}
+
+		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassBeginInfo.pClearValues = clearValues.data();
 		renderPassBeginInfo.framebuffer = framebuffer;
 
 		vkCmdBeginRenderPass(commandBuffer_, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -56,7 +63,7 @@ namespace gwa
 		vkCmdBindPipeline(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	}
 
-	void VulkanCommandBuffer::pipelineBarrier(VkImageMemoryBarrier barrier)
+	void VulkanCommandBuffer::pipelineBarrier(const VkImageMemoryBarrier& barrier)
 	{
 		vkCmdPipelineBarrier(
 			commandBuffer_,
@@ -93,20 +100,20 @@ namespace gwa
 		vkCmdBindIndexBuffer(commandBuffer_, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	}
 
-	void VulkanCommandBuffer::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, glm::mat4 const * const model)
+	void VulkanCommandBuffer::pushConstants(VkPipelineLayout pipelineLayout, VkShaderStageFlags flags, uint32_t pushSize, const void* pushValue)
 	{
 		vkCmdPushConstants(
 			commandBuffer_,
 			pipelineLayout, flags,
 			0,
-			sizeof(*model),
-			model);
+			pushSize,
+			pushValue);
 	}
 
-	void VulkanCommandBuffer::bindDescriptorSet(VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) 
+	void VulkanCommandBuffer::bindDescriptorSet(uint32_t descriptorSetCount, const VkDescriptorSet* descriptorSets, VkPipelineLayout pipelineLayout) 
 	{
 		vkCmdBindDescriptorSets(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-			0, 1, &descriptorSet, 0, nullptr);
+			0, descriptorSetCount, descriptorSets, 0, nullptr);
 	}
 
 	void VulkanCommandBuffer::drawIndexed(uint32_t indexCount)

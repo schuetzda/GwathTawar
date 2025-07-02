@@ -3,67 +3,46 @@
 #include <stdexcept>
 #include <array>
 #include <cassert>
-namespace gwa {
-	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, uint32_t stride, const std::array<uint32_t,2>& attributeDescriptionOffsets,
-		VkRenderPass renderPass, const VkExtent2D& swapchainExtent, const VkPushConstantRange& pushConstantRange, 
-		VkDescriptorSetLayout descriptorSetLayout): logicalDevice_(logicalDevice)
+#include <span>
+namespace gwa::renderer {
+
+	VulkanPipeline::VulkanPipeline(VkDevice logicalDevice, const renderer::PipelineConfig& config, VkRenderPass renderPass, const VkPushConstantRange& pushConstantRange, std::span<const VkDescriptorSetLayout> descriptorSetLayout)
 	{
-		std::vector<char> vertexShaderCode = FileReader::readBinaryFile<char>("src/shaders/vert.spv");
-		std::vector<char> fragmentShaderCode = FileReader::readBinaryFile<char>("src/shaders/frag.spv");
+		//Shader Creation
+		std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfo{};
+		std::vector<VkShaderModule> shaderModules{};
+		const size_t shaderModulesSize = config.shaderModules.size();
+		shaderStagesInfo.resize(shaderModulesSize);
+		shaderModules.resize(shaderModulesSize);
 
-		VkShaderModule vertexShaderModule = createShaderModule(vertexShaderCode);
-		VkShaderModule fragmentShaderModule = createShaderModule(fragmentShaderCode);
+		for (size_t i = 0; i < shaderModulesSize; i++)
+		{
+			std::vector<char> shaderCode = FileReader::readBinaryFile<char>(config.shaderModules[i].shaderPath);
+			 shaderModules[i] = createShaderModule(logicalDevice, shaderCode);
 
-		// SHADER STAGE CREATIION
-		//Vertex Stage creation information
-		VkPipelineShaderStageCreateInfo vertexCreateInfo = {};
-		vertexCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vertexCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertexCreateInfo.module = vertexShaderModule;
-		vertexCreateInfo.pName = "main";
+			shaderStagesInfo[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStagesInfo[i].stage = static_cast<VkShaderStageFlagBits>(config.shaderModules[i].stage);
+			shaderStagesInfo[i].module = shaderModules[i];
+			shaderStagesInfo[i].pName = "main";
+		}
 
-		VkPipelineShaderStageCreateInfo fragmentCreateInfo = {};
-		fragmentCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		fragmentCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragmentCreateInfo.module = fragmentShaderModule; 
-		fragmentCreateInfo.pName = "main";
+		//Vertex Binding
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
+		std::vector< VkVertexInputAttributeDescription> attributeDescriptions{};
+		const size_t vertexInputsSize = config.vertexInputs.size();
+		bindingDescriptions.resize(vertexInputsSize);
+		attributeDescriptions.resize(vertexInputsSize);
+		for (size_t i = 0; i < vertexInputsSize; i++)
+		{
+			bindingDescriptions[i].binding = config.vertexInputs[i].binding;
+			bindingDescriptions[i].stride = config.vertexInputs[i].stride;
+			bindingDescriptions[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{ vertexCreateInfo, fragmentCreateInfo };
-
-		std::array<VkVertexInputBindingDescription, 3> bindingDescriptions = {};
-		// Binding 0: Position
-		bindingDescriptions[0].binding = 0;
-		bindingDescriptions[0].stride = stride;
-		bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		// Binding 1: Normal
-		bindingDescriptions[1].binding = 1;
-		bindingDescriptions[1].stride = stride;
-		bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		//Binding 2: Texcoords
-		bindingDescriptions[2].binding = 2;
-		bindingDescriptions[2].stride = 8;
-		bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
-		// Attribute 0: Position
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset = 0;
-
-		// Attribute 1: Normal
-		attributeDescriptions[1].binding = 1;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = 0;
-
-		// Attribute 2: Texcoords
-		attributeDescriptions[2].binding = 2;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = 0;
+			attributeDescriptions[i].binding = config.vertexInputs[i].binding;
+			attributeDescriptions[i].location = config.vertexInputs[i].location;
+			attributeDescriptions[i].format = static_cast<VkFormat>(config.vertexInputs[i].format);
+			attributeDescriptions[i].offset = config.vertexInputs[i].offset;
+		}
 
 		VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo = {};
 		vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -72,26 +51,25 @@ namespace gwa {
 		vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();	//data format
 
-		// INPUT ASSEMBLYconst 
-		// What kind of topology will be drawn?
+		//Input Assembly
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.topology = static_cast<VkPrimitiveTopology>(renderer::PrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 		inputAssembly.primitiveRestartEnable = VK_FALSE;	//Ability to restart a strip topology
 
 		// VIEWPORT & SCISSOR
 		VkViewport viewport = {};
 		viewport.x = 0.f;
 		viewport.y = 0.f;
-		viewport.width = (float) swapchainExtent.width;
-		viewport.height = (float) swapchainExtent.height;
+		viewport.width = config.viewport.width;
+		viewport.height = config.viewport.height;
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 
 		// Create a scissor info struct
 		VkRect2D scissor = {};
 		scissor.offset = { 0, 0 };			// Offset to use region from
-		scissor.extent = swapchainExtent;	// Extent to describe region to use, starting at offset
+		scissor.extent = VkExtent2D{ static_cast<uint32_t>(config.viewport.width), static_cast<uint32_t>(config.viewport.height) };	// Extent to describe region to use, starting at offset
 
 		VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};
 		viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -99,7 +77,6 @@ namespace gwa {
 		viewportStateCreateInfo.pViewports = &viewport;
 		viewportStateCreateInfo.scissorCount = 1;
 		viewportStateCreateInfo.pScissors = &scissor;
-
 
 		// DYNAMIC STATES (don't bake those directly into the pipeline) Have to resize depth buffer, recreate swap chain and swap chain images
 		std::vector<VkDynamicState> dynamicStateEnables;
@@ -111,22 +88,21 @@ namespace gwa {
 		dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 		dynamicStateCreateInfo.pDynamicStates = dynamicStateEnables.data();
 
-		// RASTERIZER Primitves -> Fragments
-		//Configuration for the fixed-function rasterization. In here is where we enable or disable backface culling, and set line width or wireframe drawing.
+		//Rasterizer
 		VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo = {};
 		rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizerCreateInfo.depthClampEnable = VK_FALSE;				// Change if fragments beyond near/ far planes are clipped or clamped. Remember to enable in device feature
-		rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;		// Whether to discard data and skip rasterizer. Never create fragments, only suitable for pipeline without framebuffer output.
-		rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;		// How to handle filling points between vertices
-		rasterizerCreateInfo.lineWidth = 1.f;							// How thick lines should be when drawn
-		rasterizerCreateInfo.cullMode = VK_CULL_MODE_NONE;			// Which face of a triangle to cull
+		rasterizerCreateInfo.depthClampEnable = config.rasterizerConfig.depthClampEnabled;				// Change if fragments beyond near/ far planes are clipped or clamped. Remember to enable in device feature
+		rasterizerCreateInfo.rasterizerDiscardEnable = config.rasterizerConfig.rasterizerDiscard;		// Whether to discard data and skip rasterizer. Never create fragments, only suitable for pipeline without framebuffer output.
+		rasterizerCreateInfo.polygonMode = static_cast<VkPolygonMode>(config.rasterizerConfig.polygonMode);		// How to handle filling points between vertices
+		rasterizerCreateInfo.lineWidth = config.rasterizerConfig.lineWidth;							// How thick lines should be when drawn
+		rasterizerCreateInfo.cullMode = static_cast<VkCullModeFlags>(config.rasterizerConfig.cullMode);			// Which face of a triangle to cull
 		rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;		// Winding to determine which side is front
-		rasterizerCreateInfo.depthBiasEnable = VK_FALSE;				// Whether to add depth to fragments (good for stopping shadow acne)
+		rasterizerCreateInfo.depthBiasEnable = config.rasterizerConfig.depthBiasEnable;				// Whether to add depth to fragments (good for stopping shadow acne)
 
 		// MULTISAMPLING (using MSAA)
 		VkPipelineMultisampleStateCreateInfo multiSamplingCreateInfo = {};
 		multiSamplingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multiSamplingCreateInfo.sampleShadingEnable = VK_FALSE;					// Enable multisample shading
+		multiSamplingCreateInfo.sampleShadingEnable = config.enableMSAA;					// Enable multisample shading
 		multiSamplingCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;	// Number of samples to use per fragment
 
 		// BLENDING How to blend a new colour being written to a fragment, with a previous value
@@ -143,19 +119,21 @@ namespace gwa {
 		colorState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		colorState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
 		colorState.alphaBlendOp = VK_BLEND_OP_ADD;
+
+		std::vector<VkPipelineColorBlendAttachmentState> colorStates(config.colorAttachmentCount, colorState);
 		// Summarized (1 * newAlpha) = (0 * oldAlpha) = newAlpha
 
 		VkPipelineColorBlendStateCreateInfo colorBlendingCreateInfo = {};
 		colorBlendingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlendingCreateInfo.logicOpEnable = VK_FALSE;					// Alternative calculation is to use logical operations
-		colorBlendingCreateInfo.attachmentCount = 1;
-		colorBlendingCreateInfo.pAttachments = &colorState;
+		colorBlendingCreateInfo.attachmentCount = config.colorAttachmentCount;
+		colorBlendingCreateInfo.pAttachments = colorStates.data();
 
 		// PIPELINE LAYOUT
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
 		pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutCreateInfo.setLayoutCount = 1;
-		pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
+		pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayout.size());
+		pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayout.data();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 		pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
@@ -166,7 +144,7 @@ namespace gwa {
 		// DEPTH STENCIL TESTING
 		VkPipelineDepthStencilStateCreateInfo depthStencilCreateInfo = {};
 		depthStencilCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencilCreateInfo.depthTestEnable = VK_TRUE;		//Enalbing checking depth to determine fragment write
+		depthStencilCreateInfo.depthTestEnable = config.enableDepthTesting;		//Enalbing checking depth to determine fragment write
 		depthStencilCreateInfo.depthWriteEnable = VK_TRUE;		// Enable writing to depth buffer (to replace old values)
 		depthStencilCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS; // Comparison operation that allows an overwrite (is in front otherwise)
 		depthStencilCreateInfo.depthBoundsTestEnable = VK_FALSE;	// Does the depth value exist between two bounds
@@ -176,8 +154,8 @@ namespace gwa {
 		// GRAPHICS PIPELINE CREATION
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo = {};
 		pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineCreateInfo.stageCount = 2;
-		pipelineCreateInfo.pStages = shaderStages.data();
+		pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStagesInfo.size());
+		pipelineCreateInfo.pStages = shaderStagesInfo.data();
 		pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo; \
 			pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
 		pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
@@ -196,16 +174,17 @@ namespace gwa {
 		result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline_);
 		assert(result == VK_SUCCESS);
 		// Destroy Shader Modules, no longer needed after Pipeline created
-		vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
-		vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
-
+		for (VkShaderModule shaderModule : shaderModules)
+		{
+			vkDestroyShaderModule(logicalDevice, shaderModule, nullptr);
+		}
 	}
-	void VulkanPipeline::cleanup()
+		void VulkanPipeline::cleanup(VkDevice logicalDevice)
 	{
-		vkDestroyPipeline(logicalDevice_, pipeline_, nullptr);
-		vkDestroyPipelineLayout(logicalDevice_, pipelineLayout_, nullptr);
+		vkDestroyPipeline(logicalDevice, pipeline_, nullptr);
+		vkDestroyPipelineLayout(logicalDevice, pipelineLayout_, nullptr);
 	}
-	VkShaderModule VulkanPipeline::createShaderModule(const std::vector<char>& code)
+	VkShaderModule VulkanPipeline::createShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
 		shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -213,7 +192,7 @@ namespace gwa {
 		shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*> (code.data());
 
 		VkShaderModule shaderModule;
-		VkResult result = vkCreateShaderModule(logicalDevice_, &shaderModuleCreateInfo, nullptr, &shaderModule);
+		VkResult result = vkCreateShaderModule(logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
 		assert(result == VK_SUCCESS);
 
 		return shaderModule;

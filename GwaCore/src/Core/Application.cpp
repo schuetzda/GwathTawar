@@ -3,10 +3,11 @@
 #include <renderer/RenderAPI.h>
 #include <iostream>
 #include <imgui_impl_vulkan.h>
+#include <glm/gtc/type_ptr.hpp>
 namespace gwa
 {
-	std::unique_ptr<RenderAPI> Application::renderAPI = RenderAPI::Create();
-	Application::Application(const AppInfo& info, Game* game):m_window(Window(info.appTitle, info.appWidth, info.appHeight)), m_game(game)
+	std::unique_ptr<renderer::RenderAPI> Application::renderAPI = renderer::RenderAPI::Create();
+	Application::Application(const AppInfo& info, Game* game):m_window(Window(info.appTitle, info.appWidth, info.appHeight)), m_game(game),camera(info.appWidth / (float)info.appHeight)
 	{
 	}
 
@@ -14,12 +15,11 @@ namespace gwa
 	
 	void Application::init()
 	{
-		const std::array<uint32_t, 2> componentEstimate{ 10, 10};
-		TexturedMeshBufferMemory t(2, 2);
-		registry.initComponentList<TexturedMeshBufferMemory, TexturedMeshRenderObject>(componentEstimate, 1000);
 		uiOverlay.init(m_window);
-		m_game->init(registry);
-		renderAPI->init(&m_window, registry);
+		m_game->init(registry, camera);
+		gwa::renderer::RenderGraphDescription renderGraphDescription{};
+		m_game->initRenderGraph(registry, m_window, renderGraphDescription, camera);
+		renderAPI->init(&m_window, registry, renderGraphDescription);
 	}
 
 	void Application::run() 
@@ -33,13 +33,13 @@ namespace gwa
 			
 			m_window.update();
 			camera.onUpdate(m_window);
-			m_game->run(timestep, registry);
+			m_game->run(timestep, registry, camera);
 
 			uiOverlay.beforeUIRender();
 			m_game->renderUI(timestep);
 			ImGui::InputFloat("Cam Speed", &camera.cspeed_, 0.001f);
+			ImGui::Text("Camera position: (%.3f, %.3f, %.3f)", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 			uiOverlay.afterUIRender();
-			renderAPI->uboViewProj.view = camera.getViewMatrix();
 			renderAPI->draw(&m_window, registry);
 		}
 		m_game->shutdown();

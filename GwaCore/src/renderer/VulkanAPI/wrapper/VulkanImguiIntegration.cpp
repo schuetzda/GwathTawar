@@ -4,7 +4,7 @@
 #include "QueueFamilyIndices.h"
 #include <imgui_impl_glfw.h>
 
-namespace gwa
+namespace gwa::renderer
 {
 	VulkanImguiIntegration::VulkanImguiIntegration(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance instance, VkRenderPass renderpass, VkQueue graphicsQueue)
 	{
@@ -24,7 +24,7 @@ namespace gwa
 		assert(vkCreateDescriptorPool(logicalDevice, &pool_info, nullptr, &imguiPool) == VK_SUCCESS);
 
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		//init_info.ApiVersion = VK_API_VERSION_1_3;              // Pass in your value of VkApplicationInfo::apiVersion, otherwise will default to header version.
+		init_info.ApiVersion = VK_API_VERSION_1_3;              	
 		init_info.Instance = instance;
 		init_info.PhysicalDevice = physicalDevice;
 		init_info.Device = logicalDevice;
@@ -51,7 +51,7 @@ namespace gwa
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 	}
-	void VulkanImguiIntegration::renderData(VkCommandBuffer commandBuffer)
+	void VulkanImguiIntegration::renderData(VkCommandBuffer commandBuffer) const
 	{
 		auto drawData = ImGui::GetDrawData();
 		ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer);

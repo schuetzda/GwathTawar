@@ -5,7 +5,7 @@
 namespace gwa
 {
 	VulkanImage::VulkanImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, 
-		VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags):logicalDevice_(logicalDevice)
+		VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags)
 	{
 		// CREATE IMAGE
 		//Image Creation Info
@@ -24,30 +24,30 @@ namespace gwa
 		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		VkResult result = vkCreateImage(logicalDevice_, &imageCreateInfo, nullptr, &image_);
+		VkResult result = vkCreateImage(logicalDevice, &imageCreateInfo, nullptr, &image_);
 
 		assert(result == VK_SUCCESS);
 		// CREATE MEMORY FOR IMAGE
 
 		// Get memory requiremts for a type of image
 		VkMemoryRequirements memoryRequirements;
-		vkGetImageMemoryRequirements(logicalDevice_, image_, &memoryRequirements);
+		vkGetImageMemoryRequirements(logicalDevice, image_, &memoryRequirements);
 
 		VkMemoryAllocateInfo memoryAllocInfo = {};
 		memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		memoryAllocInfo.allocationSize = memoryRequirements.size;
 		memoryAllocInfo.memoryTypeIndex = vulkanutil::findMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits, propFlags);
 
-		result = vkAllocateMemory(logicalDevice_, &memoryAllocInfo, nullptr, &imageMemory_);
+		result = vkAllocateMemory(logicalDevice, &memoryAllocInfo, nullptr, &imageMemory_);
 		assert(result == VK_SUCCESS);
 
 		// Connect memory to image
-		vkBindImageMemory(logicalDevice_, image_, imageMemory_, 0);
+		vkBindImageMemory(logicalDevice, image_, imageMemory_, 0);
 	}
-	void VulkanImage::cleanup() 
+	void VulkanImage::cleanup(VkDevice logicalDevice) 
 	{
-		vkDestroyImage(logicalDevice_, image_, nullptr);
-		vkFreeMemory(logicalDevice_, imageMemory_, nullptr);
+		vkDestroyImage(logicalDevice, image_, nullptr);
+		vkFreeMemory(logicalDevice, imageMemory_, nullptr);
 
 	}
 }

@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 namespace gwa
 {
-	void ImGuiOverlay::init(Window& window) const
+	void ImGuiOverlay::init(const Window& window) const
 	{
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();

@@ -16,8 +16,8 @@ namespace gwa
 			return semaphores_;
 		}
 	private:
-		std::vector<VkSemaphore> semaphores_;
-		VkDevice logicalDevice_;
-		int maxFramesInFlight_;
+		std::vector<VkSemaphore> semaphores_{};
+		VkDevice logicalDevice_{};
+		int maxFramesInFlight_{ 3 };
 	};
 }

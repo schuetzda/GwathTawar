@@ -10,8 +10,8 @@ namespace gwa
 	class QuaternionCamera
 	{
 	public:
-		QuaternionCamera();
-		
+		QuaternionCamera(float aspectRatio);
+
 		/**
 		 * @brief Updates the camera's position and orientation based on user input from the window. 
 		 * NOTE Since in glfw window and input are closely coupled the data of both is retrived through the window class
@@ -26,6 +26,16 @@ namespace gwa
 		 * @return A 4x4 matrix representing the camera's view transformation.
 		 */
 		glm::mat4 getViewMatrix() const;
+		glm::mat4 getProjMatrix() const
+		{
+			return projMat;
+		}
+
+		const glm::vec3& getPosition() const
+		{
+			return position_;
+		}
+
 		float cspeed_ = 0.001f;
 	private:
 		void updateOrientationQuat();
@@ -33,6 +43,7 @@ namespace gwa
 		glm::vec3 position_;
 		glm::quat orientation_;
 		glm::vec2 previousMousePos_;
+		glm::mat4 projMat{};
 		float pitch;
 		float yaw;
 		float roll;

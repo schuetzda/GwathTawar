@@ -27,7 +27,7 @@ namespace gwa
 		~Application();
 		
 		/**
-		*	@brief: Initializes all resources of the application that can be that are loaded into memory before the application is running.
+		*	@brief: Initializes all resources of the application that are loaded into memory before the application is running.
 		*/
 		void init();
 
@@ -41,6 +41,6 @@ namespace gwa
 		ImGuiOverlay uiOverlay;
 		ntity::Registry registry; //The register for the ecs system of the application
 		QuaternionCamera camera;
-		static std::unique_ptr<RenderAPI> renderAPI; //TODO change RenderAPI to not be singleton
+		static std::unique_ptr<renderer::RenderAPI> renderAPI; //TODO change RenderAPI to not be singleton
 	};
 }

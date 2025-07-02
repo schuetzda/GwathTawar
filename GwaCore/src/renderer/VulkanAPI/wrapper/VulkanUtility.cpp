@@ -29,6 +29,25 @@ void gwa::vulkanutil::copyBuffer(VkDevice logicalDevice, VkCommandPool transferC
 	transferBuffer.endCommandBuffer();
 }
 
+VkFormat gwa::vulkanutil::chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) 
+{
+	for (VkFormat format : formats)
+	{
+		// Get properties for given format o nthis device
+		VkFormatProperties properties;
+		vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, format, &properties);
+		if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
+		{
+			return format;
+		}
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags) {
+			return format;
+		}
+	}
+	assert(false);
+	return formats[0];
+}
+
 std::vector<gwa::VulkanCommandBuffer> gwa::vulkanutil::initCommandBuffers(VkDevice logicalDevice, VkCommandPool commandPool, uint32_t commandBufferCount)
 {
 	std::vector<VkCommandBuffer> commandBuffers(commandBufferCount);

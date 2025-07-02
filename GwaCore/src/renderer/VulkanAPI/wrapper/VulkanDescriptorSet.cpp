@@ -2,109 +2,199 @@
 #include <stdexcept>
 #include <cassert>
 #include <array>
-namespace gwa
+#include <span>
+#include <iostream>
+namespace gwa::renderer
 {
-	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers,
-		const int MAX_FRAMES_IN_FLIGHT, uint64_t dataSize, VkImageView textureImageView, VkSampler textureSampler): logicalDevice_(logicalDevice)
+	VulkanDescriptorSet::VulkanDescriptorSet(VkDevice logicalDevice, std::span<const VkDescriptorSetLayout> descriptorSetLayout, std::span<const VulkanUniformBuffers> uniformBuffers,
+		uint32_t maxFramesInFlight, std::span<const DescriptorSetConfig> descriptorSetsConfig, std::span<const VkImageView> textureImageView, VkSampler textureSampler, VkSampler framebufferSampler,
+		std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, const std::vector<VulkanImageViewCollection>& imageViewCollections)
 	{
-		//---DescriptorPool---
+		attachmentReferenceBindings.resize(maxFramesInFlight);
+		std::vector<VkDescriptorPoolSize> poolSizes{};
+		uint32_t maxSets = 0;
+		std::vector<VkDescriptorSetLayout> setLayouts{};
 
-		// Type of descriptors + how many DESCRIPTORS, not descriptor sets (combined makes the pool size)
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		//Create the descriptor pool and set the layouts per set. Per bindless descriptor one set is needed otherwise a descriptor set per frame in flight.
+		for (uint32_t descriptorIndex = 0; descriptorIndex < descriptorSetsConfig.size(); descriptorIndex++)
+		{
+			const DescriptorSetConfig& descriptorConfig = descriptorSetsConfig[descriptorIndex];
+			uint32_t setsToAdd = descriptorConfig.bindless ? 1 : maxFramesInFlight;
+			VkDescriptorSetLayout layout = descriptorConfig.bindless ? descriptorSetLayout[1] : descriptorSetLayout[0];
 
-		// Dynamic Model Pool for Dynamic Uniform Buffer. NOT IN USE, for reference only
-		/*VkDescriptorPoolSize modelPoolSize = {};
-		modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-		modelPoolSize.descriptorCount = static_cast<uint32_t> (modelDynUniformBuffer.size());
-		descriptorPoolSizes.push_back(modelPoolSize)
-		*/
+			setLayouts.insert(setLayouts.end(), setsToAdd, layout);
+			maxSets += setsToAdd;
+
+			for (const DescriptorBindingConfig bindingConfig : descriptorConfig.bindings)
+			{
+				uint32_t descriptorCount = descriptorConfig.bindless
+					? bindingConfig.maxDescriptorCount
+					: bindingConfig.descriptorCount * maxFramesInFlight;
+				poolSizes.emplace_back(static_cast<VkDescriptorType>(bindingConfig.type), descriptorCount);
+			}
+		}
 
 		VkDescriptorPoolCreateInfo poolCreateInfo{};
 		poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolCreateInfo.pPoolSizes = poolSizes.data();
-		poolCreateInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolCreateInfo.maxSets = maxSets;
+		poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
 		// Create Descriptor Pool
-		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool_);
+		VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &descriptorPool);
 		assert(result == VK_SUCCESS);
 
-		//---Descriptor Set---
-		descriptorSets_.resize(MAX_FRAMES_IN_FLIGHT);
-
-		//Each sets has the same layout
-		std::vector<VkDescriptorSetLayout> setLayouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+		std::vector<VkDescriptorSet> descriptorSets;
+		descriptorSets.resize(maxSets);
 
 		VkDescriptorSetAllocateInfo setAllocInfo = {};
 		setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		setAllocInfo.descriptorPool = descriptorPool_;
-		setAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		setAllocInfo.descriptorPool = descriptorPool;
+		setAllocInfo.descriptorSetCount = maxSets;
 		setAllocInfo.pSetLayouts = setLayouts.data();
 
-		//Allocate descriptorSet 
-		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets_.data());
+		result = vkAllocateDescriptorSets(logicalDevice, &setAllocInfo, descriptorSets.data());
 		assert(result == VK_SUCCESS);
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		uint32_t currentDescriptorSetIndex = 0;
+		uint32_t frameDescriptorSetIndex = 0;
+		descriptorSetsPerFrame.resize(maxFramesInFlight);
+		for (const DescriptorSetConfig& descriptorSetConfig: descriptorSetsConfig)
 		{
-			// buffer info and data offset info
-			VkDescriptorBufferInfo vpBufferInfo = {};
-			vpBufferInfo.buffer = uniformBuffers[i];		// Buffer to get data from
-			vpBufferInfo.offset = 0;						// position of start of data
-			vpBufferInfo.range = dataSize;			// size of daa
+			uint32_t framesToProcess = descriptorSetConfig.bindless ? 1 : maxFramesInFlight;
 
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureImageView;
-			imageInfo.sampler = textureSampler;
+			for (uint32_t i = 0; i < framesToProcess; i++)
+			{
+				updateDescriptorSet(i, frameDescriptorSetIndex, logicalDevice, descriptorSetConfig, descriptorSets[currentDescriptorSetIndex],
+					uniformBuffers, textureImageView, textureSampler, framebufferSampler, framebufferImageViewsReference[i], imageViewCollections[i]);
 
-			// Data about connection between binding and buffer
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = descriptorSets_[i];
-			descriptorWrites[0].dstBinding = 0;				// Binding to update matches with binding on layout/shader)
-			descriptorWrites[0].dstArrayElement = 0;		// Index in array to update
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;		// Amount to update
-			descriptorWrites[0].pBufferInfo = &vpBufferInfo;// Information of buffer data to bind
+				if (descriptorSetConfig.bindless) {
+					// If the descriptorSet is bindless we don't have to create a new descriptor set per frame in flight. We can just reuse the same for every frame
+					for (uint32_t frame = 0; frame < maxFramesInFlight; frame++) {
+						descriptorSetsPerFrame[frame].push_back(descriptorSets[currentDescriptorSetIndex]);
+					}
+				}
+				else {
+					// If we are not bindless we have to update every descriptor set per frame
+					descriptorSetsPerFrame[i].push_back(descriptorSets[currentDescriptorSetIndex]);
+				}
 
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = descriptorSets_[i];
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-
-			/* NOT IN USE, for reference of Dynamic UBO
-			VkDescriptorBufferInfo modelBufferInfo = {};
-			modelBufferInfo.buffer = modelDynUniformBuffer[i];
-			modelBufferInfo.offset = 0;
-			modelBufferInfo.range = modelUniformAlignment;
-
-			VkWriteDescriptorSet modelSetWrite = {};
-		VulkanDescriptorSet(VkDevice logicalDevice, const int MAX_FRAMES_IN_FLIGHT, uint64_t size);
-			modelSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			modelSetWrite.dstSet = descriptorSets[i];
-			modelSetWrite.dstBinding = 1;
-			modelSetWrite.dstArrayElement = 0;
-			modelSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-			modelSetWrite.descriptorCount = 1;
-			modelSetWrite.pBufferInfo = &modelBufferInfo;
-			setWrites.push_back(modelSetWrite);*/
-
-			// Update the descriptor sets with new buffer/ binding info
-			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
+				currentDescriptorSetIndex++;
+			}
+			frameDescriptorSetIndex++;
 		}
 	}
 
-	void VulkanDescriptorSet::cleanup()
+	void VulkanDescriptorSet::updateDescriptorSet(uint32_t currentFrame, uint32_t descriptorIndex, VkDevice logicalDevice, const DescriptorSetConfig& descriptorSetConfig, VkDescriptorSet descriptorSet, std::span<const VulkanUniformBuffers> uniformBuffers, 
+		std::span<const VkImageView> textureImageView, VkSampler textureSampler, VkSampler framebufferSampler, const std::unordered_map<size_t, VkImageView>& framebufferImageViewsReference, const VulkanImageViewCollection& imageViews)
 	{
-		vkDestroyDescriptorPool(logicalDevice_, descriptorPool_, nullptr);
+
+		std::vector<VkWriteDescriptorSet> descriptorWrites{};
+		const size_t numberOfBindings = descriptorSetConfig.bindings.size();
+		descriptorWrites.resize(numberOfBindings);
+		uint32_t uniformBufferIndex = 0;
+		uint32_t textureViewIndex = 0;
+		uint32_t imageReferenceIndex = 0;
+
+		std::vector<std::vector<VkDescriptorBufferInfo>> bufferInfos;
+		std::vector<std::vector<VkDescriptorImageInfo>> imageInfos;
+
+		//Reserving is crucial otherwise moving the data when resizing the vector will invalidate the pointer at descriptorWrites pBufferInfo
+		bufferInfos.reserve(numberOfBindings);
+		imageInfos.reserve(numberOfBindings);
+		
+		for (uint32_t bindingIndex = 0; bindingIndex < numberOfBindings; bindingIndex++)
+		{
+			const DescriptorBindingConfig& binding = descriptorSetConfig.bindings[bindingIndex];
+
+			descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[bindingIndex].dstSet = descriptorSet;
+			descriptorWrites[bindingIndex].dstBinding = binding.bindingSlot;				// Binding to update matches with binding on layout/shader)
+			descriptorWrites[bindingIndex].dstArrayElement = 0;		// Index in array to update
+			descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(binding.type);
+			descriptorWrites[bindingIndex].descriptorCount = binding.descriptorCount;		// Amount to update
+
+			switch (binding.type)
+			{
+			case DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+			{
+				bufferInfos.emplace_back();
+				bufferInfos[uniformBufferIndex].resize(binding.descriptorCount);
+				for (uint32_t i = 0; i < binding.descriptorCount; i++)
+				{
+					bufferInfos[uniformBufferIndex][i].buffer = uniformBuffers[uniformBufferIndex].getUniformBuffers()[currentFrame];		// Buffer to get data from
+					bufferInfos[uniformBufferIndex][i].offset = 0;						// position of start of data
+					bufferInfos[uniformBufferIndex][i].range = uniformBuffers[uniformBufferIndex].getResource().dataInfo.size;
+
+				}
+				descriptorWrites[bindingIndex].pBufferInfo = bufferInfos[uniformBufferIndex].data();// Information of buffer data to bind
+				uniformBufferIndex++;
+				break;
+			}
+			case DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+			{
+				imageInfos.emplace_back();
+				const bool isAttachmentReference = binding.isAttachmentReference;
+				imageInfos[imageReferenceIndex].resize(binding.descriptorCount);
+				for (uint32_t i = 0; i < descriptorWrites[bindingIndex].descriptorCount; i++)
+				{
+					imageInfos[imageReferenceIndex][i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[imageReferenceIndex][i].imageView = isAttachmentReference ? framebufferImageViewsReference.at(binding.inputAttachmentHandle) : textureImageView[textureViewIndex++];
+					imageInfos[imageReferenceIndex][i].sampler = isAttachmentReference ? framebufferSampler : textureSampler;
+				}
+				descriptorWrites[bindingIndex].pImageInfo = imageInfos[imageReferenceIndex].data();
+				imageReferenceIndex++;
+				if (isAttachmentReference)
+				{
+					attachmentReferenceBindings[currentFrame].emplace_back(binding, descriptorIndex);
+				}
+				break;
+			}
+			default:
+				std::cerr << "Vulkan Descriptor Set support for binding " << descriptorSetConfig.bindings[bindingIndex].bindingSlot << " not implemented yet.";
+			}
+		}
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
+
+	void VulkanDescriptorSet::cleanup(VkDevice logicalDevice)
+	{
+		vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
+	}
+	void VulkanDescriptorSet::updateAttachmentReferences(VkDevice logicalDevice, std::span<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference, VkSampler framebufferSampler)
+	{
+		for (uint32_t frameIndex = 0; frameIndex < attachmentReferenceBindings.size(); frameIndex++)
+		{
+			const size_t numberOfBindings = attachmentReferenceBindings[frameIndex].size();
+			std::vector<VkWriteDescriptorSet> descriptorWrites{};
+
+			descriptorWrites.resize(numberOfBindings);
+			std::vector<std::vector<VkDescriptorImageInfo>> imageInfos;
+			imageInfos.resize(numberOfBindings);
+			uint32_t bindingIndex = 0;
+			for (const auto& [bindingConfig, descriptorIndex] : attachmentReferenceBindings[frameIndex])
+			{
+				descriptorWrites[bindingIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrites[bindingIndex].dstSet = descriptorSetsPerFrame[frameIndex][descriptorIndex];
+				descriptorWrites[bindingIndex].dstBinding = bindingConfig.bindingSlot;				// Binding to update matches with binding on layout/shader)
+				descriptorWrites[bindingIndex].dstArrayElement = 0;		// Index in array to update
+				descriptorWrites[bindingIndex].descriptorType = static_cast<VkDescriptorType>(bindingConfig.type);
+				descriptorWrites[bindingIndex].descriptorCount = bindingConfig.descriptorCount;		// Amount to update
+
+				imageInfos.emplace_back();
+				imageInfos[bindingIndex].resize(bindingConfig.descriptorCount);
+				for (uint32_t i = 0; i < descriptorWrites[bindingIndex].descriptorCount; i++)
+				{
+					imageInfos[bindingIndex][i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfos[bindingIndex][i].imageView = framebufferImageViewsReference[frameIndex].at(bindingConfig.inputAttachmentHandle);
+					imageInfos[bindingIndex][i].sampler = framebufferSampler;
+				}
+				descriptorWrites[bindingIndex].pImageInfo = imageInfos[bindingIndex].data();
+				bindingIndex++;
+			}
+			vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
 	}
 }

@@ -1,21 +1,21 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
-namespace gwa
+#include <vulkan/vulkan.h>
+namespace gwa::renderer
 {
 	class VulkanImageView
 	{
 	public:
 		VulkanImageView() = default;
 		VulkanImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-		void cleanup();
-		 
+		void recreateImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+		void cleanup(VkDevice logicalDevice);
 		VkImageView getImageView() const
 		{
-			return imageView_;
+			return imageView;
 		}
 	private:
-		VkImageView imageView_{};
-
-		VkDevice logicalDevice_{};
+		void createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView imageView;
 	};
 }

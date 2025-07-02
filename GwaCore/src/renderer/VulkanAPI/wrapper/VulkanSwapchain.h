@@ -1,6 +1,6 @@
 /* Swapchain
 List of image buffers that the GPU draws into.
-Those are presented to the display hardware 
+Those are presented to the display hardware
 */
 #pragma once
 #include <vulkan/vulkan_core.h>
@@ -20,14 +20,14 @@ namespace gwa {
 		VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
 		~VulkanSwapchain() = default;
 
-		void cleanup();
-		void recreateSwapchain(int framebufferWidth, int framebufferHeight);
+		void cleanup(VkDevice logicalDevice);
+		void recreateSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
 
 		VkSwapchainKHR getSwapchain() const
 		{
 			return vkSwapchain_;
 		}
-		const VkSwapchainKHR* getSwapchainPtr() 
+		const VkSwapchainKHR* getSwapchainPtr()
 		{
 			return  &vkSwapchain_;
 		}
@@ -39,27 +39,27 @@ namespace gwa {
 		{
 			return vkSwapchainExtent_;
 		}
-		const std::vector<VulkanSwapchainImage>& getSwapchainImages() const
-		{
-			return swapchainImages_;
-		}
 		uint32_t getSwapchainImagesSize() const
 		{
-			return static_cast<uint32_t>(swapchainImages_.size());
+			return static_cast<uint32_t>(swapchainImages.size());
+		}
+
+		const std::vector<VkImage>& getSwapchainImages() const
+		{
+			return swapchainImages;
 		}
 
 	private:
-		void createSwapchain(int framebufferWidth, int framebufferHeight, bool recreate);
+		void createSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight, bool recreate);
 		VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes) const;
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities, int framebufferWidth, int framebufferHeight) const;
 		VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const;
-		VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-	
+		VkImageView createImageView(VkDevice logicalDevice, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+
 		VkSwapchainKHR vkSwapchain_{};
 		VkFormat vkSwapchainImageFormat_{};
 		VkExtent2D vkSwapchainExtent_{};
-		std::vector<VulkanSwapchainImage> swapchainImages_ = std::vector<VulkanSwapchainImage>(0);
-
-		const VulkanDevice* device_{nullptr};
+		std::vector<VkImage> swapchainImages;
 	};
 }

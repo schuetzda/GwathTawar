@@ -2,33 +2,31 @@
 #include "vulkan/vulkan_core.h"
 #include <vector>
 #include "VulkanDevice.h"
-namespace gwa
+#include <renderer/rendergraph/RenderGraph.h>
+namespace gwa::renderer
 {
 	class VulkanRenderPass
 	{
 	public:
 		VulkanRenderPass() = default;
-		VulkanRenderPass(const VulkanDevice* const device, VkFormat swapchainImageFormat);
+		VulkanRenderPass(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkFormat swapchainImageFormat, const RenderPassConfig& renderPassConfig, const std::map<size_t, RenderAttachment>& attachments, VkFormat depthFormat);
 		~VulkanRenderPass() = default;
 
-		void cleanup();
+		void cleanup(VkDevice logicalDevice);
 
 		VkRenderPass getRenderPass() const
 		{
 			return vkRenderPass_;
 		}
 
-		VkFormat getDepthFormat() const
+		uint32_t getOutputAttachmentCounts() const
 		{
-			return depthFormat_;
+			return outputAttachmentsCount;
 		}
 
 	private:
-		VkFormat chooseSupportedFormat(VkPhysicalDevice vkPhysicalDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
-
 		VkRenderPass vkRenderPass_{};
-		VkFormat depthFormat_{};
-
-		VkDevice logicalDevice_{};
+		uint32_t outputAttachmentsCount{ 0 };
 	};
+
 }

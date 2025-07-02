@@ -19,7 +19,7 @@ namespace gwa::ntity
 		/**
 		 * @brief Initializes an empty component table without a specific type.
 		 */
-		ComponentTable() : _memoryManager(nullptr)	{
+		ComponentTable() : _memoryManager(nullptr) {
 
 		}
 
@@ -44,7 +44,7 @@ namespace gwa::ntity
 		 * @param other The table being moved.
 		*/
 		ComponentTable(ComponentTable&& other) noexcept
-			:typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_), componentData_(nullptr)
+			:_memoryManager(nullptr), typeID_(other.typeID_), currentComponentsCount_(other.currentComponentsCount_), reservedComponentsCount_(other.reservedComponentsCount_), componentData_(nullptr)
 		{
 			if (other._memoryManager == nullptr)
 			{
@@ -70,7 +70,17 @@ namespace gwa::ntity
 			assert(index < reservedComponentsCount_);
 			return static_cast<Component*>(componentData_) + index;
 		}
-		
+
+		/**
+		 * @brief Returns a pointer to the byte at the specified offset within the component data.
+		 * @param offset The offset in bytes from the beginning of the component data.
+		 * @return A pointer to the byte at the given offset.
+		 * @note It is the caller's responsibility to ensure that the index is within bounds.
+		 */
+		const void* getVoidPtr(size_t offset) const
+		{
+			return static_cast<const void*>(static_cast<const std::byte*>(componentData_) + offset);
+		}
 		/**
 		 * @brief Adds a new component to the end of the table, reallocating memory if necessary.
 		* @param component The component to be added.
@@ -109,7 +119,7 @@ namespace gwa::ntity
 		 * @brief Constructs and adds a new component to the storage
 		 * @tparam Component Type of the component
 		 * @tparam ...Args 
-		 * @param ...args Arguments to be perfectly forwarded to the Component constructor
+		 * @param ...args Arguments to be forwarded to the Component constructor
 		 */
 		template<typename Component, typename... Args> requires std::is_constructible_v<Component, Args...>
 		void emplace_back(Args&&... args)
@@ -119,7 +129,7 @@ namespace gwa::ntity
 			{
 				grow<Component>();
 			}
-			Component const* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
+			Component* currentPointer = static_cast<Component*>(componentData_) + currentComponentsCount_;
 			new(currentPointer) Component(std::forward<Args>(args)...);
 			currentComponentsCount_++;
 		}
@@ -208,7 +218,7 @@ namespace gwa::ntity
 			ComponentTable* otherTable;
 		};
 
-		void (*_memoryManager)(_Operation, const ComponentTable*, _Arguments*);
+		void (*_memoryManager)(_Operation, const ComponentTable*, _Arguments*) {};
 
 		template <typename Component>
 		struct Manager

@@ -3,6 +3,7 @@
 #include <array>
 #include<span>
 #include<vector>
+#include "components/ECSObjects.h"
 
 namespace gwa::ntity
 {
@@ -97,7 +98,7 @@ namespace gwa::ntity
 		template<typename Component>
 		Component* get(uint32_t entityID) const
 		{
-			const uint32_t typeIndex = TypeIDGenerator::type<Component>(false);
+			const uint32_t typeIndex = TypeIDGenerator::type<Component>();
 			assert(typeIndex < sparseSets.size());
 			return sparseSets[typeIndex].get<Component>(entityID);
 		}

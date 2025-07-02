@@ -9,7 +9,7 @@ namespace gwa
 		VulkanImage() = default;
 		VulkanImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, 
 			VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
-		void cleanup();
+		void cleanup(VkDevice logicalDevice);
 		 
 
 		VkImage getImage() const
@@ -17,10 +17,7 @@ namespace gwa
 			return image_;
 		}
 	private:
-		void createImage(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags);
 		VkImage image_{};
 		VkDeviceMemory imageMemory_{};
-
-		VkDevice logicalDevice_{};
 	};
 }
