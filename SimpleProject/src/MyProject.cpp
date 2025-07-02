@@ -159,8 +159,11 @@ void MyProject::run(float ts, gwa::ntity::Registry& registry, gwa::QuaternionCam
 	gwa::LightInformation* lightInfo = registry.getComponent<gwa::LightInformation>(lightEntity);
 	for (gwa::RenderPointLight& light: lightInfo->lights)
 	{
-		light.position.x += radius * cos(angle);
-		light.position.z += radius * sin(angle);
+		float dx = light.position.x;
+		float dz = light.position.z;
+
+		light.position.x = dx * cos(angularSpeed * ts) - dz * sin(angularSpeed * ts);
+		light.position.z = dx * sin(angularSpeed * ts) + dz * cos(angularSpeed * ts);
 		light.radius = lightRadius;
 		light.color = lightColor;
 	}

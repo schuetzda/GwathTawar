@@ -38,7 +38,7 @@ private:
 	gwa::ntity::ComponentHandle lightsHandle;
 
 	float angle = 0.0f;  // in radians
-	float angularSpeed = 1.0f;  // radians per second
+	float angularSpeed = .3f;  // radians per second
 	float radius = .1f;
 
 	float lightRadius = 7000.f;
