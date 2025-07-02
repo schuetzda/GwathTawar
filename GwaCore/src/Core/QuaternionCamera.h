@@ -31,6 +31,11 @@ namespace gwa
 			return projMat;
 		}
 
+		const glm::vec3& getPosition() const
+		{
+			return position_;
+		}
+
 		float cspeed_ = 0.001f;
 	private:
 		void updateOrientationQuat();

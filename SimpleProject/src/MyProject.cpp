@@ -10,11 +10,13 @@
 #include <renderer/rendergraph/RenderGraph.h>
 #include <renderer/rendergraph/RenderValues.h>
 #include <renderer/rendergraph/PipelineBuilder.h>
+#include <numbers>
+#include <glm/gtc/type_ptr.hpp>
 
 void MyProject::init(gwa::ntity::Registry& registry, gwa::QuaternionCamera& camera)
 {
-	const std::array<uint32_t, 6> componentEstimate{ 10, 10, 2, 5, 1024, 10};
-	registry.initComponentList<gwa::MeshBufferMemory, gwa::MeshRenderObject, glm::mat4, gwa::GltfEntityContainer, gwa::Texture, gwa::RenderPointLight>(componentEstimate, 100);
+	const std::array<uint32_t, 6> componentEstimate{ 10, 10, 2, 5, 1024, 1};
+	registry.initComponentList<gwa::MeshBufferMemory, gwa::MeshRenderObject, glm::mat4, gwa::GltfEntityContainer, gwa::Texture, gwa::LightInformation>(componentEstimate, 100);
 
 	std::filesystem::path assetPath("./assets/Sponza");
 	std::string gltfFileName("Sponza.gltf");
@@ -27,8 +29,14 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 	uboEntity = registry.registerEntity();
 	registry.emplace(uboEntity, std::move(viewProjMat));
 
-	uint32_t lightEntity = registry.registerEntity();
-	registry.emplace<gwa::RenderPointLight>(lightEntity, glm::vec4(0.0f, 500.0f, 1.0f, 0.0f), glm::vec3(1.f), 350000.f);
+	lightEntity = registry.registerEntity();
+	std::array<gwa::RenderPointLight, 100> lights;
+	for (gwa::RenderPointLight& light: lights)
+	{
+		light = gwa::RenderPointLight{ getRandomVec4(-1000.f, 1000.f, 0.f, 1000.f, -500.f, 500.f), glm::vec3(1.f), lightRadius };
+	}
+	registry.emplace<gwa::LightInformation>(lightEntity, lights, camera.getPosition());
+	lightsHandle = registry.getComponentHandle<gwa::LightInformation>(lightEntity);
 
 	gwa::renderer::PipelineBuilder pipelineBuilder{};
 	gwa::renderer::PipelineConfig gBufferPipelineConfig =
@@ -70,7 +78,6 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 
 	gwa::renderer::RenderGraph<deferred> graph{};
 	gwa::ntity::ComponentHandle viewProjHandle = registry.getComponentHandle<glm::mat4>(uboEntity);
-	gwa::ntity::ComponentHandle lightSourceHandle = registry.getComponentHandle<gwa::RenderPointLight>(lightEntity);
 	const uint32_t textureCount = static_cast<uint32_t>(registry.getComponent<gwa::GltfEntityContainer>(gltfEntity)->textures.size());
 
 	description = graph.init()
@@ -89,7 +96,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addRenderAttachment(deferred::lightingColor,
 			gwa::renderer::Format::FORMAT_SWAPCHAIN_IMAGE_FORMAT)
 		.addResourceAttachment(deferred::projView, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, viewProjHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{ sizeof(glm::mat4) })
-		.addResourceAttachment(deferred::lightSource, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, lightSourceHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{ sizeof(gwa::RenderPointLight) })
+		.addResourceAttachment(deferred::lightSource, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_BUFFER, lightsHandle, gwa::renderer::ResourceAttachment::DataSizeInfo{sizeof(gwa::LightInformation)})
 		.addResourceAttachment(deferred::sponzaScene, gwa::renderer::ResourceAttachmentType::ATTACHMENT_TYPE_TEXTURED_MESH, registry.getComponentHandle<gwa::GltfEntityContainer>(gltfEntity))
 		.addGraphNode()
 		.addRenderPass<3>({ deferred::gBufferColor, deferred::position, deferred::normal }, deferred::depth)
@@ -134,12 +141,29 @@ void MyProject::renderUI(float ts)
 	ImGui::Text("f,g- In-\\Decrease camera speed");
 	ImGui::Text("q,e- Camera roll");
 
+	ImGui::InputFloat("Light Radius: %f", &lightRadius, 25.f);
+	ImGui::ColorEdit3("Color", glm::value_ptr(lightColor));
+
 }
 
 void MyProject::run(float ts, gwa::ntity::Registry& registry, gwa::QuaternionCamera& camera)
 {
 	glm::mat4* viewProj = registry.getComponent<glm::mat4>(uboEntity);
 	*viewProj = camera.getProjMatrix() * camera.getViewMatrix();
+
+	angle += angularSpeed * ts;
+	if (angle > 2 * std::numbers::pi)
+		angle -= 2 * std::numbers::pi;
+
+	gwa::LightInformation* lightInfo = registry.getComponent<gwa::LightInformation>(lightEntity);
+	for (gwa::RenderPointLight& light: lightInfo->lights)
+	{
+		light.position.x += radius * cos(angle);
+		light.position.z += radius * sin(angle);
+		light.radius = lightRadius;
+		light.color = lightColor;
+	}
+	lightInfo->viewPos = camera.getPosition();
 }
 
 void MyProject::shutdown()

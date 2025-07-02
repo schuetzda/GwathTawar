@@ -3,6 +3,7 @@
 #include <renderer/RenderAPI.h>
 #include <iostream>
 #include <imgui_impl_vulkan.h>
+#include <glm/gtc/type_ptr.hpp>
 namespace gwa
 {
 	std::unique_ptr<renderer::RenderAPI> Application::renderAPI = renderer::RenderAPI::Create();
@@ -37,6 +38,7 @@ namespace gwa
 			uiOverlay.beforeUIRender();
 			m_game->renderUI(timestep);
 			ImGui::InputFloat("Cam Speed", &camera.cspeed_, 0.001f);
+			ImGui::Text("Camera position: (%.3f, %.3f, %.3f)", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 			uiOverlay.afterUIRender();
 			renderAPI->draw(&m_window, registry);
 		}

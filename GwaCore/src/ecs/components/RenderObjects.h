@@ -98,4 +98,10 @@ namespace gwa
         glm::vec3 color;
         float radius;
     };
+
+    struct LightInformation 
+    {
+        std::array<RenderPointLight, 100> lights;
+        glm::vec3 viewPos;
+    };
 }
