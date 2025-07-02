@@ -41,7 +41,7 @@ private:
 	float angularSpeed = 1.0f;  // radians per second
 	float radius = 0.1f;
 
-	float lightRadius = 5000.f;
+	float lightRadius = 10000.f;
 	glm::vec3 lightColor = glm::vec3(1.f);
 
 

@@ -30,10 +30,10 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 	registry.emplace(uboEntity, std::move(viewProjMat));
 
 	lightEntity = registry.registerEntity();
-	std::array<gwa::RenderPointLight, 100> lights;
+	std::array<gwa::RenderPointLight, 50> lights;
 	for (gwa::RenderPointLight& light: lights)
 	{
-		light = gwa::RenderPointLight{ getRandomVec4(-1000.f, 1000.f, 0.f, 1000.f, -500.f, 500.f), glm::vec3(1.f), lightRadius };
+		light = gwa::RenderPointLight{ getRandomVec4(-800.f, 800.f, 0.f, 900.f, -400.f, 400.f), glm::vec3(1.f), lightRadius };
 	}
 	registry.emplace<gwa::LightInformation>(lightEntity, lights, camera.getPosition());
 	lightsHandle = registry.getComponentHandle<gwa::LightInformation>(lightEntity);

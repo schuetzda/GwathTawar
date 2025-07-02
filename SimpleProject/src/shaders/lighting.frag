@@ -11,7 +11,7 @@ struct Light {
 
 
 layout(binding = 3) uniform LightInformation {
-	Light lights[100];
+	Light lights[50];
 	vec3 position;
 }ubo;
 

@@ -101,7 +101,7 @@ namespace gwa
 
     struct LightInformation 
     {
-        std::array<RenderPointLight, 100> lights;
+        std::array<RenderPointLight, 50> lights;
         glm::vec3 viewPos;
     };
 }

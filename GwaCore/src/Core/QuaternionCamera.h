@@ -36,7 +36,7 @@ namespace gwa
 			return position_;
 		}
 
-		float cspeed_ = 0.001f;
+		float cspeed_ = 1.f;
 	private:
 		void updateOrientationQuat();
 
