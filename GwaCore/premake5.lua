@@ -45,18 +45,9 @@
 		runtime "Debug"
 		symbols "on"
 
-		links
-		{
-			"%{Library.ShaderC_Debug}"
-		}
 
 	filter "configurations:Release"
 		defines "GWA_RELEASE"
 		runtime "Release"
 		optimize "on"
 
-		links
-		{
-			"%{Library.ShaderC_Release}"
-		}
-		

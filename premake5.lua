@@ -35,9 +35,6 @@ workspace "GwathTawar"
 
 	Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 	Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
-
-	Library["ShaderC_Debug"] = "%{LibraryDir.VulkanSDK}/shaderc_sharedd.lib"
-	Library["ShaderC_Release"] = "%{LibraryDir.VulkanSDK}/shaderc_shared.lib"
 	
 	group "Dependencies"
 		include "GwaCore/externals/GLFW"
