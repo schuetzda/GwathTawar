@@ -282,7 +282,7 @@ namespace gwa::renderer
     };
 
     template<typename E> requires enable_bitmask_operators<E>::value
-    constexpr typename E
+    constexpr E
         operator|(E lhs, E rhs) {
         using underlying = typename std::underlying_type<E>::type;
         return static_cast<E>(
