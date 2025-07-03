@@ -17,8 +17,9 @@ namespace gwa
 		 * NOTE Since in glfw window and input are closely coupled the data of both is retrived through the window class
 		 *
 		 * @param window The application window used to retrieve input data (e.g., mouse and keyboard).
+		 * @param ts time between the last and current frame
 		 */
-		void onUpdate(const Window& window);
+		void onUpdate(const Window& window, float ts);
 
 		/**
 		 * @brief Retrieves and calculates the view matrix of the camera based on the orientation quaternion and the position.

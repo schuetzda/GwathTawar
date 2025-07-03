@@ -32,7 +32,7 @@ namespace gwa
 			lasttime = time;
 			
 			m_window.update();
-			camera.onUpdate(m_window);
+			camera.onUpdate(m_window, timestep);
 			m_game->run(timestep, registry, camera);
 
 			uiOverlay.beforeUIRender();

@@ -26,7 +26,7 @@ namespace gwa
 	}
 
 	// NOTE: The callback here should be replaced by proper event handling with callback functions once ecs is implemented.
-	void QuaternionCamera::onUpdate(const Window& window)
+	void QuaternionCamera::onUpdate(const Window& window, float ts)
 	{
 		glm::vec2 mousePosition = window.getMousePosition();
 		if (window.isMousePressed(0))
@@ -54,19 +54,19 @@ namespace gwa
 		}
 		if (window.isKeyPressed(87))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, -1.0f)) * cspeed_;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, -1.0f)) * cspeed_ * ts * 300.f;
 		}
 		if (window.isKeyPressed(83))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, 1.0f)) * cspeed_;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(0.0f, 0.0f, 1.0f)) * cspeed_ * ts * 300.f;
 		}
 		if (window.isKeyPressed(65))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(-1.0f, 0.0f, 0.0f)) * cspeed_;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(-1.0f, 0.0f, 0.0f)) * cspeed_ * ts * 300.f;
 		}
 		if (window.isKeyPressed(68))
 		{
-			position_ += (glm::conjugate(orientation_) * glm::vec3(1.0f, 0.0f, 0.0f)) * cspeed_;
+			position_ += (glm::conjugate(orientation_) * glm::vec3(1.0f, 0.0f, 0.0f)) * cspeed_ * ts * 300.f;
 		}
 		if (window.isKeyPressed(GWA_KEY_F))
 		{

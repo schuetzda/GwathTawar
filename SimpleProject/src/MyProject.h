@@ -15,7 +15,7 @@ public:
 private:
 	glm::vec4 getRandomVec4(float minX, float maxX,
 		float minY, float maxY,
-		float minZ, float maxZ) {
+		float minZ, float maxZ) const {
 		static std::random_device rd;
 		static std::mt19937 gen(rd());
 		std::uniform_real_distribution<float> distX(minX, maxX);
