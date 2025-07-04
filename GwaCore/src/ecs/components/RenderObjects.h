@@ -101,6 +101,7 @@ namespace gwa
 
     struct LightInformation 
     {
+        static constexpr uint32_t numberOfLights = 30;
         std::array<RenderPointLight, 30> lights;
         glm::vec3 viewPos;
     };

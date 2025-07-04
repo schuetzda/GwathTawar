@@ -26,8 +26,9 @@ void main() {
 	
 	for(int i = 0; i < 30; i++)
 	{
+		// Phong lighting model
+		//https://rodolphe-vaillant.fr/entry/85/phong-illumination-model-cheat-sheet
 		vec3 L = ubo.lights[i].position.xyz - fragPos;
-		// Distance from light to fragment position
 		float dist = length(L);
 			
 		// Viewer to fragment
@@ -38,13 +39,12 @@ void main() {
 		// Attenuation
 		float atten = ubo.lights[i].radius / (pow(dist, 2.0) + 1.0);
 			
-		// Diffuse part
+		// Diffuse
 		vec3 N = normalize(normal);
 		float NdotL = max(0.0, dot(N, L));
 		vec3 diff = ubo.lights[i].color * albedo.rgb * NdotL * atten;
 
-		// Specular part
-		// Specular map values are stored in alpha of albedo mrt
+		// Specular
 		vec3 R = reflect(-L, N);
 		float NdotR = max(0.0, dot(R, V));
 		vec3 spec = ubo.lights[i].color * albedo.a * pow(NdotR, 16.0) * atten;

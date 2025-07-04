@@ -9,6 +9,7 @@ namespace gwa::renderer
 	{
 		std::vector<size_t> outputAttachmentHandles;
 		size_t depthStencilAttachmentHandle;
+		bool renderFullscreenPass;
 	};
 
 	struct PipelineConfig

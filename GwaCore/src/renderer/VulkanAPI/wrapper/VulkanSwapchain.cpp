@@ -5,9 +5,9 @@
 #include <array>
 #include "QueueFamilyIndices.h"
 namespace gwa {
-	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight)
+	VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, WindowSize framebufferSize)
 	{
-		createSwapchain(device, framebufferWidth, framebufferHeight, false);
+		createSwapchain(device, framebufferSize.width, framebufferSize.height, false);
 	}
 
 	void VulkanSwapchain::createSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight, bool recreateSwapchain = false)

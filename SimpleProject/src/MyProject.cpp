@@ -30,7 +30,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 	registry.emplace(uboEntity, std::move(viewProjMat));
 
 	lightEntity = registry.registerEntity();
-	std::array<gwa::RenderPointLight, 30> lights;
+	std::array<gwa::RenderPointLight, gwa::LightInformation::numberOfLights> lights;
 	for (gwa::RenderPointLight& light: lights)
 	{
 		light = gwa::RenderPointLight{ getRandomVec4(-800.f, 800.f, 0.f, 900.f, -400.f, 400.f), glm::vec3(1.f), lightRadius };
@@ -107,7 +107,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addTexturedMesh(deferred::sponzaScene)
 		.addPipeline(gBufferPipelineConfig)
 		.addGraphNode()
-		.addRenderPass<1>({ deferred::lightingColor })
+		.addRenderPass<1>({ deferred::lightingColor }, true)
 		.addPipeline(lightingPipeline)
 		.addDescriptorSet(false)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::gBufferColor, 0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)

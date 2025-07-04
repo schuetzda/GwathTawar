@@ -58,24 +58,24 @@ namespace gwa::renderer
 		}
 
 		template<size_t attachmentsCount> 	
-		RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false> addRenderPass(const std::array<AttachmentID, attachmentsCount>& attachmentsIds, AttachmentID depthAttachmentId) 
+		RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false> addRenderPass(const std::array<AttachmentID, attachmentsCount>& attachmentsIds, AttachmentID depthAttachmentId, bool renderFullscreenPass = false) 
 			requires nodeAdded && isInitialized
 		{
 			std::array<size_t, attachmentsCount> attachmentsHashed;
 			hashAttachmentHandles<attachmentsCount>(attachmentsHashed, attachmentsIds);
 
-			graphDescription.graphNodes.back().renderPass = { std::vector<size_t>(attachmentsHashed.begin(), attachmentsHashed.end()), hash(depthAttachmentId) };
+			graphDescription.graphNodes.back().renderPass = { std::vector<size_t>(attachmentsHashed.begin(), attachmentsHashed.end()), hash(depthAttachmentId), renderFullscreenPass };
 			return RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false>(std::move(graphDescription));
 		}
 
 		template<size_t attachmentsCount> 	
-		RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false> addRenderPass(const std::array<AttachmentID, attachmentsCount>& attachmentsIds) 
+		RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false> addRenderPass(const std::array<AttachmentID, attachmentsCount>& attachmentsIds, bool renderFullscreenPass = false)
 			requires nodeAdded && isInitialized
 		{
 			std::array<size_t, attachmentsCount> attachmentsHashed;
 			hashAttachmentHandles<attachmentsCount>(attachmentsHashed, attachmentsIds);
 
-			graphDescription.graphNodes.back().renderPass = { std::vector<size_t>(attachmentsHashed.begin(), attachmentsHashed.end()), INVALID_ATTACHMENT_ID };
+			graphDescription.graphNodes.back().renderPass = { std::vector<size_t>(attachmentsHashed.begin(), attachmentsHashed.end()), INVALID_ATTACHMENT_ID, renderFullscreenPass };
 			return RenderGraph<AttachmentID, true, nodeAdded, true, setPipeline, setDescriptorSet, false>(std::move(graphDescription));
 		}
 

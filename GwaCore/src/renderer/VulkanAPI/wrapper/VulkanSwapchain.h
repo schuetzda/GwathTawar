@@ -17,7 +17,7 @@ namespace gwa {
 
 	public:
 		VulkanSwapchain() = default;
-		VulkanSwapchain(const VulkanDevice* device, int framebufferWidth, int framebufferHeight);
+		VulkanSwapchain(const VulkanDevice* device, WindowSize framebufferSize);
 		~VulkanSwapchain() = default;
 
 		void cleanup(VkDevice logicalDevice);

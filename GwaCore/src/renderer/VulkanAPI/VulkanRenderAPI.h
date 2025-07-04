@@ -41,9 +41,6 @@ namespace gwa::renderer {
 
 		void recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry);
 	private:
-		void recreateSwapchain(WindowSize framebufferSize);
-		uint32_t currentFrame = 0;
-
 		struct RenderNode
 		{
 			VulkanRenderPass renderPass{};
@@ -54,9 +51,10 @@ namespace gwa::renderer {
 			VulkanMeshBuffers meshBuffers{};
 			VulkanFramebuffers framebuffers;
 			std::vector<VulkanUniformBuffers> uniformBuffers;
+			std::vector<uint32_t> meshesToRender;
 			bool useDepthBuffer{ false };
+			bool renderFullscreenPass{ false };
 		};
-
 		struct DataNode
 		{
 			VulkanMeshBufferMemory meshBuffersMemory;
@@ -66,6 +64,12 @@ namespace gwa::renderer {
 			std::vector<VulkanImageViewCollection> frameBufferImageViews;
 			std::vector<size_t> renderAttachmentHandles;
 		};
+
+		void recreateSwapchain(WindowSize framebufferSize);
+		void loadTexturedMeshes(DataNode& curDataNode, RenderNode& curRenderNode, const RenderGraphNode& curRenderGraphNode, gwa::ntity::Registry& registry, const std::map<size_t, ResourceAttachment>& resourceAttachments) const;
+		void createFramebufferAttachment(DataNode& curDataNode, size_t attachmentHandle, VkFormat format, VkExtent2D attachmentSize, VkImageAspectFlagBits aspectFlag, VkImageUsageFlags usageBits);
+		uint32_t currentFrame = 0;
+
 
 		std::vector<std::unordered_map<size_t, VkImageView>> framebufferImageViewsReference;
 		std::map<size_t, RenderAttachment> attachmentInfos;

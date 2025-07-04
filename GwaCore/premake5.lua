@@ -46,6 +46,7 @@
 		symbols "on"
 
 
+
 	filter "configurations:Release"
 		defines "GWA_RELEASE"
 		runtime "Release"

@@ -11,9 +11,10 @@ namespace gwa::renderer
 	class VulkanMeshBuffers
 	{
 		public:
+		static constexpr uint32_t vertexBufferCount = 3;
 		struct MeshBufferData {
 			VkBuffer indexBuffer;
-			std::array<VkBuffer, 3> vertexBuffers; // 0: Vertex, 1: Normal, 2: Texcoord
+			std::array<VkBuffer, vertexBufferCount> vertexBuffers; // 0: Vertex, 1: Normal, 2: Texcoord
 			uint32_t indexCount;
 		};
 
@@ -29,6 +30,10 @@ namespace gwa::renderer
 		{
 			return meshBufferDataList_;
 		}
+		const std::array<VkDeviceSize, vertexBufferCount> getOffsets() const
+		{
+			return offsets;
+		}
 		void cleanup(VkDevice logicalDevice);
 	private:
 		void copyAndSubmitBuffer(VkDevice logicalDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize);
@@ -36,5 +41,6 @@ namespace gwa::renderer
 		void createMeshBuffer(VkDevice logicalDevice, VkPhysicalDevice physicalDevice, VkBuffer& meshBuffer, VkDeviceMemory& meshBufferMemory, VkQueue transferQueue, VkCommandPool transferCommandPool, VkDeviceSize bufferSize, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, const void* vertData);
 
 		std::vector<MeshBufferData> meshBufferDataList_;
+		std::array<VkDeviceSize, vertexBufferCount> offsets{0, 0, 0};
 	};
 }
