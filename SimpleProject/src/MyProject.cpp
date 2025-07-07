@@ -103,7 +103,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addDescriptorSet(false)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(deferred::projView, 0, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_VERTEX_BIT)
 		.addDescriptorSet(true)
-		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, textureCount, 1024)
+		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, textureCount+1, 1024)
 		.addTexturedMesh(deferred::sponzaScene)
 		.addPipeline(gBufferPipelineConfig)
 		.addGraphNode()
@@ -114,7 +114,7 @@ void MyProject::initRenderGraph(gwa::ntity::Registry& registry, const gwa::Windo
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::position, 1, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER>(deferred::normal, 2, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT, 1, 1)
 		.addBinding<gwa::renderer::DescriptorType::DESCRIPTOR_TYPE_UNIFORM_BUFFER>(deferred::lightSource, 3, gwa::renderer::ShaderStageFlagBits::SHADER_STAGE_FRAGMENT_BIT)
-		.createRenderGraph().getRenderGraph();
+		.createRenderGraph().getRenderGraphDescription();
 }
 
 

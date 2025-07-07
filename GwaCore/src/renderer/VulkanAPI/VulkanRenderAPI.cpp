@@ -99,7 +99,7 @@ namespace gwa::renderer {
 
 			curRenderNode.framebuffers = VulkanFramebuffers(m_device.getLogicalDevice(), curDataNode.frameBufferImageViews, curRenderNode.renderPass.getRenderPass(), VkExtent2D{ framebufferSize.width, framebufferSize.height });
 			
-			// Load the scene from RAM to the Graphics card
+			// Load the meshes from RAM to the Graphics card
 			loadTexturedMeshes(curDataNode, curRenderNode, curRenderGraphNode, registry, description.resourceAttachments); 
 
 			// Bind UBOs
@@ -202,16 +202,16 @@ namespace gwa::renderer {
 
 	void VulkanRenderAPI::recordCommands(uint32_t imageIndex, gwa::ntity::Registry& registry)
 	{
-			
+		VulkanCommandBuffer& cmd = m_graphicsCommandBuffers[currentFrame];
 		VkExtent2D extent = m_swapchain.getSwapchainExtent();
-		m_graphicsCommandBuffers[currentFrame].beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+		cmd.beginCommandBuffer(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
 		for (size_t i = 0; i < renderNodes.size(); ++i)
 		{
 			RenderNode& renderNode = renderNodes[i];
 
-			m_graphicsCommandBuffers[currentFrame].beginRenderPass(renderNode.renderPass.getOutputAttachmentCounts(), renderNode.renderPass.getRenderPass(), extent,
+			cmd.beginRenderPass(renderNode.renderPass.getOutputAttachmentCounts(), renderNode.renderPass.getRenderPass(), extent,
 				renderNode.framebuffers.getFramebuffers()[imageIndex], renderNode.useDepthBuffer);
-			m_graphicsCommandBuffers[currentFrame].bindPipeline(renderNode.pipeline.getPipeline());
+			cmd.bindPipeline(renderNode.pipeline.getPipeline());
 
 			for (VulkanUniformBuffers buffers : renderNode.uniformBuffers)
 			{
@@ -219,38 +219,38 @@ namespace gwa::renderer {
 				buffers.updateUniformBuffers(m_device.getLogicalDevice(), currentFrame, buffers.getResource().dataInfo.size, uboData);
 			}
 
-			m_graphicsCommandBuffers[currentFrame].setViewport({ 0.f, 0.f,(float)extent.width, (float)extent.height, 0.f, 1.f });
-			m_graphicsCommandBuffers[currentFrame].setScissor({ {0,0},extent });
+			cmd.setViewport({ 0.f, 0.f,(float)extent.width, (float)extent.height, 0.f, 1.f });
+			cmd.setScissor({ {0,0},extent });
 
 			const std::vector<VkDescriptorSet>& currentFrameDescriptors = renderNode.descriptorSet.getDescriptorSets(currentFrame);
-			m_graphicsCommandBuffers[currentFrame].bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), renderNode.pipeline.getPipelineLayout());
+			cmd.bindDescriptorSet(static_cast<uint32_t>(currentFrameDescriptors.size()), currentFrameDescriptors.data(), renderNode.pipeline.getPipelineLayout());
 
 			for (uint32_t entity : renderNode.meshesToRender)
 			{
 				MeshRenderObject const* renderObject = registry.getComponent<MeshRenderObject>(entity);
 				VulkanMeshBuffers::MeshBufferData meshData = renderNode.meshBuffers.getMeshBufferData(renderObject->bufferID);
-				m_graphicsCommandBuffers[currentFrame].bindVertexBuffer(meshData.vertexBuffers.data(), renderNode.meshBuffers.vertexBufferCount, renderNode.meshBuffers.getOffsets().data());
-				m_graphicsCommandBuffers[currentFrame].bindIndexBuffer(meshData.indexBuffer);
+				cmd.bindVertexBuffer(meshData.vertexBuffers.data(), VulkanMeshBuffers::vertexBufferCount, renderNode.meshBuffers.getOffsets().data());
+				cmd.bindIndexBuffer(meshData.indexBuffer);
 
 				pushConstantObject = { renderObject->modelMatrix, renderObject->materialTextureIDs[0] };
-				m_graphicsCommandBuffers[currentFrame].pushConstants(renderNode.pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
+				cmd.pushConstants(renderNode.pipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(pushConstantObject), &pushConstantObject);
 
-				m_graphicsCommandBuffers[currentFrame].drawIndexed(meshData.indexCount);
+				cmd.drawIndexed(meshData.indexCount);
 			}
 
 			if (renderNode.renderFullscreenPass)
 			{
-				vkCmdDraw(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer(), 3, 1, 0, 0);
+				vkCmdDraw(*cmd.getCommandBuffer(), 3, 1, 0, 0);
 			}
 
 			//Render Imgui UI
 			if (i == renderNodes.size() - 1) {
 				// Last iteration
-				m_imgui.renderData(*m_graphicsCommandBuffers[currentFrame].getCommandBuffer());
+				m_imgui.renderData(*cmd.getCommandBuffer());
 			}
-			m_graphicsCommandBuffers[currentFrame].endRenderPass();
+			cmd.endRenderPass();
 		}
-		m_graphicsCommandBuffers[currentFrame].endCommandBuffer();
+		cmd.endCommandBuffer();
 	}
 	void VulkanRenderAPI::recreateSwapchain(WindowSize framebufferSize)
 	{
@@ -372,6 +372,7 @@ namespace gwa::renderer {
 
 	void VulkanRenderAPI::createFramebufferAttachment(DataNode& curDataNode, size_t attachmentHandle, VkFormat format, VkExtent2D attachmentSize, VkImageAspectFlagBits aspectFlag, VkImageUsageFlags usageBits)
 	{
+		assert(m_swapchain.getSwapchainImagesSize() == curDataNode.frameBufferImageViews.size() && m_swapchain.getSwapchainImagesSize() == framebufferImageViewsReference.size());
 		curDataNode.renderAttachmentHandles.push_back(attachmentHandle);
 		curDataNode.framebufferImages.emplace_back(m_device.getLogicalDevice(), m_device.getPhysicalDevice(), attachmentSize.width, attachmentSize.height, format,
 			VK_IMAGE_TILING_OPTIMAL, usageBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
