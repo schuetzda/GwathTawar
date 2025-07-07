@@ -12,10 +12,12 @@ Additional used libraries are:
 - [stb_image](https://github.com/nothings/stb) for reading and writing images
 - [glm](https://github.com/g-truc/glm) is used as the math library
 - [imgui](https://github.com/ocornut/imgui) for the graphical user interface
-
-Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). **Important:** Make sure to select 'Shader Toolchain Debug Symbols' in the installation dialog, and ensure that your graphics card driver is up to date.
+## Build
+Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/).
 
 Then clone recursively: git clone --recurse-submodule https://github.com/schuetzda/GwathTawar
-and run BuildScript.bat to build the project.
+and run BuildScript.bat to build the solution file. Finally compile the project in Visual Studio.
+
+
 ![](https://github.com/schuetzda/GwathTawar/blob/main/screenshots/DeferredRendererScreenshot.png)
 Real time rendering of 100 light sources in the Sponza Scene
