@@ -18,3 +18,4 @@ Install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). **Important:** Mak
 Then clone recursively: git clone --recurse-submodule https://github.com/schuetzda/GwathTawar
 and run BuildScript.bat to build the project.
 ![](https://github.com/schuetzda/GwathTawar/blob/main/screenshots/DeferredRendererScreenshot.png)
+Real time rendering of 100 light sources in the Sponza Scene
